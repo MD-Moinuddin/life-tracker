@@ -5,6 +5,9 @@ node_modules/
 dist/
 build/
 
+# Prisma's generated client (regenerated from schema.prisma, never hand-edited)
+backend/src/generated/prisma/
+
 # Environment variables — keep the example, ignore the real ones
 .env
 .env.*
