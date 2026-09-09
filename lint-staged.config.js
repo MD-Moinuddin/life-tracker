@@ -1,10 +1,6 @@
-// lint-staged runs from the repo root, but frontend/ and backend/ each have
-// their own separate ESLint and Prettier install and config file. Rather than
-// `cd`-ing into each app (which needs a shell and chained `&&`, and got tangled
-// in fragile quoting), each command below calls that app's own local binary
-// directly by path, with an explicit --config flag, and passes the staged file
-// paths unchanged (they're already relative to the repo root, which is also
-// lint-staged's own working directory).
+// frontend/ and backend/ each have their own ESLint/Prettier install, so
+// each command below calls that app's local binary directly rather than
+// `cd`-ing in (which needs a shell and broke on quoting previously).
 function runInApp(appDir) {
   return (filenames) => {
     const files = filenames.map((f) => `"${f}"`).join(" ");

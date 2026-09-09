@@ -23,14 +23,12 @@ services:
     ports:
       - "4000:4000"
     environment:
-      # Service name, not localhost — this container reaches Postgres over
-      # the compose network, where "postgres" resolves to that container.
+      # "postgres" is the service name, resolved over the compose network.
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/life_tracker?schema=public
     volumes:
       - ./backend:/app
-      # Anonymous volume: keeps the image's own node_modules instead of
-      # letting the bind mount above shadow it with the host's copy, which
-      # may hold different platform-specific binaries.
+      # Anonymous volume, keeps the image's own node_modules instead of
+      # letting the bind mount above shadow it with the host's copy.
       - /app/node_modules
     depends_on:
       postgres:
@@ -42,8 +40,6 @@ services:
     ports:
       - "5173:5173"
     environment:
-      # Read by code running in the browser, so this points at the port
-      # mapped to the host, not the backend's in-network service name.
       VITE_API_URL: http://localhost:4000
     volumes:
       - ./frontend:/app
@@ -51,7 +47,5 @@ services:
     depends_on:
       - backend
 
-# Named so Postgres data survives `docker compose down` / restarts, instead
-# of resetting every time the containers are recreated.
 volumes:
   postgres_data:
