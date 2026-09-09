@@ -12,6 +12,7 @@
     "format:check": "prettier --check . --ignore-path ../.prettierignore"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "express": "^5.2.1"
   },
