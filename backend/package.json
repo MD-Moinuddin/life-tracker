@@ -5,11 +5,12 @@
   "type": "commonjs",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "lint": "eslint .",
     "format": "prettier --write . --ignore-path ../.prettierignore",
-    "format:check": "prettier --check . --ignore-path ../.prettierignore"
+    "format:check": "prettier --check . --ignore-path ../.prettierignore",
+    "test": "vitest run"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
@@ -28,6 +29,7 @@
     "prisma": "^7.10.0",
     "tsx": "^4.23.13",
     "typescript": "~6.0.2",
-    "typescript-eslint": "^8.70.0"
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.0"
   }
 }
