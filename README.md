@@ -32,4 +32,40 @@ This repository has two main folders: `backend` and `frontend`. Each one is its 
 
 I chose not to use workspace tooling, like pnpm workspaces or a monorepo tool. A plain two-folder repo is simpler to set up and easier to understand. It also fits the time I have for this project. If the project grows a lot in the future, I may switch to workspace tooling then.
 
-More details, like the tech stack and setup instructions, will be added to this README as the project grows.
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Frontend | React, TypeScript, Vite |
+| Backend | Node.js, Express, TypeScript |
+| Database | PostgreSQL, Prisma |
+| Containers | Docker, Docker Compose |
+| CI | GitHub Actions |
+| Testing | Vitest |
+| Code quality | ESLint, Prettier, Husky |
+
+## Running this locally
+
+You need Docker installed. You do not need Node or PostgreSQL installed on your own machine, since Docker runs both for you.
+
+1. Clone the repository.
+2. Copy `backend/.env.example` to `backend/.env`, and `frontend/.env.example` to `frontend/.env`.
+3. From the repository root, run:
+   ```
+   docker compose up --build
+   ```
+4. The first time you run this, the database exists but has no tables yet. In a separate terminal, run the first migration:
+   ```
+   cd backend
+   npx prisma migrate dev
+   ```
+5. Open `http://localhost:5173` for the frontend, and `http://localhost:4000` for the backend.
+
+## Running tests
+
+Backend tests use Vitest:
+
+```
+cd backend
+npm run test
+```
