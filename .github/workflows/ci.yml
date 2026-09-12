@@ -67,3 +67,19 @@ jobs:
         run: npx tsc --noEmit -p tsconfig.app.json
       - working-directory: frontend
         run: npx tsc --noEmit -p tsconfig.node.json
+
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - working-directory: backend
+        run: npm ci
+      - working-directory: backend
+        run: npx prisma generate
+      - working-directory: backend
+        run: npm run test
