@@ -3,8 +3,14 @@ import * as password from "../../lib/password";
 import * as repository from "./auth.repository";
 import { EmailAlreadyRegisteredError, signup } from "./auth.service";
 
-vi.mock("./auth.repository");
-vi.mock("../../lib/password");
+vi.mock("./auth.repository", () => ({
+  findUserByEmail: vi.fn(),
+  createUser: vi.fn(),
+}));
+vi.mock("../../lib/password", () => ({
+  hashPassword: vi.fn(),
+  comparePassword: vi.fn(),
+}));
 
 const existingUser = {
   id: "1",
