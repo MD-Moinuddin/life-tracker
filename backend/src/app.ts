@@ -3,6 +3,7 @@ import helmet from "helmet";
 import cors from "cors";
 import { authRouter } from "./modules/auth/auth.routes";
 import { env } from "./config/env";
+import { errorHandler } from "./middleware/error-handler";
 
 const app = express();
 
@@ -25,5 +26,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+
+app.use(errorHandler);
 
 export default app;
