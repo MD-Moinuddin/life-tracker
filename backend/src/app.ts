@@ -4,10 +4,12 @@ import cors from "cors";
 import { authRouter } from "./modules/auth/auth.routes";
 import { env } from "./config/env";
 import { errorHandler } from "./middleware/error-handler";
+import { generalLimiter } from "./middleware/rate-limit";
 
 const app = express();
 
 app.use(helmet());
+app.use(generalLimiter);
 app.use(
   cors({
     // No origin at all means a non-browser client (curl, a server-to-server
