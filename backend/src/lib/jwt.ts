@@ -12,3 +12,7 @@ export function signRefreshToken(userId: string): string {
     expiresIn: "30d",
   });
 }
+
+export function verifyRefreshToken(token: string): { sub: string } {
+  return jwt.verify(token, env.JWT_REFRESH_SECRET) as { sub: string };
+}

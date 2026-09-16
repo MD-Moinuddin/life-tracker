@@ -2,7 +2,9 @@ import type { NextFunction, Request, Response } from "express";
 import {
   EmailAlreadyRegisteredError,
   InvalidCredentialsError,
+  InvalidRefreshTokenError,
   login,
+  refresh,
   signup,
 } from "./auth.service";
 import { loginSchema, signupSchema } from "./auth.schema";
@@ -68,6 +70,29 @@ export async function loginHandler(
       .json({ accessToken: result.accessToken, user: result.user });
   } catch (error) {
     if (error instanceof InvalidCredentialsError) {
+      res.status(401).json({ error: { message: error.message } });
+      return;
+    }
+    next(error);
+  }
+}
+
+export async function refreshHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const token = req.cookies.refreshToken as string | undefined;
+  if (!token) {
+    res.status(401).json({ error: { message: "Invalid refresh token" } });
+    return;
+  }
+
+  try {
+    const result = refresh(token);
+    res.status(200).json(result);
+  } catch (error) {
+    if (error instanceof InvalidRefreshTokenError) {
       res.status(401).json({ error: { message: error.message } });
       return;
     }

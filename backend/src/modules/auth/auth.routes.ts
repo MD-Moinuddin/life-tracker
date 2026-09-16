@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginHandler, signupHandler } from "./auth.controller";
+import { loginHandler, refreshHandler, signupHandler } from "./auth.controller";
 import { authLimiter } from "../../middleware/rate-limit";
 
 export const authRouter = Router();
@@ -7,3 +7,4 @@ export const authRouter = Router();
 authRouter.use(authLimiter);
 authRouter.post("/signup", signupHandler);
 authRouter.post("/login", loginHandler);
+authRouter.post("/refresh", refreshHandler);

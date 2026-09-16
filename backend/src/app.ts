@@ -1,6 +1,7 @@
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { authRouter } from "./modules/auth/auth.routes";
 import { env } from "./config/env";
 import { errorHandler } from "./middleware/error-handler";
@@ -22,6 +23,7 @@ app.use(
   }),
 );
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (_req, res) => {
   res.json({ status: "ok" });
