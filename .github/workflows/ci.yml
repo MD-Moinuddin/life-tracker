@@ -51,6 +51,8 @@ jobs:
         run: npx tsc --noEmit
       - working-directory: backend
         run: npx tsc --noEmit -p prisma/tsconfig.json
+      - working-directory: backend
+        run: npx tsc --noEmit -p tests/tsconfig.json
 
   typecheck-frontend:
     runs-on: ubuntu-latest
@@ -70,6 +72,26 @@ jobs:
 
   test-backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: life_tracker_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/life_tracker_test?schema=public
+      JWT_ACCESS_SECRET: ci-test-access-secret
+      JWT_REFRESH_SECRET: ci-test-refresh-secret
+      CORS_ORIGIN: http://localhost:5173
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -81,6 +103,8 @@ jobs:
         run: npm ci
       - working-directory: backend
         run: npx prisma generate
+      - working-directory: backend
+        run: npx prisma migrate deploy
       - working-directory: backend
         run: npm run test
 

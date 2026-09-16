@@ -8,10 +8,10 @@ build/
 # Prisma's generated client (regenerated from schema.prisma, never hand-edited)
 backend/src/generated/prisma/
 
-# Environment variables — keep the example, ignore the real ones
+# Environment variables — keep any *.example file, ignore the real ones
 .env
 .env.*
-!.env.example
+!.env*.example
 
 # Test coverage
 coverage/
