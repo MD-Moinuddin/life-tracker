@@ -99,3 +99,8 @@ export async function refreshHandler(
     next(error);
   }
 }
+
+export function logoutHandler(_req: Request, res: Response) {
+  res.clearCookie("refreshToken", { path: "/api/auth" });
+  res.status(204).end();
+}
