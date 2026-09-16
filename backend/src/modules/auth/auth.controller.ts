@@ -1,6 +1,14 @@
 import type { NextFunction, Request, Response } from "express";
-import { EmailAlreadyRegisteredError, signup } from "./auth.service";
-import { signupSchema } from "./auth.schema";
+import {
+  EmailAlreadyRegisteredError,
+  InvalidCredentialsError,
+  login,
+  signup,
+} from "./auth.service";
+import { loginSchema, signupSchema } from "./auth.schema";
+import { env } from "../../config/env";
+
+const REFRESH_TOKEN_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 export async function signupHandler(
   req: Request,
@@ -24,6 +32,43 @@ export async function signupHandler(
   } catch (error) {
     if (error instanceof EmailAlreadyRegisteredError) {
       res.status(409).json({ error: { message: error.message } });
+      return;
+    }
+    next(error);
+  }
+}
+
+export async function loginHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const parsed = loginSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: {
+        message: "Validation failed",
+        fields: parsed.error.flatten().fieldErrors,
+      },
+    });
+    return;
+  }
+
+  try {
+    const result = await login(parsed.data);
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/api/auth",
+      maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+    });
+    res
+      .status(200)
+      .json({ accessToken: result.accessToken, user: result.user });
+  } catch (error) {
+    if (error instanceof InvalidCredentialsError) {
+      res.status(401).json({ error: { message: error.message } });
       return;
     }
     next(error);
