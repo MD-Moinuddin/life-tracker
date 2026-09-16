@@ -29,18 +29,21 @@ describe("auth flow", () => {
 
     const refreshRes = await request(app)
       .post("/api/auth/refresh")
-      .set("Cookie", loginCookie);
+      .set("Cookie", loginCookie!);
     expect(refreshRes.status).toBe(200);
     expect(refreshRes.body.accessToken).toBeTruthy();
 
     const logoutRes = await request(app)
       .post("/api/auth/logout")
-      .set("Cookie", loginCookie);
+      .set("Cookie", loginCookie!);
     expect(logoutRes.status).toBe(204);
+
+    const logoutCookie = logoutRes.headers["set-cookie"];
+    expect(logoutCookie).toBeTruthy();
 
     const refreshAfterLogoutRes = await request(app)
       .post("/api/auth/refresh")
-      .set("Cookie", logoutRes.headers["set-cookie"]);
+      .set("Cookie", logoutCookie!);
     expect(refreshAfterLogoutRes.status).toBe(401);
   });
 });
