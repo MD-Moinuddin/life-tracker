@@ -4,7 +4,7 @@ import {
   signRefreshToken,
   verifyRefreshToken,
 } from "../../lib/jwt";
-import { createUser, findUserByEmail } from "./auth.repository";
+import { createUser, findUserByEmail, findUserById } from "./auth.repository";
 import type { LoginInput, SignupInput } from "./auth.schema";
 
 export class EmailAlreadyRegisteredError extends Error {
@@ -58,11 +58,21 @@ export async function login(input: LoginInput) {
   };
 }
 
-export function refresh(refreshToken: string) {
+export async function refresh(refreshToken: string) {
+  let userId: string;
   try {
-    const payload = verifyRefreshToken(refreshToken);
-    return { accessToken: signAccessToken(payload.sub) };
+    userId = verifyRefreshToken(refreshToken).sub;
   } catch {
     throw new InvalidRefreshTokenError();
   }
+
+  const user = await findUserById(userId);
+  if (!user) {
+    throw new InvalidRefreshTokenError();
+  }
+
+  return {
+    accessToken: signAccessToken(user.id),
+    user: { id: user.id, email: user.email, createdAt: user.createdAt },
+  };
 }
