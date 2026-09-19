@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FormStatus } from "./components/auth/FormStatus";
 import { LoginForm, type LoginFormValues } from "./components/auth/LoginForm";
 import {
@@ -6,7 +6,7 @@ import {
   type SignupFormValues,
 } from "./components/auth/SignupForm";
 import { ApiError } from "./lib/api-client";
-import { login, signup } from "./lib/auth-api";
+import { login, refresh, signup } from "./lib/auth-api";
 import { useAuthStore } from "./store/auth-store";
 
 function App() {
@@ -14,6 +14,16 @@ function App() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [signupError, setSignupError] = useState<string | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
+
+  useEffect(() => {
+    refresh()
+      .then(setAuth)
+      .catch(() => {
+        // No valid refresh cookie (new visitor or expired session) — stay logged out silently.
+      })
+      .finally(() => setIsBootstrapping(false));
+  }, [setAuth]);
 
   async function handleSignup(values: SignupFormValues) {
     setSignupError(null);
@@ -38,6 +48,10 @@ function App() {
         error instanceof ApiError ? error.message : "Something went wrong",
       );
     }
+  }
+
+  if (isBootstrapping) {
+    return <p>Loading…</p>;
   }
 
   if (user) {
