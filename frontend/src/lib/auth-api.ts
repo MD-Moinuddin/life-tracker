@@ -28,3 +28,7 @@ export function login(credentials: Credentials) {
 export function refresh() {
   return apiFetch<LoginResponse>("/api/auth/refresh", { method: "POST" });
 }
+
+export function logout() {
+  return apiFetch<void>("/api/auth/logout", { method: "POST" });
+}
