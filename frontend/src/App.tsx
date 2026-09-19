@@ -1,16 +1,60 @@
-import { LoginForm } from "./components/auth/LoginForm";
-import { SignupForm } from "./components/auth/SignupForm";
+import { useState } from "react";
+import { FormStatus } from "./components/auth/FormStatus";
+import { LoginForm, type LoginFormValues } from "./components/auth/LoginForm";
+import {
+  SignupForm,
+  type SignupFormValues,
+} from "./components/auth/SignupForm";
+import { ApiError } from "./lib/api-client";
+import { login, signup } from "./lib/auth-api";
+import { useAuthStore } from "./store/auth-store";
 
 function App() {
+  const user = useAuthStore((state) => state.user);
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const [signupError, setSignupError] = useState<string | null>(null);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  async function handleSignup(values: SignupFormValues) {
+    setSignupError(null);
+    try {
+      await signup(values);
+      const result = await login(values);
+      setAuth(result);
+    } catch (error) {
+      setSignupError(
+        error instanceof ApiError ? error.message : "Something went wrong",
+      );
+    }
+  }
+
+  async function handleLogin(values: LoginFormValues) {
+    setLoginError(null);
+    try {
+      const result = await login(values);
+      setAuth(result);
+    } catch (error) {
+      setLoginError(
+        error instanceof ApiError ? error.message : "Something went wrong",
+      );
+    }
+  }
+
+  if (user) {
+    return <p>Logged in as {user.email}</p>;
+  }
+
   return (
     <>
       <section>
         <h2>Sign up</h2>
-        <SignupForm onSubmit={(values) => console.log("signup", values)} />
+        <FormStatus message={signupError} />
+        <SignupForm onSubmit={handleSignup} />
       </section>
       <section>
         <h2>Log in</h2>
-        <LoginForm onSubmit={(values) => console.log("login", values)} />
+        <FormStatus message={loginError} />
+        <LoginForm onSubmit={handleLogin} />
       </section>
     </>
   );
