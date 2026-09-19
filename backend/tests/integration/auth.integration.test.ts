@@ -32,6 +32,7 @@ describe("auth flow", () => {
       .set("Cookie", loginCookie!);
     expect(refreshRes.status).toBe(200);
     expect(refreshRes.body.accessToken).toBeTruthy();
+    expect(refreshRes.body.user.email).toBe(testEmail);
 
     const logoutRes = await request(app)
       .post("/api/auth/logout")

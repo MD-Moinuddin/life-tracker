@@ -89,7 +89,7 @@ export async function refreshHandler(
   }
 
   try {
-    const result = refresh(token);
+    const result = await refresh(token);
     res.status(200).json(result);
   } catch (error) {
     if (error instanceof InvalidRefreshTokenError) {

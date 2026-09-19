@@ -1,15 +1,27 @@
 import { describe, expect, it, vi } from "vitest";
+import * as jwt from "../../lib/jwt";
 import * as password from "../../lib/password";
 import * as repository from "./auth.repository";
-import { EmailAlreadyRegisteredError, signup } from "./auth.service";
+import {
+  EmailAlreadyRegisteredError,
+  InvalidRefreshTokenError,
+  refresh,
+  signup,
+} from "./auth.service";
 
 vi.mock("./auth.repository", () => ({
   findUserByEmail: vi.fn(),
+  findUserById: vi.fn(),
   createUser: vi.fn(),
 }));
 vi.mock("../../lib/password", () => ({
   hashPassword: vi.fn(),
   comparePassword: vi.fn(),
+}));
+vi.mock("../../lib/jwt", () => ({
+  signAccessToken: vi.fn(),
+  signRefreshToken: vi.fn(),
+  verifyRefreshToken: vi.fn(),
 }));
 
 const existingUser = {
@@ -62,5 +74,43 @@ describe("signup", () => {
     });
 
     expect(result).not.toHaveProperty("passwordHash");
+  });
+});
+
+describe("refresh", () => {
+  it("rejects an invalid or expired token", async () => {
+    vi.mocked(jwt.verifyRefreshToken).mockImplementation(() => {
+      throw new Error("invalid token");
+    });
+
+    await expect(refresh("bad-token")).rejects.toThrow(
+      InvalidRefreshTokenError,
+    );
+  });
+
+  it("rejects a valid token whose user no longer exists", async () => {
+    vi.mocked(jwt.verifyRefreshToken).mockReturnValue({ sub: "1" });
+    vi.mocked(repository.findUserById).mockResolvedValue(null);
+
+    await expect(refresh("valid-token")).rejects.toThrow(
+      InvalidRefreshTokenError,
+    );
+  });
+
+  it("returns a new access token and the user on success", async () => {
+    vi.mocked(jwt.verifyRefreshToken).mockReturnValue({ sub: "1" });
+    vi.mocked(repository.findUserById).mockResolvedValue(existingUser);
+    vi.mocked(jwt.signAccessToken).mockReturnValue("new-access-token");
+
+    const result = await refresh("valid-token");
+
+    expect(result).toEqual({
+      accessToken: "new-access-token",
+      user: {
+        id: existingUser.id,
+        email: existingUser.email,
+        createdAt: existingUser.createdAt,
+      },
+    });
   });
 });
