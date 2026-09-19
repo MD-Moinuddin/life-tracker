@@ -11,10 +11,11 @@ import { useAuthStore } from "./store/auth-store";
 
 function App() {
   const user = useAuthStore((state) => state.user);
+  const isInitialized = useAuthStore((state) => state.isInitialized);
   const setAuth = useAuthStore((state) => state.setAuth);
+  const setInitialized = useAuthStore((state) => state.setInitialized);
   const [signupError, setSignupError] = useState<string | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [isBootstrapping, setIsBootstrapping] = useState(true);
 
   useEffect(() => {
     refresh()
@@ -22,8 +23,8 @@ function App() {
       .catch(() => {
         // No valid refresh cookie (new visitor or expired session) — stay logged out silently.
       })
-      .finally(() => setIsBootstrapping(false));
-  }, [setAuth]);
+      .finally(setInitialized);
+  }, [setAuth, setInitialized]);
 
   async function handleSignup(values: SignupFormValues) {
     setSignupError(null);
@@ -50,7 +51,7 @@ function App() {
     }
   }
 
-  if (isBootstrapping) {
+  if (!isInitialized) {
     return <p>Loading…</p>;
   }
 
