@@ -1,9 +1,13 @@
 import { apiFetch } from "./api-client";
 import type { AuthUser } from "../store/auth-store";
 
-interface Credentials {
+interface LoginCredentials {
   email: string;
   password: string;
+}
+
+interface SignupCredentials extends LoginCredentials {
+  name: string;
 }
 
 interface LoginResponse {
@@ -11,14 +15,14 @@ interface LoginResponse {
   user: AuthUser;
 }
 
-export function signup(credentials: Credentials) {
+export function signup(credentials: SignupCredentials) {
   return apiFetch<AuthUser>("/api/auth/signup", {
     method: "POST",
     body: credentials,
   });
 }
 
-export function login(credentials: Credentials) {
+export function login(credentials: LoginCredentials) {
   return apiFetch<LoginResponse>("/api/auth/login", {
     method: "POST",
     body: credentials,

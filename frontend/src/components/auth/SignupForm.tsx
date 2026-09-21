@@ -1,6 +1,7 @@
 import { useId, useState, type FormEvent } from "react";
 
 export interface SignupFormValues {
+  name: string;
   email: string;
   password: string;
 }
@@ -10,14 +11,19 @@ interface SignupFormProps {
 }
 
 interface FormErrors {
+  name?: string;
   email?: string;
   password?: string[];
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function validate(email: string, password: string): FormErrors {
+function validate(name: string, email: string, password: string): FormErrors {
   const errors: FormErrors = {};
+
+  if (name.trim().length === 0) {
+    errors.name = "Name is required";
+  }
 
   if (!EMAIL_PATTERN.test(email)) {
     errors.email = "Enter a valid email address";
@@ -44,11 +50,14 @@ function validate(email: string, password: string): FormErrors {
 }
 
 export function SignupForm({ onSubmit }: SignupFormProps) {
+  const nameId = useId();
+  const nameErrorId = useId();
   const emailId = useId();
   const emailErrorId = useId();
   const passwordId = useId();
   const passwordErrorId = useId();
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
@@ -56,16 +65,35 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const validationErrors = validate(email, password);
+    const validationErrors = validate(name, email, password);
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length === 0) {
-      onSubmit({ email, password });
+      onSubmit({ name: name.trim(), email, password });
     }
   }
 
   return (
     <form onSubmit={handleSubmit} noValidate>
+      <div>
+        <label htmlFor={nameId}>Name</label>
+        <input
+          id={nameId}
+          type="text"
+          autoComplete="name"
+          required
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          aria-invalid={Boolean(errors.name)}
+          aria-describedby={errors.name ? nameErrorId : undefined}
+        />
+        {errors.name && (
+          <p id={nameErrorId} role="alert">
+            {errors.name}
+          </p>
+        )}
+      </div>
+
       <div>
         <label htmlFor={emailId}>Email</label>
         <input
