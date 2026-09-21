@@ -3,6 +3,7 @@ import request from "supertest";
 import app from "../../src/app";
 import { prisma } from "../../src/lib/prisma";
 
+const testName = "Integration Test";
 const testEmail = `integration-${Date.now()}@example.com`;
 const testPassword = "GoodPassword1";
 
@@ -14,15 +15,17 @@ describe("auth flow", () => {
   it("signs up, logs in, refreshes, and logs out", async () => {
     const signupRes = await request(app)
       .post("/api/auth/signup")
-      .send({ email: testEmail, password: testPassword });
+      .send({ name: testName, email: testEmail, password: testPassword });
     expect(signupRes.status).toBe(201);
     expect(signupRes.body).not.toHaveProperty("passwordHash");
+    expect(signupRes.body.name).toBe(testName);
 
     const loginRes = await request(app)
       .post("/api/auth/login")
       .send({ email: testEmail, password: testPassword });
     expect(loginRes.status).toBe(200);
     expect(loginRes.body.accessToken).toBeTruthy();
+    expect(loginRes.body.user.name).toBe(testName);
 
     const loginCookie = loginRes.headers["set-cookie"];
     expect(loginCookie).toBeTruthy();
