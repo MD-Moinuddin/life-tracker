@@ -35,9 +35,18 @@ export async function signup(input: SignupInput) {
   }
 
   const passwordHash = await hashPassword(input.password);
-  const user = await createUser({ email: input.email, passwordHash });
+  const user = await createUser({
+    name: input.name,
+    email: input.email,
+    passwordHash,
+  });
 
-  return { id: user.id, email: user.email, createdAt: user.createdAt };
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    createdAt: user.createdAt,
+  };
 }
 
 export async function login(input: LoginInput) {
@@ -54,7 +63,12 @@ export async function login(input: LoginInput) {
   return {
     accessToken: signAccessToken(user.id),
     refreshToken: signRefreshToken(user.id),
-    user: { id: user.id, email: user.email, createdAt: user.createdAt },
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+    },
   };
 }
 
@@ -73,6 +87,11 @@ export async function refresh(refreshToken: string) {
 
   return {
     accessToken: signAccessToken(user.id),
-    user: { id: user.id, email: user.email, createdAt: user.createdAt },
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+    },
   };
 }
