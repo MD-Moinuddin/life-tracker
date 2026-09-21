@@ -16,6 +16,9 @@ interface FormErrors {
   password?: string[];
 }
 
+const INPUT_CLASSES =
+  "w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 aria-invalid:border-red-500";
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function validate(name: string, email: string, password: string): FormErrors {
@@ -74,9 +77,14 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
+    <form onSubmit={handleSubmit} noValidate className="space-y-4">
       <div>
-        <label htmlFor={nameId}>Name</label>
+        <label
+          htmlFor={nameId}
+          className="mb-1 block text-sm font-medium text-slate-700"
+        >
+          Name
+        </label>
         <input
           id={nameId}
           type="text"
@@ -86,16 +94,26 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
           onChange={(event) => setName(event.target.value)}
           aria-invalid={Boolean(errors.name)}
           aria-describedby={errors.name ? nameErrorId : undefined}
+          className={INPUT_CLASSES}
         />
         {errors.name && (
-          <p id={nameErrorId} role="alert">
+          <p
+            id={nameErrorId}
+            role="alert"
+            className="mt-1 text-sm text-red-600"
+          >
             {errors.name}
           </p>
         )}
       </div>
 
       <div>
-        <label htmlFor={emailId}>Email</label>
+        <label
+          htmlFor={emailId}
+          className="mb-1 block text-sm font-medium text-slate-700"
+        >
+          Email
+        </label>
         <input
           id={emailId}
           type="email"
@@ -105,16 +123,26 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
           onChange={(event) => setEmail(event.target.value)}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? emailErrorId : undefined}
+          className={INPUT_CLASSES}
         />
         {errors.email && (
-          <p id={emailErrorId} role="alert">
+          <p
+            id={emailErrorId}
+            role="alert"
+            className="mt-1 text-sm text-red-600"
+          >
             {errors.email}
           </p>
         )}
       </div>
 
       <div>
-        <label htmlFor={passwordId}>Password</label>
+        <label
+          htmlFor={passwordId}
+          className="mb-1 block text-sm font-medium text-slate-700"
+        >
+          Password
+        </label>
         <input
           id={passwordId}
           type="password"
@@ -124,9 +152,14 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
           onChange={(event) => setPassword(event.target.value)}
           aria-invalid={Boolean(errors.password)}
           aria-describedby={errors.password ? passwordErrorId : undefined}
+          className={INPUT_CLASSES}
         />
         {errors.password && (
-          <ul id={passwordErrorId} role="alert">
+          <ul
+            id={passwordErrorId}
+            role="alert"
+            className="mt-1 list-inside list-disc text-sm text-red-600"
+          >
             {errors.password.map((message) => (
               <li key={message}>{message}</li>
             ))}
@@ -134,7 +167,12 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
         )}
       </div>
 
-      <button type="submit">Sign up</button>
+      <button
+        type="submit"
+        className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      >
+        Sign up
+      </button>
     </form>
   );
 }

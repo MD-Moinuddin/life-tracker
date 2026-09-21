@@ -5,6 +5,7 @@ import {
   SignupForm,
   type SignupFormValues,
 } from "../components/auth/SignupForm";
+import { AuthLayout } from "../components/layout/AuthLayout";
 import { ApiError } from "../lib/api-client";
 import { login, signup } from "../lib/auth-api";
 import { useAuthStore } from "../store/auth-store";
@@ -27,13 +28,22 @@ export function SignupPage() {
   }
 
   return (
-    <section>
-      <h2>Sign up</h2>
+    <AuthLayout
+      title="Sign up"
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="rounded font-medium text-indigo-600 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            Log in
+          </Link>
+        </>
+      }
+    >
       <FormStatus message={error} />
       <SignupForm onSubmit={handleSignup} />
-      <p>
-        Already have an account? <Link to="/login">Log in</Link>
-      </p>
-    </section>
+    </AuthLayout>
   );
 }
