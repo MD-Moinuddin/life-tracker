@@ -1,29 +1,25 @@
-import { useNavigate } from "react-router-dom";
-import { logout } from "../lib/auth-api";
-import { useAuthStore } from "../store/auth-store";
+import { ModuleCard } from "../components/dashboard/ModuleCard";
+import { AppShell } from "../components/layout/AppShell";
+
+const MODULES = [
+  { icon: "🗓️", title: "Work Schedule" },
+  { icon: "💪", title: "Fitness" },
+  { icon: "🥗", title: "Nutrition" },
+  { icon: "💰", title: "Finance" },
+];
 
 export function DashboardPage() {
-  const user = useAuthStore((state) => state.user);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
-  const navigate = useNavigate();
-
-  async function handleLogout() {
-    try {
-      await logout();
-    } catch {
-      // Best-effort: still clear the local session even if the request fails.
-    } finally {
-      clearAuth();
-      navigate("/login");
-    }
-  }
-
   return (
-    <div>
-      <p>Logged in as {user?.email}</p>
-      <button type="button" onClick={handleLogout}>
-        Log out
-      </button>
-    </div>
+    <AppShell>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {MODULES.map((module) => (
+          <ModuleCard
+            key={module.title}
+            icon={module.icon}
+            title={module.title}
+          />
+        ))}
+      </div>
+    </AppShell>
   );
 }
