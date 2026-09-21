@@ -1,19 +1,22 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { hashPassword } from "../src/lib/password";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  const passwordHash = await hashPassword("DevPassword1");
+
   // upsert, not create — safe to re-run without a unique-email conflict.
   await prisma.user.upsert({
     where: { email: "dev@example.com" },
     update: {},
     create: {
+      name: "Dev User",
       email: "dev@example.com",
-      // Not a real bcrypt hash — password hashing lands in S4.
-      passwordHash: "placeholder-not-a-real-hash",
+      passwordHash,
     },
   });
 }

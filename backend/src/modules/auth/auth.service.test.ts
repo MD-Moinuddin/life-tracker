@@ -26,6 +26,7 @@ vi.mock("../../lib/jwt", () => ({
 
 const existingUser = {
   id: "1",
+  name: "Alex",
   email: "a@b.com",
   passwordHash: "existing-hash",
   createdAt: new Date(),
@@ -37,7 +38,7 @@ describe("signup", () => {
     vi.mocked(repository.findUserByEmail).mockResolvedValue(existingUser);
 
     await expect(
-      signup({ email: "a@b.com", password: "GoodPassword1" }),
+      signup({ name: "Alex", email: "a@b.com", password: "GoodPassword1" }),
     ).rejects.toThrow(EmailAlreadyRegisteredError);
 
     expect(repository.createUser).not.toHaveBeenCalled();
@@ -51,10 +52,15 @@ describe("signup", () => {
       passwordHash: "hashed-value",
     });
 
-    await signup({ email: "new@example.com", password: "GoodPassword1" });
+    await signup({
+      name: "New User",
+      email: "new@example.com",
+      password: "GoodPassword1",
+    });
 
     expect(password.hashPassword).toHaveBeenCalledWith("GoodPassword1");
     expect(repository.createUser).toHaveBeenCalledWith({
+      name: "New User",
       email: "new@example.com",
       passwordHash: "hashed-value",
     });
@@ -69,6 +75,7 @@ describe("signup", () => {
     });
 
     const result = await signup({
+      name: "New User",
       email: "new@example.com",
       password: "GoodPassword1",
     });
@@ -108,6 +115,7 @@ describe("refresh", () => {
       accessToken: "new-access-token",
       user: {
         id: existingUser.id,
+        name: existingUser.name,
         email: existingUser.email,
         createdAt: existingUser.createdAt,
       },
