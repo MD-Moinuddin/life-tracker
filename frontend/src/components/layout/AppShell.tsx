@@ -36,7 +36,7 @@ export function AppShell({ children }: AppShellProps) {
           <button
             type="button"
             onClick={handleLogout}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
             Log out
           </button>
@@ -46,7 +46,7 @@ export function AppShell({ children }: AppShellProps) {
         <Link
           to="/dashboard"
           aria-current="page"
-          className="text-sm font-medium text-slate-900"
+          className="rounded px-1 text-sm font-medium text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
           Dashboard
         </Link>
