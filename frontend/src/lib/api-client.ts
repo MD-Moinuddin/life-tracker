@@ -40,8 +40,14 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
-    const errorBody = (await response.json()) as ApiErrorResponse;
-    throw new ApiError(response.status, errorBody.error.message);
+    let message = "Something went wrong";
+    try {
+      const errorBody = (await response.json()) as ApiErrorResponse;
+      message = errorBody.error.message;
+    } catch {
+      // Response body wasn't valid JSON (e.g. a proxy/gateway error page) — fall back to the generic message.
+    }
+    throw new ApiError(response.status, message);
   }
 
   return (await response.json()) as T;
