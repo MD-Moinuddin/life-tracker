@@ -10,6 +10,11 @@ import { formatUptime } from "./lib/format";
 
 const app = express();
 
+// Two trusted hops in front of the app: Vercel's rewrite proxy, then
+// Render's own load balancer. Needed for express-rate-limit to key on the
+// real client IP instead of one of the proxies.
+app.set("trust proxy", 2);
+
 app.use(helmet());
 app.use(generalLimiter);
 app.use(
