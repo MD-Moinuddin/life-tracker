@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL;
+// Unset in production: requests go through the same-origin Vercel rewrite
+// proxy instead of an absolute cross-domain URL (see frontend/vercel.json).
+const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 interface ApiErrorResponse {
   error: { message: string };
