@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from "react";
+import { Spinner } from "../Spinner";
 
 export interface LoginFormValues {
   email: string;
@@ -6,7 +7,7 @@ export interface LoginFormValues {
 }
 
 interface LoginFormProps {
-  onSubmit: (values: LoginFormValues) => void;
+  onSubmit: (values: LoginFormValues) => Promise<void>;
 }
 
 interface FormErrors {
@@ -15,7 +16,7 @@ interface FormErrors {
 }
 
 const INPUT_CLASSES =
-  "w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 aria-invalid:border-red-500";
+  "w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 aria-invalid:border-red-500 disabled:bg-slate-100 disabled:text-slate-500";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -41,15 +42,21 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const validationErrors = validate(email, password);
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length === 0) {
-      onSubmit({ email, password });
+      setIsSubmitting(true);
+      try {
+        await onSubmit({ email, password });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   }
 
@@ -67,6 +74,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
           type="email"
           autoComplete="email"
           required
+          disabled={isSubmitting}
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           aria-invalid={Boolean(errors.email)}
@@ -96,6 +104,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
           type="password"
           autoComplete="current-password"
           required
+          disabled={isSubmitting}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           aria-invalid={Boolean(errors.password)}
@@ -115,9 +124,17 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
 
       <button
         type="submit"
-        className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        disabled={isSubmitting}
+        className="flex w-full items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        Log in
+        {isSubmitting ? (
+          <>
+            <Spinner />
+            Logging in…
+          </>
+        ) : (
+          "Log in"
+        )}
       </button>
     </form>
   );
