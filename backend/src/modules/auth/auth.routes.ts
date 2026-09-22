@@ -9,8 +9,7 @@ import { authLimiter } from "../../middleware/rate-limit";
 
 export const authRouter = Router();
 
-authRouter.use(authLimiter);
-authRouter.post("/signup", signupHandler);
-authRouter.post("/login", loginHandler);
+authRouter.post("/signup", authLimiter, signupHandler);
+authRouter.post("/login", authLimiter, loginHandler);
 authRouter.post("/refresh", refreshHandler);
 authRouter.post("/logout", logoutHandler);
