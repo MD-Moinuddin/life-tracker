@@ -10,7 +10,7 @@ export function ModuleCard({ icon, title }: ModuleCardProps) {
         {icon}
       </span>
       <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
         Coming in v1.1
       </span>
     </div>
