@@ -37,6 +37,9 @@ function validate(name: string, email: string, password: string): FormErrors {
   if (password.length < 8) {
     passwordErrors.push("Password must be at least 8 characters");
   }
+  if (password.length > 72) {
+    passwordErrors.push("Password must be at most 72 characters");
+  }
   if (!/[a-z]/.test(password)) {
     passwordErrors.push("Password must contain a lowercase letter");
   }
