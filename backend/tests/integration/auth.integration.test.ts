@@ -7,8 +7,12 @@ const testName = "Integration Test";
 const testEmail = `integration-${Date.now()}@example.com`;
 const testPassword = "GoodPassword1";
 
+const caseTestEmail = `integration-case-${Date.now()}@example.com`;
+
 afterAll(async () => {
-  await prisma.user.deleteMany({ where: { email: testEmail } });
+  await prisma.user.deleteMany({
+    where: { email: { in: [testEmail, caseTestEmail] } },
+  });
 });
 
 describe("auth flow", () => {
@@ -49,5 +53,26 @@ describe("auth flow", () => {
       .post("/api/auth/refresh")
       .set("Cookie", logoutCookie!);
     expect(refreshAfterLogoutRes.status).toBe(401);
+  });
+
+  it("treats email case-insensitively for both signup and login", async () => {
+    const mixedCaseEmail = caseTestEmail.toUpperCase();
+
+    const signupRes = await request(app)
+      .post("/api/auth/signup")
+      .send({ name: testName, email: mixedCaseEmail, password: testPassword });
+    expect(signupRes.status).toBe(201);
+    expect(signupRes.body.email).toBe(caseTestEmail);
+
+    const duplicateRes = await request(app)
+      .post("/api/auth/signup")
+      .send({ name: testName, email: caseTestEmail, password: testPassword });
+    expect(duplicateRes.status).toBe(409);
+
+    const loginRes = await request(app)
+      .post("/api/auth/login")
+      .send({ email: mixedCaseEmail, password: testPassword });
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.user.email).toBe(caseTestEmail);
   });
 });
