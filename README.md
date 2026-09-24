@@ -30,7 +30,7 @@ After version 1 is finished, future versions will add:
 
 ## Screenshots
 
-<!-- Add real screenshots here, e.g.: -->
+<!-- screenshots here, e.g.: -->
 <!-- ![Login page](docs/screenshots/login.png) -->
 <!-- ![Dashboard](docs/screenshots/dashboard.png) -->
 
@@ -62,6 +62,8 @@ flowchart LR
 The frontend and backend are deployed on different domains. Browser requests to `/api/*` are transparently proxied through Vercel to the Render backend, so the browser always talks to a single origin — this avoids third-party cookie blocking on the httpOnly refresh-token cookie, which modern browsers restrict across genuinely different domains.
 
 Locally, `docker-compose.yml` runs both apps plus a Postgres container on the same machine, talking directly to each other over the compose network — no proxy needed there since everything is same-origin (`localhost`) already.
+
+See [`docs/auth-design.md`](docs/auth-design.md) for the reasoning behind the token storage and refresh strategy.
 
 ## Project layout
 
