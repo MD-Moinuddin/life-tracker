@@ -25,6 +25,12 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-indigo-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      >
+        Skip to content
+      </a>
       <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
         <span className="text-lg font-semibold text-slate-900">
           Life Tracker
@@ -51,7 +57,9 @@ export function AppShell({ children }: AppShellProps) {
           Dashboard
         </Link>
       </nav>
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">{children}</main>
+      <main id="main-content" className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+        {children}
+      </main>
     </div>
   );
 }
