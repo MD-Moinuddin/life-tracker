@@ -16,9 +16,10 @@ export class ApiError extends Error {
   }
 }
 
-interface ApiFetchOptions {
+export interface ApiFetchOptions {
   method?: string;
   body?: unknown;
+  accessToken?: string | null;
 }
 
 export async function apiFetch<T>(
@@ -27,10 +28,18 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const hasBody = options.body !== undefined;
 
+  const headers: Record<string, string> = {};
+  if (hasBody) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (options.accessToken) {
+    headers.Authorization = `Bearer ${options.accessToken}`;
+  }
+
   const response = await fetch(`${API_URL}${path}`, {
     method: options.method ?? "GET",
     credentials: "include",
-    headers: hasBody ? { "Content-Type": "application/json" } : undefined,
+    headers,
     body: hasBody ? JSON.stringify(options.body) : undefined,
   });
 
