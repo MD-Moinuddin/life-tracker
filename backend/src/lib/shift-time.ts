@@ -18,7 +18,7 @@ export function workedMinutes(
   return shiftLengthMinutes(startTime, endTime) - breakMinutes;
 }
 
-function addDays(date: string, days: number): string {
+export function addDays(date: string, days: number): string {
   // UTC avoids daylight-saving changes moving the calendar day.
   const result = new Date(`${date}T00:00:00Z`);
   result.setUTCDate(result.getUTCDate() + days);
