@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { shiftLengthMinutes } from "../../lib/shift-time";
 
 const calendarDate = z.iso.date(
   "Date must be a real date in YYYY-MM-DD format",
@@ -27,9 +28,39 @@ const shiftFields = z.object({
     .optional(),
 });
 
-export const createShiftSchema = shiftFields.extend({
-  breakMinutes: breakMinutes.default(0),
-});
+export function validateShiftTimes(shift: {
+  startTime: string;
+  endTime: string;
+  breakMinutes: number;
+}) {
+  const length = shiftLengthMinutes(shift.startTime, shift.endTime);
+  if (length === 0) {
+    return {
+      field: "endTime",
+      message: "End time must be different from start time",
+    };
+  }
+  if (shift.breakMinutes > length) {
+    return {
+      field: "breakMinutes",
+      message: "Break cannot be longer than the shift",
+    };
+  }
+  return null;
+}
+
+export const createShiftSchema = shiftFields
+  .extend({ breakMinutes: breakMinutes.default(0) })
+  .superRefine((shift, ctx) => {
+    const issue = validateShiftTimes(shift);
+    if (issue) {
+      ctx.addIssue({
+        code: "custom",
+        path: [issue.field],
+        message: issue.message,
+      });
+    }
+  });
 
 export type CreateShiftInput = z.infer<typeof createShiftSchema>;
 

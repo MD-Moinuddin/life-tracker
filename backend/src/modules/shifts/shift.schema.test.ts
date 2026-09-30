@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createShiftSchema, updateShiftSchema } from "./shift.schema";
+import {
+  createShiftSchema,
+  updateShiftSchema,
+  validateShiftTimes,
+} from "./shift.schema";
 
 const validShift = {
   jobId: "job-1",
@@ -97,5 +101,80 @@ describe("updateShiftSchema", () => {
 
   it("rejects an empty update", () => {
     expect(updateShiftSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe("cross-field rules on create", () => {
+  function issuePaths(input: object) {
+    const result = createShiftSchema.safeParse(input);
+    return result.success ? [] : result.error.issues.map((i) => i.path[0]);
+  }
+
+  it("rejects equal start and end times on the end time", () => {
+    expect(
+      issuePaths({ ...validShift, startTime: "08:00", endTime: "08:00" }),
+    ).toEqual(["endTime"]);
+  });
+
+  it("rejects a break longer than the shift on the break field", () => {
+    expect(
+      issuePaths({
+        ...validShift,
+        startTime: "09:00",
+        endTime: "10:00",
+        breakMinutes: 61,
+      }),
+    ).toEqual(["breakMinutes"]);
+  });
+
+  it("accepts a break equal to the whole shift", () => {
+    expect(
+      createShiftSchema.safeParse({
+        ...validShift,
+        startTime: "09:00",
+        endTime: "10:00",
+        breakMinutes: 60,
+      }).success,
+    ).toBe(true);
+  });
+
+  it("measures the break against an overnight shift", () => {
+    const overnight = { ...validShift, startTime: "22:00", endTime: "02:00" };
+
+    expect(
+      createShiftSchema.safeParse({ ...overnight, breakMinutes: 240 }).success,
+    ).toBe(true);
+    expect(
+      createShiftSchema.safeParse({ ...overnight, breakMinutes: 241 }).success,
+    ).toBe(false);
+  });
+});
+
+describe("validateShiftTimes", () => {
+  it("returns null for a valid shift", () => {
+    expect(
+      validateShiftTimes({
+        startTime: "09:00",
+        endTime: "17:00",
+        breakMinutes: 30,
+      }),
+    ).toBeNull();
+  });
+
+  it("names the field that is wrong", () => {
+    expect(
+      validateShiftTimes({
+        startTime: "08:00",
+        endTime: "08:00",
+        breakMinutes: 0,
+      })?.field,
+    ).toBe("endTime");
+    expect(
+      validateShiftTimes({
+        startTime: "09:00",
+        endTime: "10:00",
+        breakMinutes: 90,
+      })?.field,
+    ).toBe("breakMinutes");
   });
 });
