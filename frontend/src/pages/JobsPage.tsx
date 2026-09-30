@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { AddJobButton } from "../components/jobs/AddJobButton";
+import { DeleteJobConfirmation } from "../components/jobs/DeleteJobConfirmation";
 import { JobForm } from "../components/jobs/JobForm";
 import { JobList } from "../components/jobs/JobList";
 import { JobsEmptyState } from "../components/jobs/JobsEmptyState";
 import { AppShell } from "../components/layout/AppShell";
 import { Modal } from "../components/Modal";
-import { createJob, listJobs, updateJob } from "../lib/jobs-api";
+import { createJob, deleteJob, listJobs, updateJob } from "../lib/jobs-api";
 import type { JobInput, JobWithShiftCount } from "../lib/jobs-api";
 
 type LoadStatus = "loading" | "ready" | "error";
@@ -15,6 +16,9 @@ export function JobsPage() {
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobWithShiftCount | null>(null);
+  const [deletingJob, setDeletingJob] = useState<JobWithShiftCount | null>(
+    null,
+  );
 
   useEffect(() => {
     let ignore = false;
@@ -51,6 +55,12 @@ export function JobsPage() {
     setEditingJob(null);
   }
 
+  async function handleDelete(id: string) {
+    await deleteJob(id);
+    setJobs((current) => current.filter((job) => job.id !== id));
+    setDeletingJob(null);
+  }
+
   const hasJobs = jobs.length > 0;
 
   return (
@@ -73,7 +83,11 @@ export function JobsPage() {
       {status === "ready" && (
         <>
           {hasJobs ? (
-            <JobList jobs={jobs} onEdit={setEditingJob} />
+            <JobList
+              jobs={jobs}
+              onEdit={setEditingJob}
+              onDelete={setDeletingJob}
+            />
           ) : (
             <JobsEmptyState onAdd={() => setIsAddOpen(true)} />
           )}
@@ -108,6 +122,20 @@ export function JobsPage() {
                 submitLabel="Save changes"
                 onSubmit={(values) => handleUpdate(editingJob.id, values)}
                 onCancel={() => setEditingJob(null)}
+              />
+            )}
+          </Modal>
+
+          <Modal
+            open={deletingJob !== null}
+            title="Delete job?"
+            onClose={() => setDeletingJob(null)}
+          >
+            {deletingJob && (
+              <DeleteJobConfirmation
+                job={deletingJob}
+                onConfirm={() => handleDelete(deletingJob.id)}
+                onCancel={() => setDeletingJob(null)}
               />
             )}
           </Modal>

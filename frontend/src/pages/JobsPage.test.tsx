@@ -8,7 +8,7 @@ import {
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../lib/api-client";
-import { createJob, listJobs, updateJob } from "../lib/jobs-api";
+import { createJob, deleteJob, listJobs, updateJob } from "../lib/jobs-api";
 import type { JobWithShiftCount } from "../lib/jobs-api";
 import { JobsPage } from "./JobsPage";
 
@@ -16,6 +16,7 @@ vi.mock("../lib/jobs-api", () => ({
   listJobs: vi.fn(),
   createJob: vi.fn(),
   updateJob: vi.fn(),
+  deleteJob: vi.fn(),
 }));
 
 const warehouse: JobWithShiftCount = {
@@ -218,5 +219,71 @@ describe("JobsPage", () => {
       await within(dialog).findByText("Hourly rate must be greater than 0"),
     ).toBeDefined();
     expect(screen.getByRole("dialog", { name: "Edit job" })).toBeDefined();
+  });
+
+  it("asks for confirmation, naming the job and its shifts, before deleting", async () => {
+    vi.mocked(listJobs).mockResolvedValue([warehouse]);
+    renderPage();
+    await screen.findByRole("list");
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
+
+    const dialog = screen.getByRole("dialog", { name: "Delete job?" });
+    expect(within(dialog).getByText("Warehouse")).toBeDefined();
+    expect(
+      within(dialog).getByText("Its 3 logged shifts will be deleted too."),
+    ).toBeDefined();
+    expect(deleteJob).not.toHaveBeenCalled();
+  });
+
+  it("deletes the job once confirmed, and shows the empty state after the last one", async () => {
+    vi.mocked(listJobs).mockResolvedValue([warehouse]);
+    vi.mocked(deleteJob).mockResolvedValue(undefined);
+    renderPage();
+    await screen.findByRole("list");
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Delete job",
+      }),
+    );
+
+    await waitFor(() => expect(deleteJob).toHaveBeenCalledWith("job-1"));
+    expect(await screen.findByText("No jobs yet")).toBeDefined();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("keeps the job when the delete is cancelled", async () => {
+    vi.mocked(listJobs).mockResolvedValue([warehouse]);
+    renderPage();
+    await screen.findByRole("list");
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Cancel",
+      }),
+    );
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(deleteJob).not.toHaveBeenCalled();
+    expect(
+      within(screen.getByRole("list")).getByText("Warehouse"),
+    ).toBeDefined();
+  });
+
+  it("keeps the dialog open and shows the error when the delete fails", async () => {
+    vi.mocked(listJobs).mockResolvedValue([warehouse]);
+    vi.mocked(deleteJob).mockRejectedValue(new ApiError(404, "Job not found"));
+    renderPage();
+    await screen.findByRole("list");
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
+    const dialog = screen.getByRole("dialog", { name: "Delete job?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete job" }));
+
+    expect(await within(dialog).findByText("Job not found")).toBeDefined();
+    expect(screen.getByRole("dialog", { name: "Delete job?" })).toBeDefined();
   });
 });

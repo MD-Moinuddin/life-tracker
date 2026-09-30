@@ -26,7 +26,7 @@ const jobs: JobWithShiftCount[] = [
 
 describe("JobList", () => {
   it("shows each job's name, type and hourly rate", () => {
-    render(<JobList jobs={jobs} onEdit={vi.fn()} />);
+    render(<JobList jobs={jobs} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
     expect(screen.getByText("Warehouse")).toBeDefined();
@@ -39,10 +39,19 @@ describe("JobList", () => {
 
   it("reports which job to edit, with a button named after the job", () => {
     const onEdit = vi.fn();
-    render(<JobList jobs={jobs} onEdit={onEdit} />);
+    render(<JobList jobs={jobs} onEdit={onEdit} onDelete={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Edit Cafe" }));
 
     expect(onEdit).toHaveBeenCalledWith(jobs[1]);
+  });
+
+  it("reports which job to delete, with a button named after the job", () => {
+    const onDelete = vi.fn();
+    render(<JobList jobs={jobs} onEdit={vi.fn()} onDelete={onDelete} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
+
+    expect(onDelete).toHaveBeenCalledWith(jobs[0]);
   });
 });
