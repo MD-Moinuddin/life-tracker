@@ -1,10 +1,21 @@
 import type { ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { logout } from "../../lib/auth-api";
 import { useAuthStore } from "../../store/auth-store";
 
 interface AppShellProps {
   children: ReactNode;
+}
+
+const NAV_LINKS = [{ to: "/dashboard", label: "Dashboard" }];
+
+const NAV_LINK_BASE_CLASSES =
+  "rounded px-1 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";
+
+function navLinkClassName({ isActive }: { isActive: boolean }) {
+  return isActive
+    ? `${NAV_LINK_BASE_CLASSES} text-slate-900 underline underline-offset-4`
+    : `${NAV_LINK_BASE_CLASSES} text-slate-600 hover:text-slate-900`;
 }
 
 export function AppShell({ children }: AppShellProps) {
@@ -48,14 +59,12 @@ export function AppShell({ children }: AppShellProps) {
           </button>
         </div>
       </header>
-      <nav className="border-b border-slate-200 bg-white px-4 py-2 sm:px-6">
-        <Link
-          to="/dashboard"
-          aria-current="page"
-          className="rounded px-1 text-sm font-medium text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        >
-          Dashboard
-        </Link>
+      <nav className="flex gap-4 border-b border-slate-200 bg-white px-4 py-2 sm:px-6">
+        {NAV_LINKS.map(({ to, label }) => (
+          <NavLink key={to} to={to} className={navLinkClassName}>
+            {label}
+          </NavLink>
+        ))}
       </nav>
       <main id="main-content" className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         {children}
