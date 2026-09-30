@@ -51,3 +51,10 @@ export async function deleteJob(userId: string, id: string) {
     throw new JobNotFoundError();
   }
 }
+
+export async function assertJobOwned(userId: string, jobId: string) {
+  const job = await repository.findJobByIdForUser(jobId, userId);
+  if (!job) {
+    throw new JobNotFoundError();
+  }
+}

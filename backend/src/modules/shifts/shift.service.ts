@@ -1,24 +1,19 @@
+import { NotFoundError, ValidationError } from "../../lib/errors";
+import { shiftEndDate, workedMinutes } from "../../lib/shift-time";
+import { assertJobOwned } from "../jobs/job.service";
+import * as repository from "./shift.repository";
 import { validateShiftTimes } from "./shift.schema";
 import type { CreateShiftInput, UpdateShiftInput } from "./shift.schema";
-import { shiftEndDate, workedMinutes } from "../../lib/shift-time";
-import * as jobRepository from "../jobs/job.repository";
-import { JobNotFoundError } from "../jobs/job.service";
-import * as repository from "./shift.repository";
 
-export class ShiftNotFoundError extends Error {
+export class ShiftNotFoundError extends NotFoundError {
   constructor() {
     super("Shift not found");
-    this.name = "ShiftNotFoundError";
   }
 }
 
-export class InvalidShiftError extends Error {
-  constructor(
-    readonly field: string,
-    message: string,
-  ) {
-    super(message);
-    this.name = "InvalidShiftError";
+export class InvalidShiftError extends ValidationError {
+  constructor(field: string, message: string) {
+    super({ [field]: [message] });
   }
 }
 
@@ -53,13 +48,6 @@ function toShiftResponse(shift: ShiftRow) {
   };
 }
 
-async function requireOwnedJob(jobId: string, userId: string) {
-  const job = await jobRepository.findJobByIdForUser(jobId, userId);
-  if (!job) {
-    throw new JobNotFoundError();
-  }
-}
-
 async function requireOwnedShift(id: string, userId: string) {
   const shift = await repository.findShiftByIdForUser(id, userId);
   if (!shift) {
@@ -77,7 +65,7 @@ export async function listShifts(
 }
 
 export async function createShift(userId: string, input: CreateShiftInput) {
-  await requireOwnedJob(input.jobId, userId);
+  await assertJobOwned(userId, input.jobId);
   const shift = await repository.createShift(input);
   return toShiftResponse(shift);
 }
@@ -90,7 +78,7 @@ export async function updateShift(
   const existing = await requireOwnedShift(id, userId);
 
   if (input.jobId && input.jobId !== existing.jobId) {
-    await requireOwnedJob(input.jobId, userId);
+    await assertJobOwned(userId, input.jobId);
   }
 
   const issue = validateShiftTimes({
@@ -102,11 +90,16 @@ export async function updateShift(
     throw new InvalidShiftError(issue.field, issue.message);
   }
 
-  const shift = await repository.updateShift(id, input);
+  const shift = await repository.updateShiftForUser(id, userId, input);
+  if (!shift) {
+    throw new ShiftNotFoundError();
+  }
   return toShiftResponse(shift);
 }
 
 export async function deleteShift(userId: string, id: string) {
-  await requireOwnedShift(id, userId);
-  await repository.deleteShift(id);
+  const deleted = await repository.deleteShiftForUser(id, userId);
+  if (!deleted) {
+    throw new ShiftNotFoundError();
+  }
 }

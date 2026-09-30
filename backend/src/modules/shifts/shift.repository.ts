@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma";
+import { hasPrismaCode } from "../../lib/prisma-errors";
 
 interface ShiftData {
   jobId: string;
@@ -50,15 +51,30 @@ export function createShift(data: ShiftData) {
   });
 }
 
-export function updateShift(id: string, data: Partial<ShiftData>) {
+export async function updateShiftForUser(
+  id: string,
+  userId: string,
+  data: Partial<ShiftData>,
+) {
   const { date, ...rest } = data;
-  return prisma.shift.update({
-    where: { id },
-    data: { ...rest, ...(date ? { date: toDbDate(date) } : {}) },
-    include: withJob,
-  });
+  try {
+    return await prisma.shift.update({
+      where: { id, job: { userId } },
+      data: { ...rest, ...(date ? { date: toDbDate(date) } : {}) },
+      include: withJob,
+    });
+  } catch (error) {
+    // Prisma throws P2025 when no row matches; report that as null.
+    if (hasPrismaCode(error, "P2025")) {
+      return null;
+    }
+    throw error;
+  }
 }
 
-export function deleteShift(id: string) {
-  return prisma.shift.delete({ where: { id } });
+export async function deleteShiftForUser(id: string, userId: string) {
+  const { count } = await prisma.shift.deleteMany({
+    where: { id, job: { userId } },
+  });
+  return count > 0;
 }
