@@ -1,18 +1,20 @@
 import type { NextFunction, Request, Response } from "express";
+import { UnauthorizedError } from "../lib/errors";
 import { verifyAccessToken } from "../lib/jwt";
 
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
+export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
-    res.status(401).json({ error: { message: "Unauthorized" } });
+    next(new UnauthorizedError());
     return;
   }
 
   try {
-    const payload = verifyAccessToken(header.slice("Bearer ".length));
-    req.userId = payload.sub;
-    next();
+    req.userId = verifyAccessToken(header.slice("Bearer ".length)).sub;
   } catch {
-    res.status(401).json({ error: { message: "Unauthorized" } });
+    next(new UnauthorizedError());
+    return;
   }
+
+  next();
 }

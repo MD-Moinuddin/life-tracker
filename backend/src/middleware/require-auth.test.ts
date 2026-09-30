@@ -2,26 +2,23 @@ import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { describe, expect, it, vi } from "vitest";
 import { env } from "../config/env";
+import { UnauthorizedError } from "../lib/errors";
 import { signAccessToken } from "../lib/jwt";
 import { requireAuth } from "./require-auth";
 
-function run(authorization?: string) {
+function run(authorization?: string, next = vi.fn()) {
   const req = { headers: { authorization } } as unknown as Request;
-  const res = {
-    status: vi.fn().mockReturnThis(),
-    json: vi.fn(),
-  } as unknown as Response;
-  const next = vi.fn() as unknown as NextFunction;
-  requireAuth(req, res, next);
-  return { req, res, next };
+  requireAuth(req, {} as Response, next as unknown as NextFunction);
+  return { req, next };
 }
 
-function expectRejected({ res, next }: ReturnType<typeof run>) {
-  expect(res.status).toHaveBeenCalledWith(401);
-  expect(res.json).toHaveBeenCalledWith({
-    error: { message: "Unauthorized" },
+function expectRejected({ next }: ReturnType<typeof run>) {
+  expect(next).toHaveBeenCalledTimes(1);
+  expect(next.mock.calls[0]?.[0]).toBeInstanceOf(UnauthorizedError);
+  expect(next.mock.calls[0]?.[0]).toMatchObject({
+    statusCode: 401,
+    message: "Unauthorized",
   });
-  expect(next).not.toHaveBeenCalled();
 }
 
 describe("requireAuth", () => {
@@ -52,10 +49,21 @@ describe("requireAuth", () => {
   });
 
   it("accepts a valid token and sets req.userId", () => {
-    const { req, res, next } = run(`Bearer ${signAccessToken("user-1")}`);
+    const { req, next } = run(`Bearer ${signAccessToken("user-1")}`);
 
     expect(next).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledWith();
     expect(req.userId).toBe("user-1");
-    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it("does not turn an error from the next handler into a 401", () => {
+    const next = vi.fn(() => {
+      throw new Error("downstream failure");
+    });
+
+    expect(() => run(`Bearer ${signAccessToken("user-1")}`, next)).toThrow(
+      "downstream failure",
+    );
+    expect(next).toHaveBeenCalledTimes(1);
   });
 });
