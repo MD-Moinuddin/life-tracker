@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { authRouter } from "./modules/auth/auth.routes";
 import { jobRouter } from "./modules/jobs/job.routes";
 import { shiftRouter } from "./modules/shifts/shift.routes";
+import { summaryRouter } from "./modules/summary/summary.routes";
 import { env } from "./config/env";
 import { errorHandler } from "./middleware/error-handler";
 import { noStore } from "./middleware/no-store";
@@ -46,6 +47,7 @@ app.use("/api", noStore);
 app.use("/api/auth", authRouter);
 app.use("/api/jobs", jobRouter);
 app.use("/api/shifts", shiftRouter);
+app.use("/api/summary", summaryRouter);
 
 app.use(errorHandler);
 
