@@ -3,6 +3,7 @@ import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { authRouter } from "./modules/auth/auth.routes";
+import { jobRouter } from "./modules/jobs/job.routes";
 import { env } from "./config/env";
 import { errorHandler } from "./middleware/error-handler";
 import { generalLimiter } from "./middleware/rate-limit";
@@ -40,6 +41,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/jobs", jobRouter);
 
 app.use(errorHandler);
 
