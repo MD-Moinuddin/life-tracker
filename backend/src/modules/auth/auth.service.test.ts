@@ -82,6 +82,28 @@ describe("signup", () => {
 
     expect(result).not.toHaveProperty("passwordHash");
   });
+
+  it("reports a duplicate email when the database rejects the insert", async () => {
+    vi.mocked(repository.findUserByEmail).mockResolvedValue(null);
+    vi.mocked(password.hashPassword).mockResolvedValue("hashed-value");
+    vi.mocked(repository.createUser).mockRejectedValueOnce({ code: "P2002" });
+
+    await expect(
+      signup({ name: "Alex", email: "a@b.com", password: "GoodPassword1" }),
+    ).rejects.toThrow(EmailAlreadyRegisteredError);
+  });
+
+  it("rethrows other database errors unchanged", async () => {
+    vi.mocked(repository.findUserByEmail).mockResolvedValue(null);
+    vi.mocked(password.hashPassword).mockResolvedValue("hashed-value");
+    vi.mocked(repository.createUser).mockRejectedValueOnce(
+      new Error("database is down"),
+    );
+
+    await expect(
+      signup({ name: "Alex", email: "a@b.com", password: "GoodPassword1" }),
+    ).rejects.toThrow("database is down");
+  });
 });
 
 describe("refresh", () => {

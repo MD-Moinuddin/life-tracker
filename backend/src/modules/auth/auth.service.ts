@@ -1,5 +1,6 @@
 import { ConflictError, UnauthorizedError } from "../../lib/errors";
 import { comparePassword, hashPassword } from "../../lib/password";
+import { hasPrismaCode } from "../../lib/prisma-errors";
 import {
   signAccessToken,
   signRefreshToken,
@@ -33,10 +34,17 @@ export async function signup(input: SignupInput) {
   }
 
   const passwordHash = await hashPassword(input.password);
+  // The check above can race with a concurrent signup, so the unique index on
+  // email is the real guard.
   const user = await createUser({
     name: input.name,
     email: input.email,
     passwordHash,
+  }).catch((error: unknown) => {
+    if (hasPrismaCode(error, "P2002")) {
+      throw new EmailAlreadyRegisteredError();
+    }
+    throw error;
   });
 
   return {
