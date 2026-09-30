@@ -7,7 +7,10 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-const NAV_LINKS = [{ to: "/dashboard", label: "Dashboard" }];
+const NAV_LINKS = [
+  { to: "/dashboard", label: "Dashboard" },
+  { to: "/jobs", label: "Jobs" },
+];
 
 const NAV_LINK_BASE_CLASSES =
   "rounded px-1 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";

@@ -14,17 +14,22 @@ function renderAt(path: string) {
 }
 
 describe("AppShell navigation", () => {
-  it("marks the link of the current page", () => {
-    renderAt("/dashboard");
+  it.each([
+    ["/dashboard", "Dashboard"],
+    ["/jobs", "Jobs"],
+  ])("marks the link of the current page (%s)", (path, label) => {
+    renderAt(path);
 
-    const link = screen.getByRole("link", { name: "Dashboard" });
+    const link = screen.getByRole("link", { name: label });
     expect(link.getAttribute("aria-current")).toBe("page");
   });
 
-  it("does not mark the link on other pages", () => {
+  it("marks no link on other pages", () => {
     renderAt("/somewhere-else");
 
-    const link = screen.getByRole("link", { name: "Dashboard" });
-    expect(link.getAttribute("aria-current")).toBeNull();
+    for (const label of ["Dashboard", "Jobs"]) {
+      const link = screen.getByRole("link", { name: label });
+      expect(link.getAttribute("aria-current")).toBeNull();
+    }
   });
 });

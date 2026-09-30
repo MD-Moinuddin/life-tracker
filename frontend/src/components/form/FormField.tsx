@@ -1,0 +1,42 @@
+import { useId, type ReactNode } from "react";
+
+interface ControlProps {
+  id: string;
+  "aria-invalid": boolean;
+  "aria-describedby": string | undefined;
+}
+
+interface FormFieldProps {
+  label: string;
+  errors?: string[];
+  children: (controlProps: ControlProps) => ReactNode;
+}
+
+export function FormField({ label, errors = [], children }: FormFieldProps) {
+  const controlId = useId();
+  const errorId = useId();
+  const hasErrors = errors.length > 0;
+
+  return (
+    <div>
+      <label
+        htmlFor={controlId}
+        className="mb-1 block text-sm font-medium text-slate-700"
+      >
+        {label}
+      </label>
+      {children({
+        id: controlId,
+        "aria-invalid": hasErrors,
+        "aria-describedby": hasErrors ? errorId : undefined,
+      })}
+      {hasErrors && (
+        <div id={errorId} role="alert" className="mt-1 text-sm text-red-600">
+          {errors.map((message) => (
+            <p key={message}>{message}</p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
