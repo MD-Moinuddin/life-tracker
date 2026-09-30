@@ -1,3 +1,4 @@
+import { ConflictError, UnauthorizedError } from "../../lib/errors";
 import { comparePassword, hashPassword } from "../../lib/password";
 import {
   signAccessToken,
@@ -7,24 +8,21 @@ import {
 import { createUser, findUserByEmail, findUserById } from "./auth.repository";
 import type { LoginInput, SignupInput } from "./auth.schema";
 
-export class EmailAlreadyRegisteredError extends Error {
+export class EmailAlreadyRegisteredError extends ConflictError {
   constructor() {
     super("Email already registered");
-    this.name = "EmailAlreadyRegisteredError";
   }
 }
 
-export class InvalidCredentialsError extends Error {
+export class InvalidCredentialsError extends UnauthorizedError {
   constructor() {
     super("Invalid credentials");
-    this.name = "InvalidCredentialsError";
   }
 }
 
-export class InvalidRefreshTokenError extends Error {
+export class InvalidRefreshTokenError extends UnauthorizedError {
   constructor() {
     super("Invalid refresh token");
-    this.name = "InvalidRefreshTokenError";
   }
 }
 
