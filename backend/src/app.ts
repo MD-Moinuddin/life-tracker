@@ -7,6 +7,7 @@ import { jobRouter } from "./modules/jobs/job.routes";
 import { shiftRouter } from "./modules/shifts/shift.routes";
 import { env } from "./config/env";
 import { errorHandler } from "./middleware/error-handler";
+import { noStore } from "./middleware/no-store";
 import { generalLimiter } from "./middleware/rate-limit";
 import { formatUptime } from "./lib/format";
 
@@ -41,6 +42,7 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", uptime: formatUptime(process.uptime()) });
 });
 
+app.use("/api", noStore);
 app.use("/api/auth", authRouter);
 app.use("/api/jobs", jobRouter);
 app.use("/api/shifts", shiftRouter);
