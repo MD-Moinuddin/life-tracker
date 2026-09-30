@@ -1,11 +1,11 @@
 import type { Job } from "../../generated/prisma/client";
+import { NotFoundError } from "../../lib/errors";
 import * as repository from "./job.repository";
 import type { CreateJobInput, UpdateJobInput } from "./job.schema";
 
-export class JobNotFoundError extends Error {
+export class JobNotFoundError extends NotFoundError {
   constructor() {
     super("Job not found");
-    this.name = "JobNotFoundError";
   }
 }
 
@@ -18,14 +18,6 @@ function toJobResponse(job: Job) {
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
   };
-}
-
-async function requireOwnedJob(id: string, userId: string) {
-  const job = await repository.findJobByIdForUser(id, userId);
-  if (!job) {
-    throw new JobNotFoundError();
-  }
-  return job;
 }
 
 export async function listJobs(userId: string) {
@@ -46,12 +38,23 @@ export async function updateJob(
   id: string,
   input: UpdateJobInput,
 ) {
-  await requireOwnedJob(id, userId);
-  const job = await repository.updateJob(id, input);
+  const job = await repository.updateJobForUser(id, userId, input);
+  if (!job) {
+    throw new JobNotFoundError();
+  }
   return toJobResponse(job);
 }
 
 export async function deleteJob(userId: string, id: string) {
-  await requireOwnedJob(id, userId);
-  await repository.deleteJob(id);
+  const deleted = await repository.deleteJobForUser(id, userId);
+  if (!deleted) {
+    throw new JobNotFoundError();
+  }
+}
+
+export async function assertJobOwned(userId: string, jobId: string) {
+  const job = await repository.findJobByIdForUser(jobId, userId);
+  if (!job) {
+    throw new JobNotFoundError();
+  }
 }
