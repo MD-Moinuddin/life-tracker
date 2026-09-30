@@ -1,9 +1,6 @@
 import { z } from "zod";
+import { calendarDate } from "../../lib/date-schemas";
 import { shiftLengthMinutes } from "../../lib/shift-time";
-
-const calendarDate = z.iso.date(
-  "Date must be a real date in YYYY-MM-DD format",
-);
 
 const clockTime = z
   .string()

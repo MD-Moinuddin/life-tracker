@@ -1,6 +1,7 @@
 import { addDays } from "./shift-time";
 
-export type SummaryRange = "week" | "month";
+export const SUMMARY_RANGES = ["week", "month"] as const;
+export type SummaryRange = (typeof SUMMARY_RANGES)[number];
 
 export function periodBounds(range: SummaryRange, date: string) {
   if (range === "week") {
