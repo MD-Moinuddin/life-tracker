@@ -20,14 +20,6 @@ function toJobResponse(job: Job) {
   };
 }
 
-async function requireOwnedJob(id: string, userId: string) {
-  const job = await repository.findJobByIdForUser(id, userId);
-  if (!job) {
-    throw new JobNotFoundError();
-  }
-  return job;
-}
-
 export async function listJobs(userId: string) {
   const jobs = await repository.listJobsByUser(userId);
   return jobs.map((job) => ({
@@ -46,12 +38,16 @@ export async function updateJob(
   id: string,
   input: UpdateJobInput,
 ) {
-  await requireOwnedJob(id, userId);
-  const job = await repository.updateJob(id, input);
+  const job = await repository.updateJobForUser(id, userId, input);
+  if (!job) {
+    throw new JobNotFoundError();
+  }
   return toJobResponse(job);
 }
 
 export async function deleteJob(userId: string, id: string) {
-  await requireOwnedJob(id, userId);
-  await repository.deleteJob(id);
+  const deleted = await repository.deleteJobForUser(id, userId);
+  if (!deleted) {
+    throw new JobNotFoundError();
+  }
 }

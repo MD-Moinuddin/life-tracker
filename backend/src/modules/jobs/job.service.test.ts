@@ -12,10 +12,9 @@ import {
 
 vi.mock("./job.repository", () => ({
   listJobsByUser: vi.fn(),
-  findJobByIdForUser: vi.fn(),
   createJob: vi.fn(),
-  updateJob: vi.fn(),
-  deleteJob: vi.fn(),
+  updateJobForUser: vi.fn(),
+  deleteJobForUser: vi.fn(),
 }));
 
 const ownJob: Job = {
@@ -34,31 +33,27 @@ beforeEach(() => {
 
 describe("updateJob", () => {
   it("rejects a job that belongs to another user", async () => {
-    vi.mocked(repository.findJobByIdForUser).mockResolvedValue(null);
+    vi.mocked(repository.updateJobForUser).mockResolvedValue(null);
 
     await expect(
       updateJob("user-2", "job-1", { name: "Hacked" }),
     ).rejects.toThrow(JobNotFoundError);
 
-    expect(repository.findJobByIdForUser).toHaveBeenCalledWith(
+    expect(repository.updateJobForUser).toHaveBeenCalledWith(
       "job-1",
       "user-2",
+      { name: "Hacked" },
     );
-    expect(repository.updateJob).not.toHaveBeenCalled();
   });
 
   it("updates the caller's own job and returns the rate as a string", async () => {
-    vi.mocked(repository.findJobByIdForUser).mockResolvedValue(ownJob);
-    vi.mocked(repository.updateJob).mockResolvedValue({
+    vi.mocked(repository.updateJobForUser).mockResolvedValue({
       ...ownJob,
       hourlyRate: new Prisma.Decimal("15"),
     });
 
     const result = await updateJob("user-1", "job-1", { hourlyRate: "15" });
 
-    expect(repository.updateJob).toHaveBeenCalledWith("job-1", {
-      hourlyRate: "15",
-    });
     expect(result.hourlyRate).toBe("15.00");
     expect(result).not.toHaveProperty("userId");
   });
@@ -66,21 +61,19 @@ describe("updateJob", () => {
 
 describe("deleteJob", () => {
   it("rejects a job that belongs to another user", async () => {
-    vi.mocked(repository.findJobByIdForUser).mockResolvedValue(null);
+    vi.mocked(repository.deleteJobForUser).mockResolvedValue(false);
 
     await expect(deleteJob("user-2", "job-1")).rejects.toThrow(
       JobNotFoundError,
     );
 
-    expect(repository.deleteJob).not.toHaveBeenCalled();
+    expect(repository.deleteJobForUser).toHaveBeenCalledWith("job-1", "user-2");
   });
 
   it("deletes the caller's own job", async () => {
-    vi.mocked(repository.findJobByIdForUser).mockResolvedValue(ownJob);
+    vi.mocked(repository.deleteJobForUser).mockResolvedValue(true);
 
-    await deleteJob("user-1", "job-1");
-
-    expect(repository.deleteJob).toHaveBeenCalledWith("job-1");
+    await expect(deleteJob("user-1", "job-1")).resolves.toBeUndefined();
   });
 });
 
