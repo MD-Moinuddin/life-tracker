@@ -70,6 +70,14 @@ export async function listShifts(userId: string, query: ListShiftsQuery) {
   return { items: items.map(toShiftResponse), total, limit, offset };
 }
 
+export async function listShiftsInRange(
+  userId: string,
+  range: { from: string; to: string },
+) {
+  const shifts = await repository.listShiftsByUser(userId, range);
+  return shifts.map(toShiftResponse);
+}
+
 export async function createShift(userId: string, input: CreateShiftInput) {
   await assertJobOwned(userId, input.jobId);
   const shift = await repository.createShift(input);
