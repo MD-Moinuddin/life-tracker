@@ -1,11 +1,11 @@
 import type { Job } from "../../generated/prisma/client";
+import { NotFoundError } from "../../lib/errors";
 import * as repository from "./job.repository";
 import type { CreateJobInput, UpdateJobInput } from "./job.schema";
 
-export class JobNotFoundError extends Error {
+export class JobNotFoundError extends NotFoundError {
   constructor() {
     super("Job not found");
-    this.name = "JobNotFoundError";
   }
 }
 
