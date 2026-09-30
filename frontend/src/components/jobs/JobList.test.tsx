@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import type { JobWithShiftCount } from "../../lib/jobs-api";
 import { JobList } from "./JobList";
 
@@ -26,7 +26,7 @@ const jobs: JobWithShiftCount[] = [
 
 describe("JobList", () => {
   it("shows each job's name, type and hourly rate", () => {
-    render(<JobList jobs={jobs} />);
+    render(<JobList jobs={jobs} onEdit={vi.fn()} />);
 
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
     expect(screen.getByText("Warehouse")).toBeDefined();
@@ -38,11 +38,20 @@ describe("JobList", () => {
   });
 
   it("shows a friendly message when there are no jobs", () => {
-    render(<JobList jobs={[]} />);
+    render(<JobList jobs={[]} onEdit={vi.fn()} />);
 
     expect(
       screen.getByText("You have no jobs yet. Add your first one below."),
     ).toBeDefined();
     expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("reports which job to edit, with a button named after the job", () => {
+    const onEdit = vi.fn();
+    render(<JobList jobs={jobs} onEdit={onEdit} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Cafe" }));
+
+    expect(onEdit).toHaveBeenCalledWith(jobs[1]);
   });
 });
