@@ -178,3 +178,32 @@ describe("validateShiftTimes", () => {
     ).toBe("breakMinutes");
   });
 });
+
+describe("blank notes", () => {
+  it("turns empty and whitespace-only notes into null on create", () => {
+    expect(createShiftSchema.parse({ ...validShift, notes: "" }).notes).toBe(
+      null,
+    );
+    expect(createShiftSchema.parse({ ...validShift, notes: "   " }).notes).toBe(
+      null,
+    );
+  });
+
+  it("keeps real notes, trimmed", () => {
+    expect(
+      createShiftSchema.parse({ ...validShift, notes: "  Early start  " })
+        .notes,
+    ).toBe("Early start");
+  });
+
+  it("clears the note on update when it is blank", () => {
+    expect(updateShiftSchema.parse({ notes: "" })).toEqual({ notes: null });
+  });
+
+  it("still rejects notes over 500 characters after trimming", () => {
+    expect(
+      createShiftSchema.safeParse({ ...validShift, notes: "a".repeat(501) })
+        .success,
+    ).toBe(false);
+  });
+});

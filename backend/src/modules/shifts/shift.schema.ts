@@ -24,6 +24,7 @@ const shiftFields = z.object({
     .string()
     .trim()
     .max(500, "Notes must be at most 500 characters")
+    .transform((notes) => (notes === "" ? null : notes))
     .nullable()
     .optional(),
 });
