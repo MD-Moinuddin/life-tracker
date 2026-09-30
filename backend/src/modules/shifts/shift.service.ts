@@ -3,7 +3,11 @@ import { shiftEndDate, workedMinutes } from "../../lib/shift-time";
 import { assertJobOwned } from "../jobs/job.service";
 import * as repository from "./shift.repository";
 import { validateShiftTimes } from "./shift.schema";
-import type { CreateShiftInput, UpdateShiftInput } from "./shift.schema";
+import type {
+  CreateShiftInput,
+  ListShiftsQuery,
+  UpdateShiftInput,
+} from "./shift.schema";
 
 export class ShiftNotFoundError extends NotFoundError {
   constructor() {
@@ -56,12 +60,14 @@ async function requireOwnedShift(id: string, userId: string) {
   return shift;
 }
 
-export async function listShifts(
-  userId: string,
-  range: { from?: string; to?: string } = {},
-) {
-  const shifts = await repository.listShiftsByUser(userId, range);
-  return shifts.map(toShiftResponse);
+export async function listShifts(userId: string, query: ListShiftsQuery) {
+  const { limit, offset, ...range } = query;
+  const { items, total } = await repository.listShiftsPageByUser(
+    userId,
+    range,
+    { limit, offset },
+  );
+  return { items: items.map(toShiftResponse), total, limit, offset };
 }
 
 export async function createShift(userId: string, input: CreateShiftInput) {

@@ -73,3 +73,26 @@ export const updateShiftSchema = shiftFields
   );
 
 export type UpdateShiftInput = z.infer<typeof updateShiftSchema>;
+
+export const listShiftsQuerySchema = z
+  .object({
+    from: calendarDate.optional(),
+    to: calendarDate.optional(),
+    limit: z.coerce
+      .number()
+      .int("Limit must be a whole number")
+      .min(1, "Limit must be at least 1")
+      .max(500, "Limit must be at most 500")
+      .default(100),
+    offset: z.coerce
+      .number()
+      .int("Offset must be a whole number")
+      .min(0, "Offset cannot be negative")
+      .default(0),
+  })
+  .refine((query) => !query.from || !query.to || query.from <= query.to, {
+    message: "From date must not be after the to date",
+    path: ["to"],
+  });
+
+export type ListShiftsQuery = z.infer<typeof listShiftsQuerySchema>;

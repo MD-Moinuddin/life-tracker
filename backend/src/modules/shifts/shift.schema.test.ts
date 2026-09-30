@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createShiftSchema,
+  listShiftsQuerySchema,
   updateShiftSchema,
   validateShiftTimes,
 } from "./shift.schema";
@@ -205,5 +206,64 @@ describe("blank notes", () => {
       createShiftSchema.safeParse({ ...validShift, notes: "a".repeat(501) })
         .success,
     ).toBe(false);
+  });
+});
+
+describe("listShiftsQuerySchema", () => {
+  it("applies the default page when nothing is given", () => {
+    expect(listShiftsQuerySchema.parse({})).toEqual({ limit: 100, offset: 0 });
+  });
+
+  it("converts limit and offset from query-string text", () => {
+    expect(listShiftsQuerySchema.parse({ limit: "25", offset: "50" })).toEqual({
+      limit: 25,
+      offset: 50,
+    });
+  });
+
+  it.each([
+    { limit: "0" },
+    { limit: "501" },
+    { limit: "abc" },
+    { limit: "1.5" },
+  ])("rejects the limit %j", (query) => {
+    expect(listShiftsQuerySchema.safeParse(query).success).toBe(false);
+  });
+
+  it.each([{ offset: "-1" }, { offset: "abc" }, { offset: "1.5" }])(
+    "rejects the offset %j",
+    (query) => {
+      expect(listShiftsQuerySchema.safeParse(query).success).toBe(false);
+    },
+  );
+
+  it("accepts a from date, a to date, or both", () => {
+    expect(
+      listShiftsQuerySchema.safeParse({ from: "2026-10-01" }).success,
+    ).toBe(true);
+    expect(listShiftsQuerySchema.safeParse({ to: "2026-10-31" }).success).toBe(
+      true,
+    );
+    expect(
+      listShiftsQuerySchema.safeParse({ from: "2026-10-01", to: "2026-10-31" })
+        .success,
+    ).toBe(true);
+  });
+
+  it("rejects a date that is not real", () => {
+    expect(
+      listShiftsQuerySchema.safeParse({ from: "2026-02-30" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a from date after the to date, on the to field", () => {
+    const result = listShiftsQuerySchema.safeParse({
+      from: "2026-11-01",
+      to: "2026-10-01",
+    });
+
+    expect(
+      result.success ? [] : result.error.issues.map((issue) => issue.path[0]),
+    ).toEqual(["to"]);
   });
 });
