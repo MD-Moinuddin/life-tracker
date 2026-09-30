@@ -15,7 +15,10 @@ module.exports = tseslint.config(
       // Express error-handling middleware needs a fixed 4-parameter shape
       // even when a param (like `next`) goes unused — underscore-prefixing
       // is the standard way to mark that as intentional.
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_" },
+      ],
     },
   },
   // Must stay last: turns off any ESLint formatting rule that would
