@@ -9,14 +9,6 @@ interface JobListProps {
 }
 
 export function JobList({ jobs, onEdit }: JobListProps) {
-  if (jobs.length === 0) {
-    return (
-      <p className="text-slate-600">
-        You have no jobs yet. Add your first one below.
-      </p>
-    );
-  }
-
   return (
     <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
       {jobs.map((job) => (

@@ -37,15 +37,6 @@ describe("JobList", () => {
     expect(screen.getByText("€10.50 / hour")).toBeDefined();
   });
 
-  it("shows a friendly message when there are no jobs", () => {
-    render(<JobList jobs={[]} onEdit={vi.fn()} />);
-
-    expect(
-      screen.getByText("You have no jobs yet. Add your first one below."),
-    ).toBeDefined();
-    expect(screen.queryByRole("list")).toBeNull();
-  });
-
   it("reports which job to edit, with a button named after the job", () => {
     const onEdit = vi.fn();
     render(<JobList jobs={jobs} onEdit={onEdit} />);

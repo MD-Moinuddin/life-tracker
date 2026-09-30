@@ -36,12 +36,29 @@ function renderPage() {
   );
 }
 
+function titleRow() {
+  const heading = screen.getByRole("heading", { level: 1, name: "Jobs" });
+  return within(heading.parentElement as HTMLElement);
+}
+
+function fillInAddForm(dialog: HTMLElement) {
+  fireEvent.change(within(dialog).getByLabelText("Name"), {
+    target: { value: "Cafe" },
+  });
+  fireEvent.change(within(dialog).getByLabelText("Hourly rate (€)"), {
+    target: { value: "10,5" },
+  });
+  fireEvent.change(within(dialog).getByLabelText("Type"), {
+    target: { value: "mini_job" },
+  });
+}
+
 beforeEach(() => {
   vi.resetAllMocks();
 });
 
 describe("JobsPage", () => {
-  it("shows a loading message, then the jobs and the add form", async () => {
+  it("shows a loading message, then the jobs", async () => {
     vi.mocked(listJobs).mockResolvedValue([warehouse]);
 
     renderPage();
@@ -50,31 +67,29 @@ describe("JobsPage", () => {
     const list = await screen.findByRole("list");
     expect(within(list).getByText("Warehouse")).toBeDefined();
     expect(within(list).getByText("€12.00 / hour")).toBeDefined();
-    expect(screen.getByLabelText("Name")).toBeDefined();
   });
 
-  it("shows the empty state when there are no jobs", async () => {
+  it("shows an empty state with one Add job button when there are no jobs", async () => {
     vi.mocked(listJobs).mockResolvedValue([]);
 
     renderPage();
 
-    expect(
-      await screen.findByText(
-        "You have no jobs yet. Add your first one below.",
-      ),
-    ).toBeDefined();
+    expect(await screen.findByText("No jobs yet")).toBeDefined();
+    expect(screen.queryByRole("list")).toBeNull();
+    expect(screen.getAllByRole("button", { name: "Add job" })).toHaveLength(1);
+    expect(titleRow().queryByRole("button")).toBeNull();
   });
 
-  it("shows an error, and no form, when the jobs cannot be loaded", async () => {
+  it("shows an error and no Add job button when the jobs cannot be loaded", async () => {
     vi.mocked(listJobs).mockRejectedValue(new Error("network down"));
 
     renderPage();
 
     expect(await screen.findByRole("alert")).toBeDefined();
-    expect(screen.queryByLabelText("Name")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add job" })).toBeNull();
   });
 
-  it("adds a job to the list and clears the form", async () => {
+  it("adds a job from a dialog and moves the Add job button next to the title", async () => {
     vi.mocked(listJobs).mockResolvedValue([]);
     vi.mocked(createJob).mockResolvedValue({
       id: "job-2",
@@ -85,18 +100,11 @@ describe("JobsPage", () => {
       updatedAt: "2026-10-02T09:00:00.000Z",
     });
     renderPage();
-    await screen.findByLabelText("Name");
+    fireEvent.click(await screen.findByRole("button", { name: "Add job" }));
 
-    fireEvent.change(screen.getByLabelText("Name"), {
-      target: { value: "Cafe" },
-    });
-    fireEvent.change(screen.getByLabelText("Hourly rate (€)"), {
-      target: { value: "10,5" },
-    });
-    fireEvent.change(screen.getByLabelText("Type"), {
-      target: { value: "mini_job" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Add job" }));
+    const dialog = screen.getByRole("dialog", { name: "Add a job" });
+    fillInAddForm(dialog);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }));
 
     await waitFor(() =>
       expect(createJob).toHaveBeenCalledWith({
@@ -108,7 +116,30 @@ describe("JobsPage", () => {
     const list = await screen.findByRole("list");
     expect(within(list).getByText("Cafe")).toBeDefined();
     expect(within(list).getByText("€10.50 / hour")).toBeDefined();
-    expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(titleRow().getByRole("button", { name: "Add job" })).toBeDefined();
+  });
+
+  it("opens the add dialog with an empty form every time", async () => {
+    vi.mocked(listJobs).mockResolvedValue([warehouse]);
+    renderPage();
+    await screen.findByRole("list");
+
+    fireEvent.click(titleRow().getByRole("button", { name: "Add job" }));
+    const dialog = screen.getByRole("dialog", { name: "Add a job" });
+    fireEvent.change(within(dialog).getByLabelText("Name"), {
+      target: { value: "Half typed" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    fireEvent.click(titleRow().getByRole("button", { name: "Add job" }));
+
+    const reopened = screen.getByRole("dialog", { name: "Add a job" });
+    expect(
+      (within(reopened).getByLabelText("Name") as HTMLInputElement).value,
+    ).toBe("");
+    expect(createJob).not.toHaveBeenCalled();
   });
 
   it("edits a job in a dialog and updates the list", async () => {
@@ -167,7 +198,7 @@ describe("JobsPage", () => {
     expect(updateJob).not.toHaveBeenCalled();
   });
 
-  it("keeps the dialog open and shows the server's error when saving fails", async () => {
+  it("keeps the edit dialog open and shows the server's error when saving fails", async () => {
     vi.mocked(listJobs).mockResolvedValue([warehouse]);
     vi.mocked(updateJob).mockRejectedValue(
       new ApiError(400, "Validation failed", {

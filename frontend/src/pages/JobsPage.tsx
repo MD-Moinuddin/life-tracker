@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { AddJobButton } from "../components/jobs/AddJobButton";
 import { JobForm } from "../components/jobs/JobForm";
 import { JobList } from "../components/jobs/JobList";
+import { JobsEmptyState } from "../components/jobs/JobsEmptyState";
 import { AppShell } from "../components/layout/AppShell";
 import { Modal } from "../components/Modal";
 import { createJob, listJobs, updateJob } from "../lib/jobs-api";
@@ -11,7 +13,7 @@ type LoadStatus = "loading" | "ready" | "error";
 export function JobsPage() {
   const [jobs, setJobs] = useState<JobWithShiftCount[]>([]);
   const [status, setStatus] = useState<LoadStatus>("loading");
-  const [formKey, setFormKey] = useState(0);
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobWithShiftCount | null>(null);
 
   useEffect(() => {
@@ -38,8 +40,7 @@ export function JobsPage() {
   async function handleCreate(values: JobInput) {
     const created = await createJob(values);
     setJobs((current) => [...current, { ...created, shiftCount: 0 }]);
-    // A new key remounts the form, which clears what was typed.
-    setFormKey((key) => key + 1);
+    setIsAddOpen(false);
   }
 
   async function handleUpdate(id: string, values: JobInput) {
@@ -50,9 +51,16 @@ export function JobsPage() {
     setEditingJob(null);
   }
 
+  const hasJobs = jobs.length > 0;
+
   return (
     <AppShell>
-      <h1 className="mb-4 text-2xl font-semibold text-slate-900">Jobs</h1>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold text-slate-900">Jobs</h1>
+        {status === "ready" && hasJobs && (
+          <AddJobButton onClick={() => setIsAddOpen(true)} />
+        )}
+      </div>
 
       {status === "loading" && <p className="text-slate-600">Loading jobs…</p>}
 
@@ -64,20 +72,26 @@ export function JobsPage() {
 
       {status === "ready" && (
         <>
-          <JobList jobs={jobs} onEdit={setEditingJob} />
-          <section aria-labelledby="add-job-heading" className="mt-8 max-w-md">
-            <h2
-              id="add-job-heading"
-              className="mb-4 text-lg font-medium text-slate-700"
-            >
-              Add a job
-            </h2>
-            <JobForm
-              key={formKey}
-              submitLabel="Add job"
-              onSubmit={handleCreate}
-            />
-          </section>
+          {hasJobs ? (
+            <JobList jobs={jobs} onEdit={setEditingJob} />
+          ) : (
+            <JobsEmptyState onAdd={() => setIsAddOpen(true)} />
+          )}
+
+          <Modal
+            open={isAddOpen}
+            title="Add a job"
+            onClose={() => setIsAddOpen(false)}
+          >
+            {isAddOpen && (
+              <JobForm
+                submitLabel="Add job"
+                onSubmit={handleCreate}
+                onCancel={() => setIsAddOpen(false)}
+              />
+            )}
+          </Modal>
+
           <Modal
             open={editingJob !== null}
             title="Edit job"
