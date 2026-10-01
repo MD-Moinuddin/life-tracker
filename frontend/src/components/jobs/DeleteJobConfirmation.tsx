@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ApiError } from "../../lib/api-client";
+import { toErrorMessage } from "../../lib/form-errors";
 import type { JobWithShiftCount } from "../../lib/jobs-api";
 import {
   DANGER_BUTTON_CLASSES,
@@ -35,11 +35,7 @@ export function DeleteJobConfirmation({
     try {
       await onConfirm();
     } catch (caught) {
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : "Something went wrong. Please try again.",
-      );
+      setError(toErrorMessage(caught));
     } finally {
       setIsDeleting(false);
     }

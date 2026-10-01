@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { ApiError } from "../../lib/api-client";
 import type { FieldErrors } from "../../lib/api-client";
+import { toFormErrors } from "../../lib/form-errors";
 import type { JobInput, JobType } from "../../lib/jobs-api";
 import { parseEuroInput } from "../../lib/money";
 import { FormField } from "../form/FormField";
@@ -40,15 +40,6 @@ function parseForm(
     return { errors };
   }
   return { values: { name: name.trim(), hourlyRate: rate, type } };
-}
-
-function toFormErrors(error: unknown): FieldErrors {
-  if (error instanceof ApiError) {
-    return Object.keys(error.fields).length > 0
-      ? error.fields
-      : { form: [error.message] };
-  }
-  return { form: ["Something went wrong. Please try again."] };
 }
 
 export function JobForm({
