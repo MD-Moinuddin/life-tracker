@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type LoadState<T> =
   { status: "loading" } | { status: "error" } | { status: "ready"; data: T };
@@ -8,9 +8,11 @@ interface LoadResult<T> {
   state: LoadState<T>;
 }
 
-// Pass a memoized `load`: a new function means a new request.
-export function useLoad<T>(load: () => Promise<T>): LoadState<T> {
+// Pass a memoized `load`: a new function means a new request. `reload` fetches
+// again and keeps showing the previous data until the new data arrives.
+export function useLoad<T>(load: () => Promise<T>) {
   const [result, setResult] = useState<LoadResult<T> | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let ignore = false;
@@ -30,7 +32,11 @@ export function useLoad<T>(load: () => Promise<T>): LoadState<T> {
     return () => {
       ignore = true;
     };
-  }, [load]);
+  }, [load, attempt]);
 
-  return result?.load === load ? result.state : { status: "loading" };
+  const reload = useCallback(() => setAttempt((current) => current + 1), []);
+  const state: LoadState<T> =
+    result?.load === load ? result.state : { status: "loading" };
+
+  return { state, reload };
 }

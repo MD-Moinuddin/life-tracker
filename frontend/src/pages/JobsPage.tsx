@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AddJobButton } from "../components/jobs/AddJobButton";
+import { AddButton } from "../components/AddButton";
 import { DeleteJobConfirmation } from "../components/jobs/DeleteJobConfirmation";
 import { JobForm } from "../components/jobs/JobForm";
 import { JobList } from "../components/jobs/JobList";
@@ -68,7 +68,7 @@ export function JobsPage() {
       <div className="mb-4 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-slate-900">Jobs</h1>
         {status === "ready" && hasJobs && (
-          <AddJobButton onClick={() => setIsAddOpen(true)} />
+          <AddButton label="Add job" onClick={() => setIsAddOpen(true)} />
         )}
       </div>
 

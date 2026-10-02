@@ -1,4 +1,4 @@
-import { AddJobButton } from "./AddJobButton";
+import { AddButton } from "../AddButton";
 
 interface JobsEmptyStateProps {
   onAdd: () => void;
@@ -14,7 +14,7 @@ export function JobsEmptyState({ onAdd }: JobsEmptyStateProps) {
         hours and earnings.
       </p>
       <div className="mt-6 flex justify-center">
-        <AddJobButton onClick={onAdd} />
+        <AddButton label="Add job" onClick={onAdd} />
       </div>
     </div>
   );

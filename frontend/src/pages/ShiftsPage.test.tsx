@@ -1,12 +1,24 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { listShifts } from "../lib/shifts-api";
+import { listJobs } from "../lib/jobs-api";
+import type { JobWithShiftCount } from "../lib/jobs-api";
+import { createShift, listShifts } from "../lib/shifts-api";
 import type { Shift } from "../lib/shifts-api";
 import { makeShift } from "../test/fixtures";
 import { ShiftsPage } from "./ShiftsPage";
 
-vi.mock("../lib/shifts-api", () => ({ listShifts: vi.fn() }));
+vi.mock("../lib/shifts-api", () => ({
+  listShifts: vi.fn(),
+  createShift: vi.fn(),
+}));
+vi.mock("../lib/jobs-api", () => ({ listJobs: vi.fn() }));
 vi.mock("../lib/dates", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/dates")>()),
   localNow: () => "2026-10-07T12:00",
@@ -30,6 +42,15 @@ const inProgress = makeShift({
   workedMinutes: 240,
 });
 const future = makeShift({ id: "future", date: "2026-10-09" });
+const warehouse: JobWithShiftCount = {
+  id: "job-1",
+  name: "Warehouse",
+  hourlyRate: "12.00",
+  type: "part_time",
+  createdAt: "2026-10-01T09:00:00.000Z",
+  updatedAt: "2026-10-01T09:00:00.000Z",
+  shiftCount: 0,
+};
 
 function mockShifts(items: Shift[]) {
   vi.mocked(listShifts).mockResolvedValue({
@@ -54,6 +75,7 @@ function section(name: string) {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(listJobs).mockResolvedValue([warehouse]);
 });
 
 describe("ShiftsPage", () => {
@@ -136,5 +158,90 @@ describe("ShiftsPage", () => {
 
     expect(await screen.findByText("5 Oct to 11 Oct 2026")).toBeDefined();
     expect((next as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("opens a dialog with the shift form from the Add shift button", async () => {
+    mockShifts([]);
+    renderPage();
+    await screen.findByText("No upcoming shifts.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add shift" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Add a shift" });
+    expect(await within(dialog).findByLabelText("Job")).toBeDefined();
+    expect(
+      within(dialog).getByRole("option", { name: "Warehouse" }),
+    ).toBeDefined();
+  });
+
+  it("adds a shift, closes the dialog and reloads both lists", async () => {
+    mockShifts([]);
+    vi.mocked(createShift).mockResolvedValue(makeShift());
+    renderPage();
+    await screen.findByText("No upcoming shifts.");
+    fireEvent.click(screen.getByRole("button", { name: "Add shift" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add a shift" });
+
+    fireEvent.change(await within(dialog).findByLabelText("Job"), {
+      target: { value: "job-1" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Start time"), {
+      target: { value: "09:00" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("End time"), {
+      target: { value: "17:00" },
+    });
+    const callsBefore = vi.mocked(listShifts).mock.calls.length;
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add shift" }));
+
+    await waitFor(() =>
+      expect(createShift).toHaveBeenCalledWith({
+        jobId: "job-1",
+        date: "2026-10-07",
+        startTime: "09:00",
+        endTime: "17:00",
+        breakMinutes: 0,
+        notes: "",
+      }),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() =>
+      expect(vi.mocked(listShifts).mock.calls.length).toBe(callsBefore + 2),
+    );
+  });
+
+  it("explains that a job is needed when there are none", async () => {
+    mockShifts([]);
+    vi.mocked(listJobs).mockResolvedValue([]);
+    renderPage();
+    await screen.findByText("No upcoming shifts.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add shift" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Add a shift" });
+    expect(
+      await within(dialog).findByText(
+        /You need a job before you can add a shift/,
+      ),
+    ).toBeDefined();
+    expect(
+      within(dialog)
+        .getByRole("link", { name: "Go to Jobs" })
+        .getAttribute("href"),
+    ).toBe("/jobs");
+  });
+
+  it("says so when the jobs cannot be loaded", async () => {
+    mockShifts([]);
+    vi.mocked(listJobs).mockRejectedValue(new Error("network down"));
+    renderPage();
+    await screen.findByText("No upcoming shifts.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add shift" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Add a shift" });
+    expect(
+      await within(dialog).findByText(/Could not load your jobs/),
+    ).toBeDefined();
   });
 });

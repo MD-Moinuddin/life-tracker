@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useLoad } from "./useLoad";
 
@@ -10,9 +10,9 @@ describe("useLoad", () => {
 
     const { result } = renderHook(() => useLoad(load));
 
-    expect(result.current).toEqual({ status: "loading" });
+    expect(result.current.state).toEqual({ status: "loading" });
     await waitFor(() =>
-      expect(result.current).toEqual({ status: "ready", data: "jobs" }),
+      expect(result.current.state).toEqual({ status: "ready", data: "jobs" }),
     );
   });
 
@@ -21,7 +21,9 @@ describe("useLoad", () => {
 
     const { result } = renderHook(() => useLoad(load));
 
-    await waitFor(() => expect(result.current).toEqual({ status: "error" }));
+    await waitFor(() =>
+      expect(result.current.state).toEqual({ status: "error" }),
+    );
   });
 
   it("starts a new request, and shows loading, when load changes", async () => {
@@ -32,14 +34,14 @@ describe("useLoad", () => {
       { initialProps: { load: first } },
     );
     await waitFor(() =>
-      expect(result.current).toEqual({ status: "ready", data: "week 1" }),
+      expect(result.current.state).toEqual({ status: "ready", data: "week 1" }),
     );
 
     rerender({ load: second });
 
-    expect(result.current).toEqual({ status: "loading" });
+    expect(result.current.state).toEqual({ status: "loading" });
     await waitFor(() =>
-      expect(result.current).toEqual({ status: "ready", data: "week 2" }),
+      expect(result.current.state).toEqual({ status: "ready", data: "week 2" }),
     );
   });
 
@@ -57,11 +59,43 @@ describe("useLoad", () => {
 
     rerender({ load: second });
     await waitFor(() =>
-      expect(result.current).toEqual({ status: "ready", data: "new" }),
+      expect(result.current.state).toEqual({ status: "ready", data: "new" }),
     );
     resolveFirst("old");
     await Promise.resolve();
 
-    expect(result.current).toEqual({ status: "ready", data: "new" });
+    expect(result.current.state).toEqual({ status: "ready", data: "new" });
+  });
+
+  it("reload fetches again and keeps the old data until the new data arrives", async () => {
+    let calls = 0;
+    const load: Loader = () => Promise.resolve(`call ${++calls}`);
+    const { result } = renderHook(() => useLoad(load));
+    await waitFor(() =>
+      expect(result.current.state).toEqual({ status: "ready", data: "call 1" }),
+    );
+
+    act(() => result.current.reload());
+
+    expect(result.current.state).toEqual({ status: "ready", data: "call 1" });
+    await waitFor(() =>
+      expect(result.current.state).toEqual({ status: "ready", data: "call 2" }),
+    );
+  });
+
+  it("reload tries again after a failure", async () => {
+    let calls = 0;
+    const load: Loader = () =>
+      ++calls === 1 ? Promise.reject(new Error("down")) : Promise.resolve("ok");
+    const { result } = renderHook(() => useLoad(load));
+    await waitFor(() =>
+      expect(result.current.state).toEqual({ status: "error" }),
+    );
+
+    act(() => result.current.reload());
+
+    await waitFor(() =>
+      expect(result.current.state).toEqual({ status: "ready", data: "ok" }),
+    );
   });
 });
