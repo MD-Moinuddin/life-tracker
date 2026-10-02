@@ -5,6 +5,7 @@ import { refresh } from "./lib/auth-api";
 import { DashboardPage } from "./pages/DashboardPage";
 import { JobsPage } from "./pages/JobsPage";
 import { LoginPage } from "./pages/LoginPage";
+import { ShiftsPage } from "./pages/ShiftsPage";
 import { SignupPage } from "./pages/SignupPage";
 import { useAuthStore } from "./store/auth-store";
 
@@ -35,6 +36,7 @@ function App() {
       >
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/jobs" element={<JobsPage />} />
+        <Route path="/shifts" element={<ShiftsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

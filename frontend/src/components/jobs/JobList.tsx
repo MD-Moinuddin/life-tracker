@@ -3,6 +3,7 @@ import { formatEuro } from "../../lib/money";
 import {
   COMPACT_BUTTON_CLASSES,
   COMPACT_DANGER_BUTTON_CLASSES,
+  LIST_CLASSES,
 } from "../form/form-styles";
 import { JOB_TYPE_LABELS } from "./job-types";
 
@@ -14,7 +15,7 @@ interface JobListProps {
 
 export function JobList({ jobs, onEdit, onDelete }: JobListProps) {
   return (
-    <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+    <ul className={LIST_CLASSES}>
       {jobs.map((job) => (
         <li
           key={job.id}
