@@ -4,13 +4,23 @@ import {
   formatTimeRange,
 } from "../../lib/shift-format";
 import type { Shift } from "../../lib/shifts-api";
-import { LIST_CLASSES } from "../form/form-styles";
+import {
+  COMPACT_BUTTON_CLASSES,
+  COMPACT_DANGER_BUTTON_CLASSES,
+  LIST_CLASSES,
+} from "../form/form-styles";
 
 interface ShiftListProps {
   shifts: Shift[];
+  onEdit: (shift: Shift) => void;
+  onDelete: (shift: Shift) => void;
 }
 
-export function ShiftList({ shifts }: ShiftListProps) {
+function describeShift(shift: Shift) {
+  return `${shift.job.name}, ${formatDay(shift.date)}, ${formatTimeRange(shift)}`;
+}
+
+export function ShiftList({ shifts, onEdit, onDelete }: ShiftListProps) {
   return (
     <ul className={LIST_CLASSES}>
       {shifts.map((shift) => (
@@ -27,9 +37,27 @@ export function ShiftList({ shifts }: ShiftListProps) {
               <p className="mt-1 text-sm text-slate-600">{shift.notes}</p>
             )}
           </div>
-          <p className="text-sm font-medium text-slate-900">
-            {formatDuration(shift.workedMinutes)}
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-sm font-medium text-slate-900">
+              {formatDuration(shift.workedMinutes)}
+            </p>
+            <button
+              type="button"
+              onClick={() => onEdit(shift)}
+              aria-label={`Edit ${describeShift(shift)}`}
+              className={COMPACT_BUTTON_CLASSES}
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(shift)}
+              aria-label={`Delete ${describeShift(shift)}`}
+              className={COMPACT_DANGER_BUTTON_CLASSES}
+            >
+              Delete
+            </button>
+          </div>
         </li>
       ))}
     </ul>

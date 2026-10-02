@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { AddButton } from "../components/AddButton";
+import { ConfirmDelete } from "../components/ConfirmDelete";
 import { AppShell } from "../components/layout/AppShell";
 import { Modal } from "../components/Modal";
 import { NoJobsNotice } from "../components/shifts/NoJobsNotice";
@@ -11,7 +12,13 @@ import type { LoadState } from "../hooks/useLoad";
 import { addDays, hasEnded, localNow, weekBounds } from "../lib/dates";
 import { listJobs } from "../lib/jobs-api";
 import type { JobWithShiftCount } from "../lib/jobs-api";
-import { createShift, listShifts } from "../lib/shifts-api";
+import { formatDay, formatTimeRange } from "../lib/shift-format";
+import {
+  createShift,
+  deleteShift,
+  listShifts,
+  updateShift,
+} from "../lib/shifts-api";
 import type { Shift, ShiftInput } from "../lib/shifts-api";
 
 const MAX_PAGE_SIZE = 500;
@@ -19,9 +26,16 @@ const MAX_PAGE_SIZE = 500;
 interface ShiftsBlockProps {
   state: LoadState<Shift[]>;
   emptyMessage: string;
+  onEdit: (shift: Shift) => void;
+  onDelete: (shift: Shift) => void;
 }
 
-function ShiftsBlock({ state, emptyMessage }: ShiftsBlockProps) {
+function ShiftsBlock({
+  state,
+  emptyMessage,
+  onEdit,
+  onDelete,
+}: ShiftsBlockProps) {
   if (state.status === "loading") {
     return <p className="text-slate-600">Loading shifts…</p>;
   }
@@ -35,16 +49,24 @@ function ShiftsBlock({ state, emptyMessage }: ShiftsBlockProps) {
   if (state.data.length === 0) {
     return <p className="text-slate-600">{emptyMessage}</p>;
   }
-  return <ShiftList shifts={state.data} />;
+  return <ShiftList shifts={state.data} onEdit={onEdit} onDelete={onDelete} />;
 }
 
-interface AddShiftContentProps {
+interface ShiftDialogContentProps {
   jobs: LoadState<JobWithShiftCount[]>;
+  initialValues?: ShiftInput;
+  submitLabel: string;
   onSubmit: (values: ShiftInput) => Promise<void>;
   onClose: () => void;
 }
 
-function AddShiftContent({ jobs, onSubmit, onClose }: AddShiftContentProps) {
+function ShiftDialogContent({
+  jobs,
+  initialValues,
+  submitLabel,
+  onSubmit,
+  onClose,
+}: ShiftDialogContentProps) {
   if (jobs.status === "loading") {
     return <p className="text-slate-600">Loading jobs…</p>;
   }
@@ -61,11 +83,23 @@ function AddShiftContent({ jobs, onSubmit, onClose }: AddShiftContentProps) {
   return (
     <ShiftForm
       jobs={jobs.data}
-      submitLabel="Add shift"
+      initialValues={initialValues}
+      submitLabel={submitLabel}
       onSubmit={onSubmit}
       onCancel={onClose}
     />
   );
+}
+
+function toShiftInput(shift: Shift): ShiftInput {
+  return {
+    jobId: shift.jobId,
+    date: shift.date,
+    startTime: shift.startTime,
+    endTime: shift.endTime,
+    breakMinutes: shift.breakMinutes,
+    notes: shift.notes,
+  };
 }
 
 export function ShiftsPage() {
@@ -73,6 +107,8 @@ export function ShiftsPage() {
   const currentWeekStart = weekBounds(now.slice(0, 10)).from;
   const [weekStart, setWeekStart] = useState(currentWeekStart);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingShift, setEditingShift] = useState<Shift | null>(null);
+  const [deletingShift, setDeletingShift] = useState<Shift | null>(null);
 
   const loadJobs = useCallback(() => listJobs(), []);
 
@@ -97,11 +133,27 @@ export function ShiftsPage() {
   const upcoming = useLoad(loadUpcoming);
   const history = useLoad(loadHistory);
 
+  function reloadLists() {
+    upcoming.reload();
+    history.reload();
+  }
+
   async function handleCreate(values: ShiftInput) {
     await createShift(values);
     setIsAddOpen(false);
-    upcoming.reload();
-    history.reload();
+    reloadLists();
+  }
+
+  async function handleUpdate(id: string, values: ShiftInput) {
+    await updateShift(id, values);
+    setEditingShift(null);
+    reloadLists();
+  }
+
+  async function handleDelete(id: string) {
+    await deleteShift(id);
+    setDeletingShift(null);
+    reloadLists();
   }
 
   return (
@@ -121,6 +173,8 @@ export function ShiftsPage() {
         <ShiftsBlock
           state={upcoming.state}
           emptyMessage="No upcoming shifts."
+          onEdit={setEditingShift}
+          onDelete={setDeletingShift}
         />
       </section>
 
@@ -141,6 +195,8 @@ export function ShiftsPage() {
         <ShiftsBlock
           state={history.state}
           emptyMessage="No finished shifts in this week."
+          onEdit={setEditingShift}
+          onDelete={setDeletingShift}
         />
       </section>
 
@@ -150,11 +206,47 @@ export function ShiftsPage() {
         onClose={() => setIsAddOpen(false)}
       >
         {isAddOpen && (
-          <AddShiftContent
+          <ShiftDialogContent
             jobs={jobs.state}
+            submitLabel="Add shift"
             onSubmit={handleCreate}
             onClose={() => setIsAddOpen(false)}
           />
+        )}
+      </Modal>
+
+      <Modal
+        open={editingShift !== null}
+        title="Edit shift"
+        onClose={() => setEditingShift(null)}
+      >
+        {editingShift && (
+          <ShiftDialogContent
+            jobs={jobs.state}
+            initialValues={toShiftInput(editingShift)}
+            submitLabel="Save changes"
+            onSubmit={(values) => handleUpdate(editingShift.id, values)}
+            onClose={() => setEditingShift(null)}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        open={deletingShift !== null}
+        title="Delete shift?"
+        onClose={() => setDeletingShift(null)}
+      >
+        {deletingShift && (
+          <ConfirmDelete
+            confirmLabel="Delete shift"
+            onConfirm={() => handleDelete(deletingShift.id)}
+            onCancel={() => setDeletingShift(null)}
+          >
+            <p>
+              {`You are about to delete the ${deletingShift.job.name} shift on ${formatDay(deletingShift.date)}, ${formatTimeRange(deletingShift)}.`}
+            </p>
+            <p>This cannot be undone.</p>
+          </ConfirmDelete>
         )}
       </Modal>
     </AppShell>
