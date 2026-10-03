@@ -35,6 +35,7 @@ export interface ShiftInput {
 export interface ListShiftsParams {
   from?: string;
   to?: string;
+  jobId?: string;
   limit?: number;
   offset?: number;
 }

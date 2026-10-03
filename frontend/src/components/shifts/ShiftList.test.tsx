@@ -8,13 +8,7 @@ function renderList(
   shifts: Shift[],
   handlers: { onEdit?: () => void; onDelete?: () => void } = {},
 ) {
-  render(
-    <ShiftList
-      shifts={shifts}
-      onEdit={handlers.onEdit ?? vi.fn()}
-      onDelete={handlers.onDelete ?? vi.fn()}
-    />,
-  );
+  render(<ShiftList shifts={shifts} {...handlers} />);
 }
 
 describe("ShiftList", () => {
@@ -75,5 +69,11 @@ describe("ShiftList", () => {
     );
 
     expect(onDelete).toHaveBeenCalledWith(shift);
+  });
+
+  it("shows no Edit or Delete buttons without handlers", () => {
+    renderList([makeShift()]);
+
+    expect(screen.queryByRole("button")).toBeNull();
   });
 });

@@ -12,8 +12,8 @@ import {
 
 interface ShiftListProps {
   shifts: Shift[];
-  onEdit: (shift: Shift) => void;
-  onDelete: (shift: Shift) => void;
+  onEdit?: (shift: Shift) => void;
+  onDelete?: (shift: Shift) => void;
 }
 
 function describeShift(shift: Shift) {
@@ -41,22 +41,26 @@ export function ShiftList({ shifts, onEdit, onDelete }: ShiftListProps) {
             <p className="text-sm font-medium text-slate-900">
               {formatDuration(shift.workedMinutes)}
             </p>
-            <button
-              type="button"
-              onClick={() => onEdit(shift)}
-              aria-label={`Edit ${describeShift(shift)}`}
-              className={COMPACT_BUTTON_CLASSES}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(shift)}
-              aria-label={`Delete ${describeShift(shift)}`}
-              className={COMPACT_DANGER_BUTTON_CLASSES}
-            >
-              Delete
-            </button>
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(shift)}
+                aria-label={`Edit ${describeShift(shift)}`}
+                className={COMPACT_BUTTON_CLASSES}
+              >
+                Edit
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(shift)}
+                aria-label={`Delete ${describeShift(shift)}`}
+                className={COMPACT_DANGER_BUTTON_CLASSES}
+              >
+                Delete
+              </button>
+            )}
           </div>
         </li>
       ))}

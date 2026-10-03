@@ -28,6 +28,14 @@ describe("shifts API client", () => {
     );
   });
 
+  it("sends the job filter", async () => {
+    await listShifts({ jobId: "job-1", limit: 500 });
+
+    expect(authedFetch).toHaveBeenCalledWith(
+      "/api/shifts?jobId=job-1&limit=500",
+    );
+  });
+
   it("creates a shift with a POST body", async () => {
     const input = {
       jobId: "job-1",
