@@ -8,14 +8,24 @@ interface ControlProps {
 
 interface FormFieldProps {
   label: string;
+  hint?: string;
   errors?: string[];
   children: (controlProps: ControlProps) => ReactNode;
 }
 
-export function FormField({ label, errors = [], children }: FormFieldProps) {
+export function FormField({
+  label,
+  hint,
+  errors = [],
+  children,
+}: FormFieldProps) {
   const controlId = useId();
+  const hintId = useId();
   const errorId = useId();
   const hasErrors = errors.length > 0;
+  const describedBy = [hint ? hintId : null, hasErrors ? errorId : null]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div>
@@ -28,8 +38,13 @@ export function FormField({ label, errors = [], children }: FormFieldProps) {
       {children({
         id: controlId,
         "aria-invalid": hasErrors,
-        "aria-describedby": hasErrors ? errorId : undefined,
+        "aria-describedby": describedBy || undefined,
       })}
+      {hint && (
+        <p id={hintId} className="mt-1 text-sm text-slate-600">
+          {hint}
+        </p>
+      )}
       {hasErrors && (
         <div id={errorId} role="alert" className="mt-1 text-sm text-red-600">
           {errors.map((message) => (

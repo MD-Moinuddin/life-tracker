@@ -1,8 +1,10 @@
+import { Link } from "react-router-dom";
 import type { JobWithShiftCount } from "../../lib/jobs-api";
 import { formatEuro } from "../../lib/money";
 import {
   COMPACT_BUTTON_CLASSES,
   COMPACT_DANGER_BUTTON_CLASSES,
+  LIST_CLASSES,
 } from "../form/form-styles";
 import { JOB_TYPE_LABELS } from "./job-types";
 
@@ -14,14 +16,19 @@ interface JobListProps {
 
 export function JobList({ jobs, onEdit, onDelete }: JobListProps) {
   return (
-    <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+    <ul className={LIST_CLASSES}>
       {jobs.map((job) => (
         <li
           key={job.id}
-          className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
+          className="relative flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-slate-50 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-indigo-600"
         >
           <div>
-            <p className="font-medium text-slate-900">{job.name}</p>
+            <Link
+              to={`/jobs/${job.id}`}
+              className="font-medium text-slate-900 after:absolute after:inset-0 focus-visible:outline-none"
+            >
+              {job.name}
+            </Link>
             <p className="text-sm text-slate-600">
               {JOB_TYPE_LABELS[job.type]}
             </p>
@@ -30,22 +37,24 @@ export function JobList({ jobs, onEdit, onDelete }: JobListProps) {
             <p className="text-sm font-medium text-slate-900">
               {formatEuro(job.hourlyRate)} / hour
             </p>
-            <button
-              type="button"
-              onClick={() => onEdit(job)}
-              aria-label={`Edit ${job.name}`}
-              className={COMPACT_BUTTON_CLASSES}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(job)}
-              aria-label={`Delete ${job.name}`}
-              className={COMPACT_DANGER_BUTTON_CLASSES}
-            >
-              Delete
-            </button>
+            <div className="relative z-10 flex gap-2">
+              <button
+                type="button"
+                onClick={() => onEdit(job)}
+                aria-label={`Edit ${job.name}`}
+                className={COMPACT_BUTTON_CLASSES}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(job)}
+                aria-label={`Delete ${job.name}`}
+                className={COMPACT_DANGER_BUTTON_CLASSES}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </li>
       ))}

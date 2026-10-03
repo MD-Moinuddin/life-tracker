@@ -10,6 +10,7 @@ interface AppShellProps {
 const NAV_LINKS = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/jobs", label: "Jobs" },
+  { to: "/shifts", label: "Shifts" },
 ];
 
 const NAV_LINK_BASE_CLASSES =

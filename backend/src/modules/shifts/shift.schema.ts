@@ -75,6 +75,7 @@ export const listShiftsQuerySchema = z
   .object({
     from: calendarDate.optional(),
     to: calendarDate.optional(),
+    jobId: z.string().min(1, "Job is required").optional(),
     limit: z.coerce
       .number()
       .int("Limit must be a whole number")
