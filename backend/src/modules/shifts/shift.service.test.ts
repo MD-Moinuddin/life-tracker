@@ -179,6 +179,21 @@ describe("deleteShift", () => {
 });
 
 describe("listShifts", () => {
+  it("passes the job filter on to the repository", async () => {
+    vi.mocked(repository.listShiftsPageByUser).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
+
+    await listShifts("user-1", { jobId: "job-1", limit: 100, offset: 0 });
+
+    expect(repository.listShiftsPageByUser).toHaveBeenCalledWith(
+      "user-1",
+      { jobId: "job-1" },
+      { limit: 100, offset: 0 },
+    );
+  });
+
   it("returns the page as an envelope with the total", async () => {
     vi.mocked(repository.listShiftsPageByUser).mockResolvedValue({
       items: [shiftRow],

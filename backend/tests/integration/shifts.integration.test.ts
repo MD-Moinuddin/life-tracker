@@ -231,6 +231,7 @@ describe("list", () => {
     ["offset=-1", "offset"],
     ["from=2026-02-30", "from"],
     ["from=2026-11-01&to=2026-10-01", "to"],
+    ["jobId=", "jobId"],
   ])("rejects the query %s", async (query, field) => {
     const res = await listShifts(alice.token, query);
 
@@ -247,6 +248,22 @@ describe("list", () => {
 
     expect(aliceRes.body.total).toBe(1);
     expect(bobRes.body.total).toBe(0);
+  });
+
+  it("lists only the shifts of the job in the jobId filter", async () => {
+    const other = await createJobFor(alice.token, "Other job");
+    await createShift({ date: "2031-07-10" });
+    await createShift({ date: "2031-07-11" }, alice.token, other.id);
+    const range = "from=2031-07-01&to=2031-07-31";
+
+    const mine = await listShifts(alice.token, `${range}&jobId=${other.id}`);
+    const all = await listShifts(alice.token, range);
+    const strangers = await listShifts(bob.token, `${range}&jobId=${other.id}`);
+
+    expect(mine.body.total).toBe(1);
+    expect(mine.body.items[0].job.name).toBe("Other job");
+    expect(all.body.total).toBe(2);
+    expect(strangers.body.total).toBe(0);
   });
 
   it("sends Cache-Control no-store", async () => {

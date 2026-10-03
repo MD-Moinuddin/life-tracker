@@ -210,6 +210,15 @@ describe("blank notes", () => {
 });
 
 describe("listShiftsQuerySchema", () => {
+  it("accepts a jobId and rejects an empty one", () => {
+    expect(listShiftsQuerySchema.parse({ jobId: "job-1" })).toEqual({
+      jobId: "job-1",
+      limit: 100,
+      offset: 0,
+    });
+    expect(listShiftsQuerySchema.safeParse({ jobId: "" }).success).toBe(false);
+  });
+
   it("applies the default page when nothing is given", () => {
     expect(listShiftsQuerySchema.parse({})).toEqual({ limit: 100, offset: 0 });
   });

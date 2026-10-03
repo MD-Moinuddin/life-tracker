@@ -21,6 +21,12 @@ function toDbDate(date: string) {
   return new Date(`${date}T00:00:00Z`);
 }
 
+interface ShiftFilter {
+  from?: string;
+  to?: string;
+  jobId?: string;
+}
+
 const shiftOrder: Prisma.ShiftOrderByWithRelationInput[] = [
   { date: "asc" },
   { startTime: "asc" },
@@ -29,23 +35,21 @@ const shiftOrder: Prisma.ShiftOrderByWithRelationInput[] = [
 
 function shiftWhere(
   userId: string,
-  range: { from?: string; to?: string },
+  filter: ShiftFilter,
 ): Prisma.ShiftWhereInput {
   return {
     job: { userId },
+    ...(filter.jobId ? { jobId: filter.jobId } : {}),
     date: {
-      ...(range.from ? { gte: toDbDate(range.from) } : {}),
-      ...(range.to ? { lte: toDbDate(range.to) } : {}),
+      ...(filter.from ? { gte: toDbDate(filter.from) } : {}),
+      ...(filter.to ? { lte: toDbDate(filter.to) } : {}),
     },
   };
 }
 
-export function listShiftsByUser(
-  userId: string,
-  range: { from?: string; to?: string } = {},
-) {
+export function listShiftsByUser(userId: string, filter: ShiftFilter = {}) {
   return prisma.shift.findMany({
-    where: shiftWhere(userId, range),
+    where: shiftWhere(userId, filter),
     include: withJob,
     orderBy: shiftOrder,
   });
@@ -53,10 +57,10 @@ export function listShiftsByUser(
 
 export async function listShiftsPageByUser(
   userId: string,
-  range: { from?: string; to?: string },
+  filter: ShiftFilter,
   page: { limit: number; offset: number },
 ) {
-  const where = shiftWhere(userId, range);
+  const where = shiftWhere(userId, filter);
   const [items, total] = await prisma.$transaction([
     prisma.shift.findMany({
       where,
