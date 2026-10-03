@@ -3,6 +3,7 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { refresh } from "./lib/auth-api";
 import { DashboardPage } from "./pages/DashboardPage";
+import { JobDetailPage } from "./pages/JobDetailPage";
 import { JobsPage } from "./pages/JobsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ShiftsPage } from "./pages/ShiftsPage";
@@ -36,6 +37,7 @@ function App() {
       >
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/jobs" element={<JobsPage />} />
+        <Route path="/jobs/:id" element={<JobDetailPage />} />
         <Route path="/shifts" element={<ShiftsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

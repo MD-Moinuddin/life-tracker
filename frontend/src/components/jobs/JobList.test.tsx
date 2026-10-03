@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import type { JobWithShiftCount } from "../../lib/jobs-api";
 import { JobList } from "./JobList";
@@ -24,9 +25,23 @@ const jobs: JobWithShiftCount[] = [
   },
 ];
 
+function renderList(
+  handlers: { onEdit?: () => void; onDelete?: () => void } = {},
+) {
+  render(
+    <MemoryRouter>
+      <JobList
+        jobs={jobs}
+        onEdit={handlers.onEdit ?? vi.fn()}
+        onDelete={handlers.onDelete ?? vi.fn()}
+      />
+    </MemoryRouter>,
+  );
+}
+
 describe("JobList", () => {
   it("shows each job's name, type and hourly rate", () => {
-    render(<JobList jobs={jobs} onEdit={vi.fn()} onDelete={vi.fn()} />);
+    renderList();
 
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
     expect(screen.getByText("Warehouse")).toBeDefined();
@@ -37,9 +52,20 @@ describe("JobList", () => {
     expect(screen.getByText("€10.50 / hour")).toBeDefined();
   });
 
+  it("links each job's name to that job's page", () => {
+    renderList();
+
+    expect(
+      screen.getByRole("link", { name: "Warehouse" }).getAttribute("href"),
+    ).toBe("/jobs/job-1");
+    expect(
+      screen.getByRole("link", { name: "Cafe" }).getAttribute("href"),
+    ).toBe("/jobs/job-2");
+  });
+
   it("reports which job to edit, with a button named after the job", () => {
     const onEdit = vi.fn();
-    render(<JobList jobs={jobs} onEdit={onEdit} onDelete={vi.fn()} />);
+    renderList({ onEdit });
 
     fireEvent.click(screen.getByRole("button", { name: "Edit Cafe" }));
 
@@ -48,7 +74,7 @@ describe("JobList", () => {
 
   it("reports which job to delete, with a button named after the job", () => {
     const onDelete = vi.fn();
-    render(<JobList jobs={jobs} onEdit={vi.fn()} onDelete={onDelete} />);
+    renderList({ onDelete });
 
     fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
 
