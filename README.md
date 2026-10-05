@@ -2,7 +2,7 @@
 
 Life Tracker is a personal app for tracking daily life. This first version covers user authentication and a dashboard. Later versions will add work scheduling, fitness tracking, nutrition tracking, and personal finance tracking.
 
-**Live demo:** [life-tracker-brown-one.vercel.app](https://life-tracker-brown-one.vercel.app)
+**Live demo:** [lifetracker-md.vercel.app](https://lifetracker-md.vercel.app)
 
 ## Why this project exists
 
