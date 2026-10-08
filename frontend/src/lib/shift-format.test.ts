@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatDay,
   formatDuration,
+  formatMonth,
   formatTimeRange,
   formatWeekRange,
 } from "./shift-format";
@@ -60,5 +61,12 @@ describe("formatTimeRange", () => {
         endDate: "2026-10-04",
       }),
     ).toBe("22:00 to 02:00 (next day)");
+  });
+});
+
+describe("formatMonth", () => {
+  it("gives the month and year", () => {
+    expect(formatMonth("2026-10-08")).toBe("Oct 2026");
+    expect(formatMonth("2027-01-01")).toBe("Jan 2027");
   });
 });

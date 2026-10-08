@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, hasEnded, localNow, weekBounds } from "./dates";
+import { addDays, hasEnded, localNow, stepPeriod, weekBounds } from "./dates";
 
 describe("localNow", () => {
   it("formats the local date and time as YYYY-MM-DDTHH:mm", () => {
@@ -45,5 +45,22 @@ describe("hasEnded", () => {
     ["on the evening it starts", "2026-10-03T23:00", false],
   ])("is judged %s", (_label, now, expected) => {
     expect(hasEnded(shift, now)).toBe(expected);
+  });
+});
+
+describe("stepPeriod", () => {
+  it("moves a week by seven days", () => {
+    expect(stepPeriod("week", "2026-10-08", 1)).toBe("2026-10-15");
+    expect(stepPeriod("week", "2026-01-03", -1)).toBe("2025-12-27");
+  });
+
+  it("moves a month to the first day of the neighbouring month", () => {
+    expect(stepPeriod("month", "2026-10-31", 1)).toBe("2026-11-01");
+    expect(stepPeriod("month", "2026-03-31", -1)).toBe("2026-02-01");
+  });
+
+  it("crosses a year boundary", () => {
+    expect(stepPeriod("month", "2026-12-15", 1)).toBe("2027-01-01");
+    expect(stepPeriod("month", "2026-01-15", -1)).toBe("2025-12-01");
   });
 });
