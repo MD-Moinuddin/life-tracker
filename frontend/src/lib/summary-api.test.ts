@@ -4,6 +4,11 @@ import { getSummary } from "./summary-api";
 
 vi.mock("./authed-api", () => ({ authedFetch: vi.fn() }));
 
+function calledUrl() {
+  const [url = ""] = vi.mocked(authedFetch).mock.calls[0] ?? [];
+  return url;
+}
+
 beforeEach(() => {
   vi.resetAllMocks();
 });
@@ -16,7 +21,7 @@ describe("summary API client", () => {
       now: "2026-10-08T14:30",
     });
 
-    const url = vi.mocked(authedFetch).mock.calls[0][0];
+    const url = calledUrl();
     const params = new URL(url, "http://localhost").searchParams;
 
     expect(url.startsWith("/api/summary?")).toBe(true);
@@ -30,7 +35,7 @@ describe("summary API client", () => {
   it("uses the browser's local time when now is left out", async () => {
     await getSummary({ range: "month", date: "2026-10-08" });
 
-    const url = vi.mocked(authedFetch).mock.calls[0][0];
+    const url = calledUrl();
     const now = new URL(url, "http://localhost").searchParams.get("now");
 
     expect(now).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
