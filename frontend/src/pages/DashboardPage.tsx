@@ -2,7 +2,7 @@ import { ModuleCard } from "../components/dashboard/ModuleCard";
 import { AppShell } from "../components/layout/AppShell";
 
 const MODULES = [
-  { icon: "🗓️", title: "Work Schedule" },
+  { icon: "🗓️", title: "Work Schedule", to: "/shifts" },
   { icon: "💪", title: "Fitness" },
   { icon: "🥗", title: "Nutrition" },
   { icon: "💰", title: "Finance" },
@@ -19,6 +19,7 @@ export function DashboardPage() {
             key={module.title}
             icon={module.icon}
             title={module.title}
+            to={module.to}
           />
         ))}
       </div>
