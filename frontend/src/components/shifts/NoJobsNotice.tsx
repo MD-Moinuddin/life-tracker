@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ROUTES } from "../../lib/routes";
 import {
   PRIMARY_BUTTON_CLASSES,
   SECONDARY_BUTTON_CLASSES,
@@ -16,7 +17,7 @@ export function NoJobsNotice({ onClose }: NoJobsNoticeProps) {
         back here.
       </p>
       <div className="flex gap-3">
-        <Link to="/jobs" className={PRIMARY_BUTTON_CLASSES}>
+        <Link to={ROUTES.jobs} className={PRIMARY_BUTTON_CLASSES}>
           Go to Jobs
         </Link>
         <button

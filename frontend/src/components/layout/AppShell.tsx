@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logout } from "../../lib/auth-api";
+import { ROUTES } from "../../lib/routes";
 import { useAuthStore } from "../../store/auth-store";
 
 interface AppShellProps {
@@ -8,10 +9,10 @@ interface AppShellProps {
 }
 
 const NAV_LINKS = [
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/jobs", label: "Jobs" },
-  { to: "/shifts", label: "Shifts" },
-  { to: "/summary", label: "Summary" },
+  { to: ROUTES.dashboard, label: "Dashboard" },
+  { to: ROUTES.jobs, label: "Jobs" },
+  { to: ROUTES.shifts, label: "Shifts" },
+  { to: ROUTES.summary, label: "Summary" },
 ];
 
 const NAV_LINK_BASE_CLASSES =
@@ -35,7 +36,7 @@ export function AppShell({ children }: AppShellProps) {
       // Best-effort: still clear the local session even if the request fails.
     } finally {
       clearAuth();
-      navigate("/login");
+      navigate(ROUTES.login);
     }
   }
 

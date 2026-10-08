@@ -5,6 +5,7 @@ import { LoginForm, type LoginFormValues } from "../components/auth/LoginForm";
 import { AuthLayout } from "../components/layout/AuthLayout";
 import { ApiError } from "../lib/api-client";
 import { login } from "../lib/auth-api";
+import { ROUTES } from "../lib/routes";
 import { useAuthStore } from "../store/auth-store";
 
 export function LoginPage() {
@@ -17,7 +18,7 @@ export function LoginPage() {
     try {
       const result = await login(values);
       setAuth(result);
-      navigate("/dashboard");
+      navigate(ROUTES.dashboard);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong");
     }
@@ -30,7 +31,7 @@ export function LoginPage() {
         <>
           Don&apos;t have an account?{" "}
           <Link
-            to="/signup"
+            to={ROUTES.signup}
             className="rounded font-medium text-indigo-600 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
             Sign up
