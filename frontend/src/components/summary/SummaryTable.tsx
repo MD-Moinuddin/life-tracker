@@ -1,23 +1,22 @@
 import { formatEuro } from "../../lib/money";
-import { formatDuration } from "../../lib/shift-format";
+import { formatDateRange, formatDuration } from "../../lib/shift-format";
 import type { Summary } from "../../lib/summary-api";
 
 interface SummaryTableProps {
   summary: Summary;
-  periodLabel: string;
 }
 
 const HEADER_CELL = "px-3 py-2 text-right font-medium";
 const NUMBER_CELL = "px-3 py-2 text-right tabular-nums";
 
-export function SummaryTable({ summary, periodLabel }: SummaryTableProps) {
+export function SummaryTable({ summary }: SummaryTableProps) {
   const { jobs, totals } = summary;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
       <table className="w-full text-sm text-slate-900">
         <caption className="px-3 py-2 text-left text-slate-700">
-          {`Hours and earnings per job, ${periodLabel}. Earned counts finished shifts, planned counts every shift in the period.`}
+          {`Hours and earnings per job, ${formatDateRange(summary.from, summary.to)}. Earned counts finished shifts, planned counts every shift in the period.`}
         </caption>
         <thead className="border-y border-slate-200 bg-slate-50 text-slate-700">
           <tr>

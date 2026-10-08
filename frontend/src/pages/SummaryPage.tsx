@@ -1,4 +1,5 @@
 import { AppShell } from "../components/layout/AppShell";
+import { LoadBoundary } from "../components/LoadBoundary";
 import { MiniJobWarning } from "../components/summary/MiniJobWarning";
 import { SummaryControls } from "../components/summary/SummaryControls";
 import { SummaryTable } from "../components/summary/SummaryTable";
@@ -14,7 +15,7 @@ export function SummaryPage() {
 
       <SummaryControls
         range={summary.range}
-        label={summary.label}
+        periodLabel={summary.periodLabel}
         onRangeChange={summary.setRange}
         onPrevious={summary.previous}
         onNext={summary.next}
@@ -24,20 +25,20 @@ export function SummaryPage() {
         miniJob={state.status === "ready" ? state.data.miniJob : undefined}
       />
 
-      {state.status === "loading" && (
-        <p className="text-slate-600">Loading summary…</p>
-      )}
-      {state.status === "error" && (
-        <p role="alert" className="text-red-600">
-          Could not load your summary. Refresh the page to try again.
-        </p>
-      )}
-      {state.status === "ready" &&
-        (state.data.jobs.length === 0 ? (
-          <p className="text-slate-600">No shifts in this period.</p>
-        ) : (
-          <SummaryTable summary={state.data} periodLabel={summary.label} />
-        ))}
+      <LoadBoundary state={state} noun="your summary">
+        {(data) =>
+          data.jobs.length === 0 ? (
+            <p className="text-slate-600">No shifts in this period.</p>
+          ) : (
+            <div
+              aria-busy={summary.isStale}
+              className={summary.isStale ? "opacity-60" : undefined}
+            >
+              <SummaryTable summary={data} />
+            </div>
+          )
+        }
+      </LoadBoundary>
     </AppShell>
   );
 }

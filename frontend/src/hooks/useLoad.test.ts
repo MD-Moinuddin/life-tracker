@@ -98,4 +98,68 @@ describe("useLoad", () => {
       expect(result.current.state).toEqual({ status: "ready", data: "ok" }),
     );
   });
+
+  describe("keepPreviousData", () => {
+    const first: Loader = () => Promise.resolve("week 1");
+
+    it("keeps showing the old data, flagged stale, until the new data arrives", async () => {
+      let resolveSecond: (value: string) => void = () => {};
+      const second: Loader = () =>
+        new Promise<string>((resolve) => {
+          resolveSecond = resolve;
+        });
+      const { result, rerender } = renderHook(
+        ({ load }: { load: Loader }) =>
+          useLoad(load, { keepPreviousData: true }),
+        { initialProps: { load: first } },
+      );
+      await waitFor(() =>
+        expect(result.current.state).toEqual({
+          status: "ready",
+          data: "week 1",
+        }),
+      );
+      expect(result.current.isStale).toBe(false);
+
+      rerender({ load: second });
+
+      expect(result.current.state).toEqual({ status: "ready", data: "week 1" });
+      expect(result.current.isStale).toBe(true);
+
+      act(() => resolveSecond("week 2"));
+      await waitFor(() =>
+        expect(result.current.state).toEqual({
+          status: "ready",
+          data: "week 2",
+        }),
+      );
+      expect(result.current.isStale).toBe(false);
+    });
+
+    it("shows loading, not stale data, when there is nothing to keep yet", () => {
+      const { result } = renderHook(() =>
+        useLoad(first, { keepPreviousData: true }),
+      );
+
+      expect(result.current.state).toEqual({ status: "loading" });
+      expect(result.current.isStale).toBe(false);
+    });
+
+    it("shows loading after an error rather than keeping the failed state", async () => {
+      const failing: Loader = () => Promise.reject(new Error("down"));
+      const never: Loader = () => new Promise<string>(() => {});
+      const { result, rerender } = renderHook(
+        ({ load }: { load: Loader }) =>
+          useLoad(load, { keepPreviousData: true }),
+        { initialProps: { load: failing } },
+      );
+      await waitFor(() =>
+        expect(result.current.state).toEqual({ status: "error" }),
+      );
+
+      rerender({ load: never });
+
+      expect(result.current.state).toEqual({ status: "loading" });
+    });
+  });
 });
