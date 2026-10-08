@@ -64,7 +64,7 @@ describe("JobsPage", () => {
 
     renderPage();
 
-    expect(screen.getByText("Loading jobs…")).toBeDefined();
+    expect(screen.getByText("Loading your jobs…")).toBeDefined();
     const list = await screen.findByRole("list");
     expect(within(list).getByText("Warehouse")).toBeDefined();
     expect(within(list).getByText("€12.00 / hour")).toBeDefined();

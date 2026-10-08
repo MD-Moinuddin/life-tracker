@@ -74,7 +74,7 @@ describe("ShiftSections", () => {
       />,
     );
 
-    expect(section("Upcoming").getByText("Loading shifts…")).toBeDefined();
+    expect(section("Upcoming").getByText("Loading your shifts…")).toBeDefined();
     expect(section("History").getByRole("alert")).toBeDefined();
   });
 });
