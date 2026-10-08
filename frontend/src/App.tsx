@@ -8,6 +8,7 @@ import { JobsPage } from "./pages/JobsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ShiftsPage } from "./pages/ShiftsPage";
 import { SignupPage } from "./pages/SignupPage";
+import { SummaryPage } from "./pages/SummaryPage";
 import { useAuthStore } from "./store/auth-store";
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/jobs/:id" element={<JobDetailPage />} />
         <Route path="/shifts" element={<ShiftsPage />} />
+        <Route path="/summary" element={<SummaryPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

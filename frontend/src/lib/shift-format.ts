@@ -38,6 +38,11 @@ export function formatWeekRange(from: string, to: string): string {
   return `${start.day} ${start.month}${startYear} to ${end.day} ${end.month} ${end.year}`;
 }
 
+export function formatMonth(date: string): string {
+  const { month, year } = parts(date);
+  return `${month} ${year}`;
+}
+
 export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;

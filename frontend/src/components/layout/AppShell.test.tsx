@@ -18,6 +18,7 @@ describe("AppShell navigation", () => {
     ["/dashboard", "Dashboard"],
     ["/jobs", "Jobs"],
     ["/shifts", "Shifts"],
+    ["/summary", "Summary"],
   ])("marks the link of the current page (%s)", (path, label) => {
     renderAt(path);
 
@@ -28,7 +29,7 @@ describe("AppShell navigation", () => {
   it("marks no link on other pages", () => {
     renderAt("/somewhere-else");
 
-    for (const label of ["Dashboard", "Jobs", "Shifts"]) {
+    for (const label of ["Dashboard", "Jobs", "Shifts", "Summary"]) {
       const link = screen.getByRole("link", { name: label });
       expect(link.getAttribute("aria-current")).toBeNull();
     }
