@@ -4,7 +4,7 @@ import {
   formatDuration,
   formatMonth,
   formatTimeRange,
-  formatWeekRange,
+  formatDateRange,
 } from "./shift-format";
 
 describe("formatDay", () => {
@@ -14,15 +14,15 @@ describe("formatDay", () => {
   });
 });
 
-describe("formatWeekRange", () => {
+describe("formatDateRange", () => {
   it("shows the year once for a week inside one year", () => {
-    expect(formatWeekRange("2026-10-05", "2026-10-11")).toBe(
+    expect(formatDateRange("2026-10-05", "2026-10-11")).toBe(
       "5 Oct to 11 Oct 2026",
     );
   });
 
   it("shows both years for a week crossing a year end", () => {
-    expect(formatWeekRange("2026-12-28", "2027-01-03")).toBe(
+    expect(formatDateRange("2026-12-28", "2027-01-03")).toBe(
       "28 Dec 2026 to 3 Jan 2027",
     );
   });

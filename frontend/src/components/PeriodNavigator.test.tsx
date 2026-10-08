@@ -1,14 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { WeekNavigator } from "./WeekNavigator";
+import { PeriodNavigator } from "./PeriodNavigator";
 
 function renderNavigator(canGoNext = true) {
   const onPrevious = vi.fn();
   const onNext = vi.fn();
   render(
-    <WeekNavigator
-      from="2026-10-05"
-      to="2026-10-11"
+    <PeriodNavigator
+      label="5 Oct to 11 Oct 2026"
+      unit="week"
       canGoNext={canGoNext}
       onPrevious={onPrevious}
       onNext={onNext}
@@ -17,8 +17,8 @@ function renderNavigator(canGoNext = true) {
   return { onPrevious, onNext };
 }
 
-describe("WeekNavigator", () => {
-  it("shows the week range", () => {
+describe("PeriodNavigator", () => {
+  it("shows the label", () => {
     renderNavigator();
 
     expect(screen.getByText("5 Oct to 11 Oct 2026")).toBeDefined();
@@ -42,5 +42,35 @@ describe("WeekNavigator", () => {
 
     expect((next as HTMLButtonElement).disabled).toBe(true);
     expect(onNext).not.toHaveBeenCalled();
+  });
+
+  it("names the buttons after the unit", () => {
+    render(
+      <PeriodNavigator
+        label="Oct 2026"
+        unit="month"
+        onPrevious={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Previous month" }),
+    ).toBeDefined();
+    expect(screen.getByRole("button", { name: "Next month" })).toBeDefined();
+  });
+
+  it("allows going forward by default", () => {
+    render(
+      <PeriodNavigator
+        label="Oct 2026"
+        unit="month"
+        onPrevious={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    const next = screen.getByRole("button", { name: "Next month" });
+    expect((next as HTMLButtonElement).disabled).toBe(false);
   });
 });

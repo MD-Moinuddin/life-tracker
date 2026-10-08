@@ -1,8 +1,7 @@
 import { authedFetch } from "./authed-api";
 import { localNow } from "./dates";
 import type { JobType } from "./jobs-api";
-
-export type SummaryRange = "week" | "month";
+import type { SummaryRange } from "./summary-period";
 
 export interface SummaryJob {
   jobId: string;
