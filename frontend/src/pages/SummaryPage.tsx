@@ -1,4 +1,5 @@
 import { AppShell } from "../components/layout/AppShell";
+import { MiniJobWarning } from "../components/summary/MiniJobWarning";
 import { SummaryControls } from "../components/summary/SummaryControls";
 import { SummaryTable } from "../components/summary/SummaryTable";
 import { useSummary } from "../hooks/useSummary";
@@ -17,6 +18,10 @@ export function SummaryPage() {
         onRangeChange={summary.setRange}
         onPrevious={summary.previous}
         onNext={summary.next}
+      />
+
+      <MiniJobWarning
+        miniJob={state.status === "ready" ? state.data.miniJob : undefined}
       />
 
       {state.status === "loading" && (

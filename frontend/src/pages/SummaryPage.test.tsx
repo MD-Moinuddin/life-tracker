@@ -122,4 +122,23 @@ describe("SummaryPage", () => {
       "Could not load your summary",
     );
   });
+
+  it("shows the mini-job warning in month view when the API flags it", async () => {
+    vi.mocked(getSummary).mockResolvedValue({
+      ...summary,
+      miniJob: { plannedAmount: "600.00", threshold: "540.00", warning: true },
+    });
+    renderPage();
+
+    expect((await screen.findByRole("status")).textContent).toContain(
+      "€600.00",
+    );
+  });
+
+  it("shows no warning in week view, where the API sends no mini-job data", async () => {
+    renderPage();
+    await screen.findByText("Warehouse");
+
+    expect(screen.getByRole("status").textContent).toBe("");
+  });
 });
