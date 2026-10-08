@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { AddButton } from "../components/AddButton";
 import { ConfirmDelete } from "../components/ConfirmDelete";
 import { AppShell } from "../components/layout/AppShell";
+import { LoadBoundary } from "../components/LoadBoundary";
 import { Modal } from "../components/Modal";
 import { NoJobsNotice } from "../components/shifts/NoJobsNotice";
 import { ShiftForm } from "../components/shifts/ShiftForm";
@@ -30,27 +31,26 @@ function ShiftDialogContent({
   onSubmit,
   onClose,
 }: ShiftDialogContentProps) {
-  if (jobs.status === "loading") {
-    return <p className="text-slate-600">Loading jobs…</p>;
-  }
-  if (jobs.status === "error") {
-    return (
-      <p role="alert" className="text-red-600">
-        Could not load your jobs. Close this dialog and try again.
-      </p>
-    );
-  }
-  if (jobs.data.length === 0) {
-    return <NoJobsNotice onClose={onClose} />;
-  }
   return (
-    <ShiftForm
-      jobs={jobs.data}
-      initialValues={initialValues}
-      submitLabel={submitLabel}
-      onSubmit={onSubmit}
-      onCancel={onClose}
-    />
+    <LoadBoundary
+      state={jobs}
+      noun="your jobs"
+      retryHint="Close this dialog and try again."
+    >
+      {(loadedJobs) =>
+        loadedJobs.length === 0 ? (
+          <NoJobsNotice onClose={onClose} />
+        ) : (
+          <ShiftForm
+            jobs={loadedJobs}
+            initialValues={initialValues}
+            submitLabel={submitLabel}
+            onSubmit={onSubmit}
+            onCancel={onClose}
+          />
+        )
+      }
+    </LoadBoundary>
   );
 }
 

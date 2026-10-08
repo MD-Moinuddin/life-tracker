@@ -1,8 +1,9 @@
 import { ModuleCard } from "../components/dashboard/ModuleCard";
 import { AppShell } from "../components/layout/AppShell";
+import { ROUTES } from "../lib/routes";
 
 const MODULES = [
-  { icon: "🗓️", title: "Work Schedule", to: "/shifts" },
+  { icon: "🗓️", title: "Work Schedule", to: ROUTES.shifts },
   { icon: "💪", title: "Fitness" },
   { icon: "🥗", title: "Nutrition" },
   { icon: "💰", title: "Finance" },

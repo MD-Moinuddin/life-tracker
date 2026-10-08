@@ -38,9 +38,7 @@ const summary: Summary = {
 
 describe("SummaryTable", () => {
   it("is a table with a caption naming the period", () => {
-    render(
-      <SummaryTable summary={summary} periodLabel="5 Oct to 11 Oct 2026" />,
-    );
+    render(<SummaryTable summary={summary} />);
 
     const table = screen.getByRole("table", {
       name: /Hours and earnings per job, 5 Oct to 11 Oct 2026/,
@@ -49,7 +47,7 @@ describe("SummaryTable", () => {
   });
 
   it("has header cells for the columns", () => {
-    render(<SummaryTable summary={summary} periodLabel="x" />);
+    render(<SummaryTable summary={summary} />);
 
     for (const name of [
       "Job",
@@ -63,7 +61,7 @@ describe("SummaryTable", () => {
   });
 
   it("shows earned and planned hours and euros for each job", () => {
-    render(<SummaryTable summary={summary} periodLabel="x" />);
+    render(<SummaryTable summary={summary} />);
 
     const row = screen.getByRole("row", { name: /Cafe/ });
     const cells = within(row).getAllByRole("cell");
@@ -77,7 +75,7 @@ describe("SummaryTable", () => {
   });
 
   it("shows the totals in the last row", () => {
-    render(<SummaryTable summary={summary} periodLabel="x" />);
+    render(<SummaryTable summary={summary} />);
 
     const row = screen.getByRole("row", { name: /Total/ });
     const cells = within(row).getAllByRole("cell");

@@ -141,4 +141,33 @@ describe("SummaryPage", () => {
 
     expect(screen.getByRole("status").textContent).toBe("");
   });
+
+  it("keeps the previous table on screen, marked busy, while the next period loads", async () => {
+    let resolveNext: (value: Summary) => void = () => {};
+    renderPage();
+    await screen.findByText("Warehouse");
+    vi.mocked(getSummary).mockReturnValue(
+      new Promise<Summary>((resolve) => {
+        resolveNext = resolve;
+      }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Next week" }));
+
+    const table = await screen.findByRole("table");
+    expect(table.closest("[aria-busy]")?.getAttribute("aria-busy")).toBe(
+      "true",
+    );
+    expect(screen.queryByText(/Loading your summary/)).toBeNull();
+
+    resolveNext({ ...summary, from: "2026-10-12", to: "2026-10-18" });
+    await waitFor(() =>
+      expect(
+        screen
+          .getByRole("table")
+          .closest("[aria-busy]")
+          ?.getAttribute("aria-busy"),
+      ).toBe("false"),
+    );
+  });
 });

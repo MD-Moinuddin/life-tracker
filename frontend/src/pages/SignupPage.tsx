@@ -8,6 +8,7 @@ import {
 import { AuthLayout } from "../components/layout/AuthLayout";
 import { ApiError } from "../lib/api-client";
 import { login, signup } from "../lib/auth-api";
+import { ROUTES } from "../lib/routes";
 import { useAuthStore } from "../store/auth-store";
 
 export function SignupPage() {
@@ -21,7 +22,7 @@ export function SignupPage() {
       await signup(values);
       const result = await login(values);
       setAuth(result);
-      navigate("/dashboard");
+      navigate(ROUTES.dashboard);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong");
     }
@@ -34,7 +35,7 @@ export function SignupPage() {
         <>
           Already have an account?{" "}
           <Link
-            to="/login"
+            to={ROUTES.login}
             className="rounded font-medium text-indigo-600 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
             Log in

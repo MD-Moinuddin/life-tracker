@@ -1,18 +1,14 @@
-import type { SummaryRange } from "../../lib/summary-api";
-import { COMPACT_BUTTON_CLASSES } from "../form/form-styles";
+import { rangeLabel, SUMMARY_RANGES } from "../../lib/summary-period";
+import type { SummaryRange } from "../../lib/summary-period";
+import { PeriodNavigator } from "../PeriodNavigator";
 
 interface SummaryControlsProps {
   range: SummaryRange;
-  label: string;
+  periodLabel: string;
   onRangeChange: (range: SummaryRange) => void;
   onPrevious: () => void;
   onNext: () => void;
 }
-
-const RANGES: { value: SummaryRange; label: string }[] = [
-  { value: "week", label: "Week" },
-  { value: "month", label: "Month" },
-];
 
 function toggleClassName(pressed: boolean) {
   const base =
@@ -24,7 +20,7 @@ function toggleClassName(pressed: boolean) {
 
 export function SummaryControls({
   range,
-  label,
+  periodLabel,
   onRangeChange,
   onPrevious,
   onNext,
@@ -36,7 +32,7 @@ export function SummaryControls({
         aria-label="Summary period"
         className="flex overflow-hidden rounded-md border border-slate-300"
       >
-        {RANGES.map(({ value, label: text }) => (
+        {SUMMARY_RANGES.map((value) => (
           <button
             key={value}
             type="button"
@@ -44,32 +40,16 @@ export function SummaryControls({
             onClick={() => onRangeChange(value)}
             className={toggleClassName(range === value)}
           >
-            {text}
+            {rangeLabel(value)}
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onPrevious}
-          className={COMPACT_BUTTON_CLASSES}
-        >
-          {`Previous ${range}`}
-        </button>
-        <p
-          aria-live="polite"
-          className="min-w-[10rem] text-center text-sm font-medium text-slate-700"
-        >
-          {label}
-        </p>
-        <button
-          type="button"
-          onClick={onNext}
-          className={COMPACT_BUTTON_CLASSES}
-        >
-          {`Next ${range}`}
-        </button>
-      </div>
+      <PeriodNavigator
+        label={periodLabel}
+        unit={range}
+        onPrevious={onPrevious}
+        onNext={onNext}
+      />
     </div>
   );
 }

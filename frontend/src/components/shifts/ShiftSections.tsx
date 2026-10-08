@@ -1,8 +1,10 @@
 import type { LoadState } from "../../hooks/useLoad";
 import type { ShiftLists } from "../../hooks/useShiftLists";
+import { formatDateRange } from "../../lib/shift-format";
 import type { Shift } from "../../lib/shifts-api";
+import { LoadBoundary } from "../LoadBoundary";
+import { PeriodNavigator } from "../PeriodNavigator";
 import { ShiftList } from "./ShiftList";
-import { WeekNavigator } from "./WeekNavigator";
 
 interface ShiftsBlockProps {
   state: LoadState<Shift[]>;
@@ -17,20 +19,17 @@ function ShiftsBlock({
   onEdit,
   onDelete,
 }: ShiftsBlockProps) {
-  if (state.status === "loading") {
-    return <p className="text-slate-600">Loading shifts…</p>;
-  }
-  if (state.status === "error") {
-    return (
-      <p role="alert" className="text-red-600">
-        Could not load your shifts. Refresh the page to try again.
-      </p>
-    );
-  }
-  if (state.data.length === 0) {
-    return <p className="text-slate-600">{emptyMessage}</p>;
-  }
-  return <ShiftList shifts={state.data} onEdit={onEdit} onDelete={onDelete} />;
+  return (
+    <LoadBoundary state={state} noun="your shifts">
+      {(shifts) =>
+        shifts.length === 0 ? (
+          <p className="text-slate-600">{emptyMessage}</p>
+        ) : (
+          <ShiftList shifts={shifts} onEdit={onEdit} onDelete={onDelete} />
+        )
+      }
+    </LoadBoundary>
+  );
 }
 
 interface ShiftSectionsProps {
@@ -64,9 +63,9 @@ export function ShiftSections({ lists, onEdit, onDelete }: ShiftSectionsProps) {
         >
           History
         </h2>
-        <WeekNavigator
-          from={lists.weekStart}
-          to={lists.weekEnd}
+        <PeriodNavigator
+          label={formatDateRange(lists.weekStart, lists.weekEnd)}
+          unit="week"
           canGoNext={lists.canGoNext}
           onPrevious={lists.previousWeek}
           onNext={lists.nextWeek}

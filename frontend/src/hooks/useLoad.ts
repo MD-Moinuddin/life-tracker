@@ -8,9 +8,18 @@ interface LoadResult<T> {
   state: LoadState<T>;
 }
 
+interface UseLoadOptions {
+  // When `load` changes, keep returning the previous data (flagged `isStale`)
+  // until the new data arrives, instead of dropping back to "loading".
+  keepPreviousData?: boolean;
+}
+
 // Pass a memoized `load`: a new function means a new request. `reload` fetches
 // again and keeps showing the previous data until the new data arrives.
-export function useLoad<T>(load: () => Promise<T>) {
+export function useLoad<T>(
+  load: () => Promise<T>,
+  { keepPreviousData = false }: UseLoadOptions = {},
+) {
   const [result, setResult] = useState<LoadResult<T> | null>(null);
   const [attempt, setAttempt] = useState(0);
 
@@ -35,8 +44,16 @@ export function useLoad<T>(load: () => Promise<T>) {
   }, [load, attempt]);
 
   const reload = useCallback(() => setAttempt((current) => current + 1), []);
-  const state: LoadState<T> =
-    result?.load === load ? result.state : { status: "loading" };
 
-  return { state, reload };
+  const isCurrent = result?.load === load;
+  const previous = result?.state;
+  const showPrevious =
+    !isCurrent && keepPreviousData && previous?.status === "ready";
+  const state: LoadState<T> = isCurrent
+    ? result.state
+    : showPrevious
+      ? previous
+      : { status: "loading" };
+
+  return { state, reload, isStale: showPrevious };
 }

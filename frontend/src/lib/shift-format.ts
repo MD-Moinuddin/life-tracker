@@ -31,7 +31,7 @@ export function formatDay(date: string): string {
   return `${weekday} ${day} ${month}`;
 }
 
-export function formatWeekRange(from: string, to: string): string {
+export function formatDateRange(from: string, to: string): string {
   const start = parts(from);
   const end = parts(to);
   const startYear = start.year === end.year ? "" : ` ${start.year}`;

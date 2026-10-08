@@ -5,6 +5,7 @@ import { JobForm } from "../components/jobs/JobForm";
 import { JobList } from "../components/jobs/JobList";
 import { JobsEmptyState } from "../components/jobs/JobsEmptyState";
 import { AppShell } from "../components/layout/AppShell";
+import { LoadMessage } from "../components/LoadBoundary";
 import { Modal } from "../components/Modal";
 import { createJob, deleteJob, listJobs, updateJob } from "../lib/jobs-api";
 import type { JobInput, JobWithShiftCount } from "../lib/jobs-api";
@@ -72,13 +73,7 @@ export function JobsPage() {
         )}
       </div>
 
-      {status === "loading" && <p className="text-slate-600">Loading jobs…</p>}
-
-      {status === "error" && (
-        <p role="alert" className="text-red-600">
-          Could not load your jobs. Refresh the page to try again.
-        </p>
-      )}
+      {status !== "ready" && <LoadMessage status={status} noun="your jobs" />}
 
       {status === "ready" && (
         <>

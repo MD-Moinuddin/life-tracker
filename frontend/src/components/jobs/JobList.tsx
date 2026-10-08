@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { JobWithShiftCount } from "../../lib/jobs-api";
 import { formatEuro } from "../../lib/money";
+import { jobPath } from "../../lib/routes";
 import {
   COMPACT_BUTTON_CLASSES,
   COMPACT_DANGER_BUTTON_CLASSES,
@@ -24,7 +25,7 @@ export function JobList({ jobs, onEdit, onDelete }: JobListProps) {
         >
           <div>
             <Link
-              to={`/jobs/${job.id}`}
+              to={jobPath(job.id)}
               className="font-medium text-slate-900 after:absolute after:inset-0 focus-visible:outline-none"
             >
               {job.name}

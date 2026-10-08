@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
-import { localNow, stepPeriod, weekBounds } from "../lib/dates";
-import { formatMonth, formatWeekRange } from "../lib/shift-format";
+import { localNow } from "../lib/dates";
 import { getSummary } from "../lib/summary-api";
-import type { SummaryRange } from "../lib/summary-api";
+import { formatPeriod, stepPeriod } from "../lib/summary-period";
+import type { SummaryRange } from "../lib/summary-period";
 import { useLoad } from "./useLoad";
 
 export function useSummary() {
@@ -14,16 +14,13 @@ export function useSummary() {
     () => getSummary({ range, date, now }),
     [range, date, now],
   );
-  const { state } = useLoad(load);
-
-  const { from, to } = weekBounds(date);
-  const label =
-    range === "week" ? formatWeekRange(from, to) : formatMonth(date);
+  const { state, isStale } = useLoad(load, { keepPreviousData: true });
 
   return {
     state,
+    isStale,
     range,
-    label,
+    periodLabel: formatPeriod(range, date),
     setRange,
     previous: () => setDate((current) => stepPeriod(range, current, -1)),
     next: () => setDate((current) => stepPeriod(range, current, 1)),
