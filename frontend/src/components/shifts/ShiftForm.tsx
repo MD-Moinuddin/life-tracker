@@ -4,7 +4,7 @@ import { localNow } from "../../lib/dates";
 import { toFormErrors } from "../../lib/form-errors";
 import type { Job } from "../../lib/jobs-api";
 import type { ShiftInput } from "../../lib/shifts-api";
-import { FormField } from "../form/FormField";
+import { Field } from "../ui/Field";
 import {
   INPUT_CLASSES,
   PRIMARY_BUTTON_CLASSES,
@@ -126,7 +126,7 @@ export function ShiftForm({
         </div>
       )}
 
-      <FormField label="Job" errors={errors.jobId}>
+      <Field label="Job" errors={errors.jobId}>
         {(control) => (
           <select
             {...control}
@@ -143,9 +143,9 @@ export function ShiftForm({
             ))}
           </select>
         )}
-      </FormField>
+      </Field>
 
-      <FormField label="Date" errors={errors.date}>
+      <Field label="Date" errors={errors.date}>
         {(control) => (
           <input
             {...control}
@@ -157,10 +157,10 @@ export function ShiftForm({
             className={INPUT_CLASSES}
           />
         )}
-      </FormField>
+      </Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <FormField label="Start time" errors={errors.startTime}>
+        <Field label="Start time" errors={errors.startTime}>
           {(control) => (
             <input
               {...control}
@@ -172,9 +172,9 @@ export function ShiftForm({
               className={INPUT_CLASSES}
             />
           )}
-        </FormField>
+        </Field>
 
-        <FormField
+        <Field
           label="End time"
           hint={endsNextDay ? "This shift ends the next day." : undefined}
           errors={errors.endTime}
@@ -190,10 +190,10 @@ export function ShiftForm({
               className={INPUT_CLASSES}
             />
           )}
-        </FormField>
+        </Field>
       </div>
 
-      <FormField label="Break (minutes)" errors={errors.breakMinutes}>
+      <Field label="Break (minutes)" errors={errors.breakMinutes}>
         {(control) => (
           <input
             {...control}
@@ -207,9 +207,9 @@ export function ShiftForm({
             className={INPUT_CLASSES}
           />
         )}
-      </FormField>
+      </Field>
 
-      <FormField label="Notes (optional)" errors={errors.notes}>
+      <Field label="Notes (optional)" errors={errors.notes}>
         {(control) => (
           <textarea
             {...control}
@@ -221,7 +221,7 @@ export function ShiftForm({
             className={INPUT_CLASSES}
           />
         )}
-      </FormField>
+      </Field>
 
       <div className="flex gap-3">
         <button

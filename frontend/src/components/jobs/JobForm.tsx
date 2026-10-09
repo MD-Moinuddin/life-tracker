@@ -3,7 +3,7 @@ import type { FieldErrors } from "../../lib/api-client";
 import { toFormErrors } from "../../lib/form-errors";
 import type { JobInput, JobType } from "../../lib/jobs-api";
 import { parseEuroInput } from "../../lib/money";
-import { FormField } from "../form/FormField";
+import { Field } from "../ui/Field";
 import {
   INPUT_CLASSES,
   PRIMARY_BUTTON_CLASSES,
@@ -87,7 +87,7 @@ export function JobForm({
         </div>
       )}
 
-      <FormField label="Name" errors={errors.name}>
+      <Field label="Name" errors={errors.name}>
         {(control) => (
           <input
             {...control}
@@ -101,9 +101,9 @@ export function JobForm({
             className={INPUT_CLASSES}
           />
         )}
-      </FormField>
+      </Field>
 
-      <FormField label="Hourly rate (€)" errors={errors.hourlyRate}>
+      <Field label="Hourly rate (€)" errors={errors.hourlyRate}>
         {(control) => (
           <input
             {...control}
@@ -118,9 +118,9 @@ export function JobForm({
             className={INPUT_CLASSES}
           />
         )}
-      </FormField>
+      </Field>
 
-      <FormField label="Type" errors={errors.type}>
+      <Field label="Type" errors={errors.type}>
         {(control) => (
           <select
             {...control}
@@ -136,7 +136,7 @@ export function JobForm({
             ))}
           </select>
         )}
-      </FormField>
+      </Field>
 
       <div className="flex gap-3">
         <button
