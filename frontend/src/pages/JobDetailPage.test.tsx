@@ -80,8 +80,12 @@ describe("JobDetailPage", () => {
 
   it("is read-only: no Edit or Delete buttons on the shifts", async () => {
     renderPage();
-    await screen.findByRole("region", { name: "Upcoming" });
-    await screen.findAllByRole("listitem");
+    const upcoming = within(
+      await screen.findByRole("region", { name: "Upcoming" }),
+    );
+    const rows = await upcoming.findAllByRole("listitem");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.textContent).toContain("09:00");
 
     expect(screen.queryByRole("button", { name: /^Edit / })).toBeNull();
     expect(screen.queryByRole("button", { name: /^Delete / })).toBeNull();
