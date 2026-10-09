@@ -27,7 +27,7 @@ Dark mode (a later task), animations beyond simple transitions, charts, screensh
 
 ## 1. Foundation
 
-- All design values live in `frontend/src/index.css` under Tailwind's `@theme`, as semantic tokens: `--color-page`, `--color-surface`, `--color-text`, `--color-text-muted`, `--color-border`, `--color-accent`, `--color-success`, `--color-warning`, `--color-danger`, plus radius, shadow and font tokens. Pages and components use token-based utilities such as `bg-surface` and never raw colours such as `bg-white` or `text-slate-600`.
+- All design values live in `frontend/src/styles/tokens.css` under Tailwind's `@theme`, imported by `index.css`, as semantic tokens: `--color-page`, `--color-surface`, `--color-ink` (text, named `ink` so the utility reads `text-ink` and not `text-text`), `--color-ink-muted`, `--color-border`, `--color-accent`, `--color-success`, `--color-warning-*`, `--color-danger`, plus radius, shadow, font-size and font tokens. Pages and components use token-based utilities such as `bg-surface` and never raw colours such as `bg-white` or `text-slate-600`.
 - Starting palette: page `#F6F7FB`, surface `#FFFFFF`, text `#1B1F3B`, muted text `#5B6088`, border `#E6E8F0`, accent `#4F46E5`, success `#047857`, warning surface `#FFFBEB`, danger `#B91C1C`. Final values may move slightly to keep every text and background pair at WCAG AA contrast.
 - A unit test reads the token values and checks the contrast of each text and background pair the UI uses, so a later colour change cannot silently break contrast.
 - Type scale: page title 28, section heading 18, body 14, caption 12. Radius: 10 for controls, 14 to 16 for cards. One soft shadow token.
