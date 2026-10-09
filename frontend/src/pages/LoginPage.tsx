@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { FormStatus } from "../components/auth/FormStatus";
 import { LoginForm, type LoginFormValues } from "../components/auth/LoginForm";
 import { AuthLayout } from "../components/layout/AuthLayout";
+import { LINK_CLASSES } from "../components/ui/links";
 import { ApiError } from "../lib/api-client";
 import { login } from "../lib/auth-api";
 import { ROUTES } from "../lib/routes";
@@ -26,14 +27,11 @@ export function LoginPage() {
 
   return (
     <AuthLayout
-      title="Log in"
+      title="Welcome back"
       footer={
         <>
           Don&apos;t have an account?{" "}
-          <Link
-            to={ROUTES.signup}
-            className="rounded font-medium text-indigo-600 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-          >
+          <Link to={ROUTES.signup} className={LINK_CLASSES}>
             Sign up
           </Link>
         </>

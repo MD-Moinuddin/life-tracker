@@ -58,7 +58,7 @@ Migration rule: when a page moves to the new components, the class strings it us
 
 **App shell.** One top bar with the logo, the nav links and an account menu showing the user's name. The menu holds "Log out" (and later the dark mode switch) and replaces the separate Log out button. Active link: indigo text with an underline, with `aria-current="page"` as today. The skip-to-content link stays. On phones the links scroll horizontally under the logo.
 
-**Login and Signup.** A centred card on the page background with the logo and a short tagline, a "Welcome back" or "Create your account" heading, the password show/hide toggle, and errors shown in an `Alert` above the submit button.
+**Login and Signup.** A centred card on the page background with the logo and a short tagline, a "Welcome back" or "Create your account" heading, the password show/hide toggle, and errors shown in an `Alert` at the top of the card, above the form fields (as the old page did).
 
 **Dashboard.** A greeting by name. A "Week at a glance" card showing planned earnings and hours for the current week, with a link to the Summary page; it uses the existing summary request. If that request fails, the card shows a short message and the rest of the page still renders. Below it, the module cards: Work Schedule is a link card, the others are dimmed with a "Coming later" badge.
 
