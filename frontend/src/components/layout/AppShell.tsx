@@ -4,6 +4,7 @@ import { logout } from "../../lib/auth-api";
 import { ROUTES } from "../../lib/routes";
 import { useAuthStore } from "../../store/auth-store";
 import { AccountMenu } from "./AccountMenu";
+import { Brand } from "./Brand";
 
 interface AppShellProps {
   children: ReactNode;
@@ -51,13 +52,7 @@ export function AppShell({ children }: AppShellProps) {
       </a>
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 px-4 sm:px-6">
-          <span className="flex min-h-11 shrink-0 items-center gap-2 text-base font-bold tracking-tight text-ink">
-            <span
-              aria-hidden="true"
-              className="h-2.5 w-2.5 rotate-45 rounded-sm bg-accent"
-            />
-            Life Tracker
-          </span>
+          <Brand className="min-h-11 shrink-0 text-base" />
           <nav
             aria-label="Main"
             className="order-last -mx-4 w-[calc(100%+2rem)] overflow-x-auto px-4 py-1 md:order-none md:mx-0 md:w-auto md:flex-1 md:overflow-visible md:px-0 md:py-0"
