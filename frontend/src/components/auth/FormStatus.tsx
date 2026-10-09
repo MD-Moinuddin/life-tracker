@@ -1,19 +1,20 @@
+import { Alert } from "../ui/Alert";
+
 interface FormStatusProps {
   message: string | null;
 }
 
+// The wrapper is always on the page, so a screen reader announces the message
+// when it appears. The alert inside has no role of its own, to avoid two
+// announcements.
 export function FormStatus({ message }: FormStatusProps) {
   return (
-    <p
+    <div
       role="alert"
       aria-live="assertive"
-      className={
-        message
-          ? "mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-          : "sr-only"
-      }
+      className={message ? "mb-4" : "sr-only"}
     >
-      {message}
-    </p>
+      {message && <Alert tone="danger">{message}</Alert>}
+    </div>
   );
 }

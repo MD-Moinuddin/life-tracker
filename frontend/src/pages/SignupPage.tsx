@@ -6,6 +6,7 @@ import {
   type SignupFormValues,
 } from "../components/auth/SignupForm";
 import { AuthLayout } from "../components/layout/AuthLayout";
+import { LINK_CLASSES } from "../components/ui/links";
 import { ApiError } from "../lib/api-client";
 import { login, signup } from "../lib/auth-api";
 import { ROUTES } from "../lib/routes";
@@ -30,14 +31,11 @@ export function SignupPage() {
 
   return (
     <AuthLayout
-      title="Sign up"
+      title="Create your account"
       footer={
         <>
           Already have an account?{" "}
-          <Link
-            to={ROUTES.login}
-            className="rounded font-medium text-indigo-600 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-          >
+          <Link to={ROUTES.login} className={LINK_CLASSES}>
             Log in
           </Link>
         </>
