@@ -1,17 +1,17 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { FormField } from "./FormField";
+import { Field } from "./Field";
 
 function renderField(props: { hint?: string; errors?: string[] } = {}) {
   render(
-    <FormField label="Name" {...props}>
+    <Field label="Name" {...props}>
       {(control) => <input {...control} />}
-    </FormField>,
+    </Field>,
   );
   return screen.getByLabelText("Name");
 }
 
-describe("FormField", () => {
+describe("Field", () => {
   it("connects the label to the control", () => {
     const input = renderField();
 

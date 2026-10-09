@@ -6,19 +6,14 @@ interface ControlProps {
   "aria-describedby": string | undefined;
 }
 
-interface FormFieldProps {
+interface FieldProps {
   label: string;
   hint?: string;
   errors?: string[];
   children: (controlProps: ControlProps) => ReactNode;
 }
 
-export function FormField({
-  label,
-  hint,
-  errors = [],
-  children,
-}: FormFieldProps) {
+export function Field({ label, hint, errors = [], children }: FieldProps) {
   const controlId = useId();
   const hintId = useId();
   const errorId = useId();
@@ -31,7 +26,7 @@ export function FormField({
     <div>
       <label
         htmlFor={controlId}
-        className="mb-1 block text-sm font-medium text-slate-700"
+        className="mb-1 block text-sm font-medium text-ink"
       >
         {label}
       </label>
@@ -41,12 +36,12 @@ export function FormField({
         "aria-describedby": describedBy || undefined,
       })}
       {hint && (
-        <p id={hintId} className="mt-1 text-sm text-slate-600">
+        <p id={hintId} className="mt-1 text-sm text-ink-muted">
           {hint}
         </p>
       )}
       {hasErrors && (
-        <div id={errorId} role="alert" className="mt-1 text-sm text-red-600">
+        <div id={errorId} role="alert" className="mt-1 text-sm text-danger">
           {errors.map((message) => (
             <p key={message}>{message}</p>
           ))}
