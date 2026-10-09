@@ -1,0 +1,50 @@
+/*
+ * Design tokens for the Clean light theme. This is the only place colours,
+ * radii, shadows and type sizes are defined. Components use the generated
+ * utilities (bg-surface, text-ink, rounded-card, ...), never raw values.
+ * Dark mode will redefine these same names under a dark selector.
+ */
+@theme {
+  --font-sans:
+    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+
+  --color-page: #f6f7fb;
+  --color-surface: #ffffff;
+  --color-ink: #1b1f3b;
+  --color-ink-muted: #5b6088;
+  --color-border: #e6e8f0;
+  --color-border-strong: #d5d8ea;
+
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-soft: #e0e7ff;
+  --color-accent-ink: #3730a3;
+  --color-on-accent: #ffffff;
+
+  --color-success: #047857;
+  --color-success-soft: #d1fae5;
+  --color-success-ink: #065f46;
+
+  --color-warning-soft: #fffbeb;
+  --color-warning-border: #f59e0b;
+  --color-warning-ink: #78350f;
+
+  --color-danger: #b91c1c;
+  --color-danger-hover: #991b1b;
+  --color-danger-soft: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-danger-ink: #991b1b;
+
+  --color-neutral-soft: #eef0f7;
+
+  --radius-control: 0.625rem;
+  --radius-card: 1rem;
+
+  --shadow-card: 0 1px 3px rgb(30 40 90 / 0.07);
+
+  --text-title: 1.75rem;
+  --text-title--line-height: 2.25rem;
+  --text-section: 1.125rem;
+  --text-section--line-height: 1.75rem;
+}
