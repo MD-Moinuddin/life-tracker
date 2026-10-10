@@ -17,6 +17,7 @@ export function useSummary() {
   const { state, isStale } = useLoad(load, { keepPreviousData: true });
 
   return {
+    now,
     state,
     isStale,
     range,
