@@ -93,4 +93,29 @@ describe("ConfirmDelete", () => {
       await screen.findByText("Something went wrong. Please try again."),
     ).toBeDefined();
   });
+
+  it("shows a failure in the shared danger alert", async () => {
+    renderConfirm({
+      onConfirm: vi.fn().mockRejectedValue(new ApiError(404, "Job not found")),
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete job" }));
+
+    const message = await screen.findByText("Job not found");
+    expect(message.closest('[role="alert"]')?.className).toContain(
+      "bg-danger-soft",
+    );
+  });
+
+  it("makes the delete button the danger button", () => {
+    renderConfirm();
+
+    const solidDanger = /(^|\s)bg-danger(\s|$)/;
+    const deleteButton = screen.getByRole("button", { name: "Delete job" });
+    expect(deleteButton.className).toMatch(solidDanger);
+    expect(deleteButton.className).toContain("text-on-accent");
+    expect(
+      screen.getByRole("button", { name: "Cancel" }).className,
+    ).not.toMatch(solidDanger);
+  });
 });

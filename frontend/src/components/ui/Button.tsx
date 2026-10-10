@@ -2,7 +2,8 @@ import type { ComponentProps } from "react";
 import { classNames } from "../../lib/class-names";
 import { Spinner } from "../Spinner";
 
-export type ButtonVariant = "primary" | "secondary" | "danger";
+export type ButtonVariant =
+  "primary" | "secondary" | "danger" | "danger-outline";
 export type ButtonSize = "normal" | "compact";
 
 const BASE =
@@ -12,6 +13,8 @@ const VARIANTS: Record<ButtonVariant, string> = {
   primary: "bg-accent text-on-accent shadow-card hover:bg-accent-hover",
   secondary: "border border-border-strong bg-surface text-ink hover:bg-page",
   danger: "bg-danger text-on-accent hover:bg-danger-hover",
+  "danger-outline":
+    "border border-danger-border bg-surface text-danger hover:bg-danger-soft",
 };
 
 const SIZES: Record<ButtonSize, string> = {

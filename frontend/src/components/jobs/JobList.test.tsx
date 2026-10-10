@@ -52,6 +52,16 @@ describe("JobList", () => {
     expect(screen.getByText("€10.50 / hour")).toBeDefined();
   });
 
+  it("hides the separator between the rate and the shift count from screen readers", () => {
+    renderList();
+
+    const paragraph = screen.getByText("3 shifts").closest("p");
+    const separator = Array.from(
+      paragraph?.querySelectorAll("span") ?? [],
+    ).find((span) => span.textContent?.includes("·"));
+    expect(separator?.getAttribute("aria-hidden")).toBe("true");
+  });
+
   it("links each job's name to that job's page", () => {
     renderList();
 
@@ -79,5 +89,45 @@ describe("JobList", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
 
     expect(onDelete).toHaveBeenCalledWith(jobs[0]);
+  });
+
+  it("shows how many shifts each job has", () => {
+    renderList();
+
+    expect(screen.getByText("3 shifts")).toBeDefined();
+    expect(screen.getByText("0 shifts")).toBeDefined();
+  });
+
+  it("shows the job type as a badge in its own colour", () => {
+    renderList();
+
+    expect(screen.getByText("Part-time job").className).toContain(
+      "bg-success-soft",
+    );
+    expect(screen.getByText("Mini-job").className).toContain("bg-accent-soft");
+  });
+
+  it("makes Delete the quiet danger button and Edit the plain one", () => {
+    renderList();
+
+    expect(
+      screen.getByRole("button", { name: "Delete Warehouse" }).className,
+    ).toContain("text-danger");
+    expect(
+      screen.getByRole("button", { name: "Edit Warehouse" }).className,
+    ).not.toContain("text-danger");
+  });
+
+  it("draws each job as a card with the shared look", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <JobList jobs={jobs} onEdit={vi.fn()} onDelete={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    const card = container.querySelector("li");
+    expect(card?.className).toContain("rounded-card");
+    expect(card?.className).toContain("p-5");
+    expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);
   });
 });

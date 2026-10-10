@@ -3,13 +3,11 @@ import type { FieldErrors } from "../../lib/api-client";
 import { toFormErrors } from "../../lib/form-errors";
 import type { JobInput, JobType } from "../../lib/jobs-api";
 import { parseEuroInput } from "../../lib/money";
+import { Alert } from "../ui/Alert";
+import { Button } from "../ui/Button";
 import { Field } from "../ui/Field";
-import {
-  INPUT_CLASSES,
-  PRIMARY_BUTTON_CLASSES,
-  SECONDARY_BUTTON_CLASSES,
-} from "../form/form-styles";
-import { Spinner } from "../Spinner";
+import { Input } from "../ui/Input";
+import { Select } from "../ui/Select";
 import { JOB_TYPE_LABELS } from "./job-types";
 
 interface JobFormProps {
@@ -77,19 +75,16 @@ export function JobForm({
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
       {errors.form && (
-        <div
-          role="alert"
-          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-        >
+        <Alert tone="danger" role="alert">
           {errors.form.map((message) => (
             <p key={message}>{message}</p>
           ))}
-        </div>
+        </Alert>
       )}
 
       <Field label="Name" errors={errors.name}>
         {(control) => (
-          <input
+          <Input
             {...control}
             type="text"
             autoComplete="off"
@@ -98,14 +93,13 @@ export function JobForm({
             disabled={isSubmitting}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className={INPUT_CLASSES}
           />
         )}
       </Field>
 
       <Field label="Hourly rate (€)" errors={errors.hourlyRate}>
         {(control) => (
-          <input
+          <Input
             {...control}
             type="text"
             inputMode="decimal"
@@ -115,53 +109,39 @@ export function JobForm({
             disabled={isSubmitting}
             value={hourlyRate}
             onChange={(event) => setHourlyRate(event.target.value)}
-            className={INPUT_CLASSES}
           />
         )}
       </Field>
 
       <Field label="Type" errors={errors.type}>
         {(control) => (
-          <select
+          <Select
             {...control}
             disabled={isSubmitting}
             value={type}
             onChange={(event) => setType(event.target.value as JobType)}
-            className={INPUT_CLASSES}
           >
             {Object.entries(JOB_TYPE_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
             ))}
-          </select>
+          </Select>
         )}
       </Field>
 
       <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={PRIMARY_BUTTON_CLASSES}
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner />
-              Saving…
-            </>
-          ) : (
-            submitLabel
-          )}
-        </button>
+        <Button type="submit" loading={isSubmitting}>
+          {isSubmitting ? "Saving…" : submitLabel}
+        </Button>
         {onCancel && (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={onCancel}
             disabled={isSubmitting}
-            className={SECONDARY_BUTTON_CLASSES}
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
     </form>

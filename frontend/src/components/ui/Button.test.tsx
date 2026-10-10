@@ -99,6 +99,21 @@ describe("Button", () => {
 
     expect(screen.getByRole("button").getAttribute("aria-busy")).toBe("true");
   });
+
+  it("has a quiet danger variant with a red outline and red text", () => {
+    render(<Button variant="danger-outline">Delete</Button>);
+
+    const { className } = screen.getByRole("button");
+    expect(className).toContain("border-danger-border");
+    expect(className).toContain("text-danger");
+    expect(className).not.toContain("text-on-accent");
+  });
+
+  it("builds the quiet danger look with buttonClassName too", () => {
+    expect(buttonClassName("danger-outline", "compact")).toContain(
+      "text-danger",
+    );
+  });
 });
 
 describe("buttonClassName", () => {

@@ -1,10 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { toErrorMessage } from "../lib/form-errors";
-import {
-  DANGER_BUTTON_CLASSES,
-  SECONDARY_BUTTON_CLASSES,
-} from "./form/form-styles";
-import { Spinner } from "./Spinner";
+import { Alert } from "./ui/Alert";
+import { Button } from "./ui/Button";
 
 interface ConfirmDeleteProps {
   confirmLabel: string;
@@ -37,40 +34,20 @@ export function ConfirmDelete({
   return (
     <div className="space-y-4">
       {error && (
-        <p
-          role="alert"
-          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-        >
+        <Alert tone="danger" role="alert">
           {error}
-        </p>
+        </Alert>
       )}
 
-      <div className="space-y-2 text-sm text-slate-700">{children}</div>
+      <div className="space-y-2 text-sm text-ink">{children}</div>
 
       <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={isDeleting}
-          className={SECONDARY_BUTTON_CLASSES}
-        >
+        <Button variant="secondary" onClick={onCancel} disabled={isDeleting}>
           Cancel
-        </button>
-        <button
-          type="button"
-          onClick={handleConfirm}
-          disabled={isDeleting}
-          className={DANGER_BUTTON_CLASSES}
-        >
-          {isDeleting ? (
-            <>
-              <Spinner />
-              Deleting…
-            </>
-          ) : (
-            confirmLabel
-          )}
-        </button>
+        </Button>
+        <Button variant="danger" onClick={handleConfirm} loading={isDeleting}>
+          {isDeleting ? "Deleting…" : confirmLabel}
+        </Button>
       </div>
     </div>
   );

@@ -48,7 +48,38 @@ describe("PageHeader", () => {
   it("omits the subtitle and action when not given", () => {
     const { container } = render(<PageHeader title="Jobs" />);
 
-    expect(container.querySelectorAll("p")).toHaveLength(0);
+    expect(container.querySelector(".text-ink-muted")).toBeNull();
     expect(container.querySelectorAll("button")).toHaveLength(0);
+  });
+
+  it("is a header element, so the whole title row can be found from the heading", () => {
+    render(
+      <PageHeader title="Jobs" action={<button type="button">Add</button>} />,
+    );
+
+    const heading = screen.getByRole("heading", { level: 1, name: "Jobs" });
+    const row = heading.closest("header");
+    expect(row).not.toBeNull();
+    expect(row?.querySelector("button")).not.toBeNull();
+  });
+
+  it("can hold elements in the subtitle", () => {
+    render(
+      <PageHeader
+        title="Warehouse"
+        subtitle={
+          <>
+            <span>Part-time job</span>
+            <span>€12.00 / hour</span>
+          </>
+        }
+      />,
+    );
+
+    expect(screen.getByText("Part-time job")).toBeDefined();
+    expect(screen.getByText("€12.00 / hour")).toBeDefined();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Warehouse" }),
+    ).toBeDefined();
   });
 });

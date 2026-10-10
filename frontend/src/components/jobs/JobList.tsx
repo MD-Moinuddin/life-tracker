@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom";
+import { classNames } from "../../lib/class-names";
 import type { JobWithShiftCount } from "../../lib/jobs-api";
 import { formatEuro } from "../../lib/money";
+import { pluralize } from "../../lib/plural";
 import { jobPath } from "../../lib/routes";
-import {
-  COMPACT_BUTTON_CLASSES,
-  COMPACT_DANGER_BUTTON_CLASSES,
-  LIST_CLASSES,
-} from "../form/form-styles";
-import { JOB_TYPE_LABELS } from "./job-types";
+import { Button } from "../ui/Button";
+import { CARD_PADDING, cardClassName } from "../ui/Card";
+import { JobTypeBadge } from "./JobTypeBadge";
 
 interface JobListProps {
   jobs: JobWithShiftCount[];
@@ -15,47 +14,50 @@ interface JobListProps {
   onDelete: (job: JobWithShiftCount) => void;
 }
 
+const CARD_CLASSES = classNames(
+  CARD_PADDING,
+  "relative flex flex-wrap items-center justify-between gap-3",
+  "has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-accent",
+);
+
 export function JobList({ jobs, onEdit, onDelete }: JobListProps) {
   return (
-    <ul className={LIST_CLASSES}>
+    <ul className="grid gap-3">
       {jobs.map((job) => (
-        <li
-          key={job.id}
-          className="relative flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-slate-50 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-indigo-600"
-        >
-          <div>
-            <Link
-              to={jobPath(job.id)}
-              className="font-medium text-slate-900 after:absolute after:inset-0 focus-visible:outline-none"
-            >
-              {job.name}
-            </Link>
-            <p className="text-sm text-slate-600">
-              {JOB_TYPE_LABELS[job.type]}
+        <li key={job.id} className={cardClassName("interactive", CARD_CLASSES)}>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to={jobPath(job.id)}
+                className="font-semibold text-ink after:absolute after:inset-0 focus-visible:outline-none"
+              >
+                {job.name}
+              </Link>
+              <JobTypeBadge type={job.type} />
+            </div>
+            <p className="mt-1 text-sm text-ink-muted">
+              <span>{formatEuro(job.hourlyRate)} / hour</span>
+              <span aria-hidden="true"> · </span>
+              <span>{pluralize(job.shiftCount, "shift")}</span>
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <p className="text-sm font-medium text-slate-900">
-              {formatEuro(job.hourlyRate)} / hour
-            </p>
-            <div className="relative z-10 flex gap-2">
-              <button
-                type="button"
-                onClick={() => onEdit(job)}
-                aria-label={`Edit ${job.name}`}
-                className={COMPACT_BUTTON_CLASSES}
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => onDelete(job)}
-                aria-label={`Delete ${job.name}`}
-                className={COMPACT_DANGER_BUTTON_CLASSES}
-              >
-                Delete
-              </button>
-            </div>
+          <div className="relative z-10 flex gap-2">
+            <Button
+              variant="secondary"
+              size="compact"
+              onClick={() => onEdit(job)}
+              aria-label={`Edit ${job.name}`}
+            >
+              Edit
+            </Button>
+            <Button
+              variant="danger-outline"
+              size="compact"
+              onClick={() => onDelete(job)}
+              aria-label={`Delete ${job.name}`}
+            >
+              Delete
+            </Button>
           </div>
         </li>
       ))}

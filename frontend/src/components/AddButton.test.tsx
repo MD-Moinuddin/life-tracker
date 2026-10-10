@@ -17,4 +17,14 @@ describe("AddButton", () => {
 
     expect(onClick).toHaveBeenCalledTimes(1);
   });
+
+  it("shows a decorative plus icon before the label", () => {
+    const { container } = render(
+      <AddButton label="Add shift" onClick={vi.fn()} />,
+    );
+
+    expect(container.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
+      "true",
+    );
+  });
 });
