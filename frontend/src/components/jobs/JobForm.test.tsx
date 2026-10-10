@@ -151,4 +151,36 @@ describe("JobForm", () => {
 
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it("uses the shared controls and no raw palette colours", () => {
+    const { container } = render(
+      <JobForm submitLabel="Add job" onSubmit={vi.fn()} />,
+    );
+
+    expect(screen.getByLabelText("Name").className).toContain(
+      "rounded-control",
+    );
+    expect(screen.getByLabelText("Type").className).toContain(
+      "rounded-control",
+    );
+    expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);
+  });
+
+  it("shows the no-field error in the shared danger alert", async () => {
+    const onSubmit = vi
+      .fn()
+      .mockRejectedValue(new ApiError(404, "Job not found"));
+    renderForm({
+      onSubmit,
+      submitLabel: "Save changes",
+      initialValues: { name: "Cafe", hourlyRate: "10.50", type: "mini_job" },
+    });
+
+    submit("Save changes");
+
+    const message = await screen.findByText("Job not found");
+    expect(message.closest('[role="alert"]')?.className).toContain(
+      "bg-danger-soft",
+    );
+  });
 });
