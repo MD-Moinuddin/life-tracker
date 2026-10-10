@@ -39,7 +39,7 @@ function renderPage() {
 
 function titleRow() {
   const heading = screen.getByRole("heading", { level: 1, name: "Jobs" });
-  return within(heading.parentElement as HTMLElement);
+  return within(heading.closest("header") as HTMLElement);
 }
 
 function fillInAddForm(dialog: HTMLElement) {

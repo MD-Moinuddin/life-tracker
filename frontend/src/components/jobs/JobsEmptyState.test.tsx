@@ -18,4 +18,11 @@ describe("JobsEmptyState", () => {
 
     expect(onAdd).toHaveBeenCalledTimes(1);
   });
+
+  it("is built on the shared empty state", () => {
+    const { container } = render(<JobsEmptyState onAdd={vi.fn()} />);
+
+    expect(container.firstElementChild?.className).toContain("border-dashed");
+    expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);
+  });
 });
