@@ -50,4 +50,13 @@ describe("Modal", () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("uses the design tokens, not raw palette colours", () => {
+    renderModal(true);
+
+    const { className } = screen.getByRole("dialog");
+    expect(className).toContain("bg-surface");
+    expect(className).toContain("rounded-card");
+    expect(className).not.toMatch(/slate-|indigo-|red-/);
+  });
 });

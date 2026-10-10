@@ -28,9 +28,9 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
       ref={dialogRef}
       aria-labelledby={titleId}
       onClose={onClose}
-      className="m-auto w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-lg backdrop:bg-slate-900/50"
+      className="m-auto w-full max-w-md rounded-card border border-border bg-surface p-6 text-ink shadow-card backdrop:bg-ink/50"
     >
-      <h2 id={titleId} className="mb-4 text-lg font-semibold text-slate-900">
+      <h2 id={titleId} className="mb-4 text-section font-semibold text-ink">
         {title}
       </h2>
       {children}
