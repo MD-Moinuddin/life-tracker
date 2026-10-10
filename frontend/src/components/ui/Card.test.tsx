@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Link } from "react-router-dom";
 import { describe, expect, it } from "vitest";
-import { Card, cardClassName } from "./Card";
+import { Card, CARD_PADDING, cardClassName } from "./Card";
 
 describe("Card", () => {
   it("renders its children in a bordered surface", () => {
@@ -35,6 +35,34 @@ describe("Card", () => {
     const card = screen.getByTestId("card");
     expect(card.className).toContain("p-4");
     expect(card.className).toContain("bg-surface");
+  });
+
+  it("has no padding unless asked, so callers can choose their own", () => {
+    render(<Card>Bare</Card>);
+
+    expect(screen.getByText("Bare").className).not.toContain(CARD_PADDING);
+  });
+
+  it("adds the standard padding when padded", () => {
+    render(<Card padded>Padded</Card>);
+
+    expect(screen.getByText("Padded").className).toContain(CARD_PADDING);
+  });
+
+  it("keeps the standard padding next to extra classes", () => {
+    render(
+      <Card padded className="flex">
+        Both
+      </Card>,
+    );
+
+    const { className } = screen.getByText("Both");
+    expect(className).toContain(CARD_PADDING);
+    expect(className).toContain("flex");
+  });
+
+  it("exports the standard padding", () => {
+    expect(CARD_PADDING).toBe("p-5");
   });
 });
 

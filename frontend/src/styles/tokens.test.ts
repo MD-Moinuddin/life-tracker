@@ -37,6 +37,7 @@ const TEXT_PAIRS: [string, string][] = [
   ["success-ink", "success-soft"],
   ["warning-ink", "warning-soft"],
   ["danger", "surface"],
+  ["danger", "page"],
   ["danger-ink", "danger-soft"],
 ];
 

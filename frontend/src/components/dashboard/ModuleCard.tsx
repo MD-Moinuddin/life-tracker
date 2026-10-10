@@ -1,41 +1,43 @@
 import { Link } from "react-router-dom";
+import { classNames } from "../../lib/class-names";
+import { Badge } from "../ui/Badge";
+import { Card, CARD_PADDING, cardClassName } from "../ui/Card";
+import { Icon } from "../ui/Icon";
+import type { IconName } from "../ui/Icon";
 
 interface ModuleCardProps {
-  icon: string;
+  icon: IconName;
   title: string;
   to?: string;
 }
 
-const CARD_CLASSES =
-  "flex flex-col items-start gap-2 rounded-lg border border-slate-200 bg-white p-4";
+const LAYOUT = "flex flex-col items-start gap-3";
 
 export function ModuleCard({ icon, title, to }: ModuleCardProps) {
-  const content = (
-    <>
-      <span aria-hidden="true" className="text-3xl">
-        {icon}
-      </span>
-      <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-    </>
-  );
-
   if (to) {
     return (
       <Link
         to={to}
-        className={`${CARD_CLASSES} hover:border-indigo-300 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}
+        className={cardClassName(
+          "interactive",
+          classNames(CARD_PADDING, LAYOUT),
+        )}
       >
-        {content}
+        <span className="rounded-control bg-accent-soft p-2 text-accent-ink">
+          <Icon name={icon} />
+        </span>
+        <h3 className="text-base font-semibold text-ink">{title}</h3>
       </Link>
     );
   }
 
   return (
-    <div className={CARD_CLASSES}>
-      {content}
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-        Coming later
+    <Card padded className={LAYOUT}>
+      <span className="rounded-control bg-neutral-soft p-2 text-ink-muted">
+        <Icon name={icon} />
       </span>
-    </div>
+      <h3 className="text-base font-semibold text-ink-muted">{title}</h3>
+      <Badge>Coming later</Badge>
+    </Card>
   );
 }
