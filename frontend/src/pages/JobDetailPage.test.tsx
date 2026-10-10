@@ -55,10 +55,36 @@ describe("JobDetailPage", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Warehouse" }),
     ).toBeDefined();
-    expect(screen.getByText("Part-time job, €12.00 / hour")).toBeDefined();
+    expect(screen.getByText("Part-time job")).toBeDefined();
+    expect(screen.getByText("€12.00 / hour")).toBeDefined();
     expect(
       screen.getByRole("link", { name: "Back to jobs" }).getAttribute("href"),
     ).toBe("/jobs");
+  });
+
+  it("shows the type as a coloured badge and keeps the heading to the name only", async () => {
+    renderPage();
+
+    const heading = await screen.findByRole("heading", { level: 1 });
+    expect(heading.textContent).toBe("Warehouse");
+    expect(screen.getByText("Part-time job").className).toContain(
+      "bg-success-soft",
+    );
+  });
+
+  it("has a back link that is a comfortable tap target, and a header with no raw colours", async () => {
+    renderPage();
+
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Warehouse",
+    });
+    expect(
+      screen.getByRole("link", { name: "Back to jobs" }).className,
+    ).toContain("min-h-11");
+    expect(heading.closest("header")?.outerHTML).not.toMatch(
+      /slate-|indigo-|red-/,
+    );
   });
 
   it("shows only this job's shifts, as Upcoming and History", async () => {
