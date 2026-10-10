@@ -1,4 +1,5 @@
 import type { JobWithShiftCount } from "../../lib/jobs-api";
+import { pluralize } from "../../lib/plural";
 import { ConfirmDelete } from "../ConfirmDelete";
 
 interface DeleteJobConfirmationProps {
@@ -11,8 +12,7 @@ function describeShifts(count: number) {
   if (count === 0) {
     return "This job has no shifts.";
   }
-  const noun = count === 1 ? "shift" : "shifts";
-  return `Its ${count} logged ${noun} will be deleted too.`;
+  return `Its ${pluralize(count, "logged shift")} will be deleted too.`;
 }
 
 export function DeleteJobConfirmation({
