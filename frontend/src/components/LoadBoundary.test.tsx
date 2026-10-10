@@ -32,6 +32,24 @@ describe("LoadMessage", () => {
   });
 });
 
+describe("LoadMessage colours", () => {
+  it("uses the muted ink token for the loading message", () => {
+    render(<LoadMessage status="loading" noun="your jobs" />);
+
+    const el = screen.getByText("Loading your jobs…");
+    expect(el.className).toContain("text-ink-muted");
+    expect(el.className).not.toContain("slate-");
+  });
+
+  it("uses the danger token for the error message", () => {
+    render(<LoadMessage status="error" noun="your jobs" />);
+
+    const el = screen.getByRole("alert");
+    expect(el.className).toContain("text-danger");
+    expect(el.className).not.toContain("red-");
+  });
+});
+
 describe("LoadBoundary", () => {
   it("shows the loading message", () => {
     render(

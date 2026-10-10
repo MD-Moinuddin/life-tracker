@@ -16,10 +16,10 @@ export function LoadMessage({
   retryHint = DEFAULT_RETRY_HINT,
 }: LoadMessageProps) {
   if (status === "loading") {
-    return <p className="text-slate-600">{`Loading ${noun}…`}</p>;
+    return <p className="text-ink-muted">{`Loading ${noun}…`}</p>;
   }
   return (
-    <p role="alert" className="text-red-600">
+    <p role="alert" className="text-danger">
       {`Could not load ${noun}. ${retryHint}`}
     </p>
   );
