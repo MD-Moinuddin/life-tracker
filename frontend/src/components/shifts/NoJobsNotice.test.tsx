@@ -31,4 +31,25 @@ describe("NoJobsNotice", () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("styles the link as the primary button and Close as the secondary one", () => {
+    renderNotice();
+
+    expect(
+      screen.getByRole("link", { name: "Go to Jobs" }).className,
+    ).toContain("bg-accent");
+    expect(screen.getByRole("button", { name: "Close" }).className).toContain(
+      "border-border-strong",
+    );
+  });
+
+  it("uses no raw palette colours", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <NoJobsNotice onClose={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);
+  });
 });

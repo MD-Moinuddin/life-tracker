@@ -1,9 +1,6 @@
 import { Link } from "react-router-dom";
 import { ROUTES } from "../../lib/routes";
-import {
-  PRIMARY_BUTTON_CLASSES,
-  SECONDARY_BUTTON_CLASSES,
-} from "../form/form-styles";
+import { Button, buttonClassName } from "../ui/Button";
 
 interface NoJobsNoticeProps {
   onClose: () => void;
@@ -12,21 +9,17 @@ interface NoJobsNoticeProps {
 export function NoJobsNotice({ onClose }: NoJobsNoticeProps) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-700">
+      <p className="text-sm text-ink">
         You need a job before you can add a shift. Add your first job, then come
         back here.
       </p>
       <div className="flex gap-3">
-        <Link to={ROUTES.jobs} className={PRIMARY_BUTTON_CLASSES}>
+        <Link to={ROUTES.jobs} className={buttonClassName("primary")}>
           Go to Jobs
         </Link>
-        <button
-          type="button"
-          onClick={onClose}
-          className={SECONDARY_BUTTON_CLASSES}
-        >
+        <Button variant="secondary" onClick={onClose}>
           Close
-        </button>
+        </Button>
       </div>
     </div>
   );
