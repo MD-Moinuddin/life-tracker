@@ -31,6 +31,12 @@ export function formatDay(date: string): string {
   return `${weekday} ${day} ${month}`;
 }
 
+// The two parts a date tile shows: "Sat" over "3".
+export function formatTileDate(date: string): { weekday: string; day: number } {
+  const { weekday, day } = parts(date);
+  return { weekday: weekday ?? "", day };
+}
+
 export function formatDateRange(from: string, to: string): string {
   const start = parts(from);
   const end = parts(to);

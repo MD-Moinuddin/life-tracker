@@ -5,6 +5,7 @@ import {
   formatMonth,
   formatTimeRange,
   formatDateRange,
+  formatTileDate,
 } from "./shift-format";
 
 describe("formatDay", () => {
@@ -68,5 +69,12 @@ describe("formatMonth", () => {
   it("gives the month and year", () => {
     expect(formatMonth("2026-10-08")).toBe("Oct 2026");
     expect(formatMonth("2027-01-01")).toBe("Jan 2027");
+  });
+});
+
+describe("formatTileDate", () => {
+  it("gives the weekday and the day of the month", () => {
+    expect(formatTileDate("2026-10-03")).toEqual({ weekday: "Sat", day: 3 });
+    expect(formatTileDate("2026-12-28")).toEqual({ weekday: "Mon", day: 28 });
   });
 });
