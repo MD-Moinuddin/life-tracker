@@ -22,6 +22,10 @@ function section(name: string) {
   return within(screen.getByRole("region", { name }));
 }
 
+function renderSections() {
+  return render(<ShiftSections lists={makeLists()} />);
+}
+
 describe("ShiftSections", () => {
   it("shows the upcoming shifts, and a message for an empty history", () => {
     render(<ShiftSections lists={makeLists()} />);
@@ -76,5 +80,34 @@ describe("ShiftSections", () => {
 
     expect(section("Upcoming").getByText("Loading your shifts…")).toBeDefined();
     expect(section("History").getByRole("alert")).toBeDefined();
+  });
+
+  it("names the sections with the shared section heading", () => {
+    renderSections();
+
+    const upcoming = screen.getByRole("heading", {
+      level: 2,
+      name: "Upcoming",
+    });
+    expect(upcoming.className).toContain("text-section");
+    expect(upcoming.id).toBe("upcoming-heading");
+    expect(screen.getByRole("heading", { level: 2, name: "History" }).id).toBe(
+      "history-heading",
+    );
+  });
+
+  it("shows an empty section as the shared empty card", () => {
+    renderSections();
+
+    const message = section("History").getByText(
+      "No finished shifts in this week.",
+    );
+    expect(message.parentElement?.className).toContain("border-dashed");
+  });
+
+  it("uses no raw palette colours", () => {
+    const { container } = renderSections();
+
+    expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);
   });
 });
