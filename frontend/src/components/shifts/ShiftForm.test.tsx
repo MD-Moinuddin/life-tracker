@@ -220,4 +220,36 @@ describe("ShiftForm", () => {
 
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it("uses the shared controls and no raw palette colours", () => {
+    renderForm();
+
+    for (const label of [
+      "Job",
+      "Date",
+      "Start time",
+      "End time",
+      "Notes (optional)",
+    ]) {
+      expect(screen.getByLabelText(label).className).toContain(
+        "rounded-control",
+      );
+    }
+    expect(document.body.innerHTML).not.toMatch(/slate-|indigo-|red-/);
+  });
+
+  it("shows the no-field error in the shared danger alert", async () => {
+    const onSubmit = vi
+      .fn()
+      .mockRejectedValue(new ApiError(404, "Job not found"));
+    renderForm({ onSubmit });
+
+    fillValid();
+    submit();
+
+    const message = await screen.findByText("Job not found");
+    expect(message.closest('[role="alert"]')?.className).toContain(
+      "bg-danger-soft",
+    );
+  });
 });
