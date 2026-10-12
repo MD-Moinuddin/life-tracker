@@ -3,6 +3,7 @@ import { WeekGlanceCard } from "../components/dashboard/WeekGlanceCard";
 import { AppShell } from "../components/layout/AppShell";
 import type { IconName } from "../components/ui/Icon";
 import { PageHeader } from "../components/ui/PageHeader";
+import { SectionHeading } from "../components/ui/SectionHeading";
 import { useSummary } from "../hooks/useSummary";
 import { greeting } from "../lib/greeting";
 import { ROUTES } from "../lib/routes";
@@ -23,7 +24,7 @@ export function DashboardPage() {
     <AppShell>
       <PageHeader title={greeting(now, user?.name)} />
       <WeekGlanceCard state={state} />
-      <h2 className="mt-8 mb-4 text-section font-semibold text-ink">Modules</h2>
+      <SectionHeading className="mt-8 mb-4">Modules</SectionHeading>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {MODULES.map((module) => (
           <ModuleCard

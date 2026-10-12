@@ -52,11 +52,14 @@ describe("JobDetailPage", () => {
   it("shows the job's name, type and rate, with a link back to the jobs", async () => {
     renderPage();
 
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Warehouse" }),
-    ).toBeDefined();
-    expect(screen.getByText("Part-time job")).toBeDefined();
-    expect(screen.getByText("€12.00 / hour")).toBeDefined();
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Warehouse",
+    });
+    expect(heading).toBeDefined();
+    const header = within(heading.closest("header") as HTMLElement);
+    expect(header.getByText("Part-time job")).toBeDefined();
+    expect(header.getByText("€12.00 / hour")).toBeDefined();
     expect(
       screen.getByRole("link", { name: "Back to jobs" }).getAttribute("href"),
     ).toBe("/jobs");
@@ -67,9 +70,11 @@ describe("JobDetailPage", () => {
 
     const heading = await screen.findByRole("heading", { level: 1 });
     expect(heading.textContent).toBe("Warehouse");
-    expect(screen.getByText("Part-time job").className).toContain(
-      "bg-success-soft",
-    );
+    expect(
+      within(heading.closest("header") as HTMLElement).getByText(
+        "Part-time job",
+      ).className,
+    ).toContain("bg-success-soft");
   });
 
   it("has a back link that is a comfortable tap target, and a header with no raw colours", async () => {

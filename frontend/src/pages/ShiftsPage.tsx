@@ -4,6 +4,7 @@ import { ConfirmDelete } from "../components/ConfirmDelete";
 import { AppShell } from "../components/layout/AppShell";
 import { LoadBoundary } from "../components/LoadBoundary";
 import { Modal } from "../components/Modal";
+import { PageHeader } from "../components/ui/PageHeader";
 import { NoJobsNotice } from "../components/shifts/NoJobsNotice";
 import { ShiftForm } from "../components/shifts/ShiftForm";
 import { ShiftSections } from "../components/shifts/ShiftSections";
@@ -94,10 +95,12 @@ export function ShiftsPage() {
 
   return (
     <AppShell>
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-slate-900">Shifts</h1>
-        <AddButton label="Add shift" onClick={() => setIsAddOpen(true)} />
-      </div>
+      <PageHeader
+        title="Shifts"
+        action={
+          <AddButton label="Add shift" onClick={() => setIsAddOpen(true)} />
+        }
+      />
 
       <ShiftSections
         lists={lists}

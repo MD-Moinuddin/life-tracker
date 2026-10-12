@@ -9,6 +9,7 @@ import type { Summary } from "../../lib/summary-api";
 import { LoadBoundary } from "../LoadBoundary";
 import { Card } from "../ui/Card";
 import { LINK_CLASSES } from "../ui/links";
+import { SectionHeading } from "../ui/SectionHeading";
 
 interface WeekGlanceCardProps {
   state: LoadState<Summary>;
@@ -74,9 +75,7 @@ function WeekContent({ summary }: { summary: Summary }) {
 export function WeekGlanceCard({ state }: WeekGlanceCardProps) {
   return (
     <Card padded>
-      <h2 className="mb-1 text-section font-semibold text-ink">
-        Week at a glance
-      </h2>
+      <SectionHeading className="mb-1">Week at a glance</SectionHeading>
       <LoadBoundary state={state} noun="your week">
         {(summary) => <WeekContent summary={summary} />}
       </LoadBoundary>

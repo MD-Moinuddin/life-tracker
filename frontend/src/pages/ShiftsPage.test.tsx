@@ -88,6 +88,22 @@ beforeEach(() => {
 });
 
 describe("ShiftsPage", () => {
+  it("has the Add shift button in the page header next to the title", async () => {
+    mockShifts([]);
+
+    renderPage();
+
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Shifts",
+    });
+    expect(
+      within(heading.closest("header") as HTMLElement).getByRole("button", {
+        name: "Add shift",
+      }),
+    ).toBeDefined();
+  });
+
   it("asks for shifts from yesterday on, and for the current week", async () => {
     mockShifts([]);
 

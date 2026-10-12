@@ -4,6 +4,8 @@ import { formatDateRange } from "../../lib/shift-format";
 import type { Shift } from "../../lib/shifts-api";
 import { LoadBoundary } from "../LoadBoundary";
 import { PeriodNavigator } from "../PeriodNavigator";
+import { EmptyState } from "../ui/EmptyState";
+import { SectionHeading } from "../ui/SectionHeading";
 import { ShiftList } from "./ShiftList";
 
 interface ShiftsBlockProps {
@@ -23,7 +25,7 @@ function ShiftsBlock({
     <LoadBoundary state={state} noun="your shifts">
       {(shifts) =>
         shifts.length === 0 ? (
-          <p className="text-slate-600">{emptyMessage}</p>
+          <EmptyState>{emptyMessage}</EmptyState>
         ) : (
           <ShiftList shifts={shifts} onEdit={onEdit} onDelete={onDelete} />
         )
@@ -42,12 +44,9 @@ export function ShiftSections({ lists, onEdit, onDelete }: ShiftSectionsProps) {
   return (
     <>
       <section aria-labelledby="upcoming-heading" className="mb-8">
-        <h2
-          id="upcoming-heading"
-          className="mb-3 text-lg font-medium text-slate-700"
-        >
+        <SectionHeading id="upcoming-heading" className="mb-3">
           Upcoming
-        </h2>
+        </SectionHeading>
         <ShiftsBlock
           state={lists.upcoming}
           emptyMessage="No upcoming shifts."
@@ -57,12 +56,9 @@ export function ShiftSections({ lists, onEdit, onDelete }: ShiftSectionsProps) {
       </section>
 
       <section aria-labelledby="history-heading">
-        <h2
-          id="history-heading"
-          className="mb-3 text-lg font-medium text-slate-700"
-        >
+        <SectionHeading id="history-heading" className="mb-3">
           History
-        </h2>
+        </SectionHeading>
         <PeriodNavigator
           label={formatDateRange(lists.weekStart, lists.weekEnd)}
           unit="week"

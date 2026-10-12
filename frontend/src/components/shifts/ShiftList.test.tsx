@@ -76,4 +76,40 @@ describe("ShiftList", () => {
 
     expect(screen.queryByRole("button")).toBeNull();
   });
+
+  it("shows a date tile with the weekday over the day number", () => {
+    renderList([makeShift()]);
+
+    expect(screen.getByText("Sat")).toBeDefined();
+    expect(screen.getByText("3")).toBeDefined();
+  });
+
+  it("shows the job's type as a badge next to its name", () => {
+    renderList([makeShift()]);
+
+    expect(screen.getByText("Part-time job").className).toContain(
+      "bg-success-soft",
+    );
+  });
+
+  it("draws Edit as a plain button and Delete as the quiet danger button", () => {
+    renderList([makeShift()], { onEdit: vi.fn(), onDelete: vi.fn() });
+
+    expect(screen.getByRole("button", { name: /^Edit / }).className).toContain(
+      "border-border-strong",
+    );
+    expect(
+      screen.getByRole("button", { name: /^Delete / }).className,
+    ).toContain("text-danger");
+  });
+
+  it("draws the rows as one card with dividers and no raw palette colours", () => {
+    const { container } = render(
+      <ShiftList shifts={[makeShift({ id: "a" }), makeShift({ id: "b" })]} />,
+    );
+
+    expect(container.querySelector("ul")?.className).toContain("rounded-card");
+    expect(container.querySelector("ul")?.className).toContain("divide-y");
+    expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);
+  });
 });

@@ -1,4 +1,5 @@
-import { COMPACT_BUTTON_CLASSES } from "./form/form-styles";
+import { Button } from "./ui/Button";
+import { Icon } from "./ui/Icon";
 
 interface PeriodNavigatorProps {
   label: string;
@@ -18,27 +19,25 @@ export function PeriodNavigator({
 }: PeriodNavigatorProps) {
   return (
     <div className="mb-3 flex items-center justify-between gap-2">
-      <button
-        type="button"
-        onClick={onPrevious}
-        className={COMPACT_BUTTON_CLASSES}
-      >
+      <Button variant="secondary" size="compact" onClick={onPrevious}>
+        <Icon name="chevron-left" className="h-4 w-4" />
         {`Previous ${unit}`}
-      </button>
+      </Button>
       <p
         aria-live="polite"
-        className="min-w-[10rem] text-center text-sm font-medium text-slate-700"
+        className="min-w-[10rem] text-center text-sm font-medium text-ink"
       >
         {label}
       </p>
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="compact"
         onClick={onNext}
         disabled={!canGoNext}
-        className={`${COMPACT_BUTTON_CLASSES} disabled:cursor-not-allowed disabled:opacity-50`}
       >
         {`Next ${unit}`}
-      </button>
+        <Icon name="chevron-right" className="h-4 w-4" />
+      </Button>
     </div>
   );
 }

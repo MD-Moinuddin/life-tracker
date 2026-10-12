@@ -73,4 +73,35 @@ describe("PeriodNavigator", () => {
     const next = screen.getByRole("button", { name: "Next month" });
     expect((next as HTMLButtonElement).disabled).toBe(false);
   });
+
+  it("draws the buttons as shared secondary buttons with decorative chevrons", () => {
+    const { container } = render(
+      <PeriodNavigator
+        label="Oct 2026"
+        unit="month"
+        onPrevious={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    const previous = screen.getByRole("button", { name: "Previous month" });
+    expect(previous.className).toContain("border-border-strong");
+    expect(container.querySelectorAll("svg")).toHaveLength(2);
+    for (const icon of container.querySelectorAll("svg")) {
+      expect(icon.getAttribute("aria-hidden")).toBe("true");
+    }
+  });
+
+  it("uses no raw palette colours", () => {
+    const { container } = render(
+      <PeriodNavigator
+        label="Oct 2026"
+        unit="month"
+        onPrevious={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);
+  });
 });

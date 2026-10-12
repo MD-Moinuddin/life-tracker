@@ -4,13 +4,12 @@ import { localNow } from "../../lib/dates";
 import { toFormErrors } from "../../lib/form-errors";
 import type { Job } from "../../lib/jobs-api";
 import type { ShiftInput } from "../../lib/shifts-api";
+import { Alert } from "../ui/Alert";
+import { Button } from "../ui/Button";
 import { Field } from "../ui/Field";
-import {
-  INPUT_CLASSES,
-  PRIMARY_BUTTON_CLASSES,
-  SECONDARY_BUTTON_CLASSES,
-} from "../form/form-styles";
-import { Spinner } from "../Spinner";
+import { Input } from "../ui/Input";
+import { Select } from "../ui/Select";
+import { Textarea } from "../ui/Textarea";
 
 interface ShiftFormProps {
   jobs: Pick<Job, "id" | "name">[];
@@ -116,24 +115,20 @@ export function ShiftForm({
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
       {errors.form && (
-        <div
-          role="alert"
-          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-        >
+        <Alert tone="danger" role="alert">
           {errors.form.map((message) => (
             <p key={message}>{message}</p>
           ))}
-        </div>
+        </Alert>
       )}
 
       <Field label="Job" errors={errors.jobId}>
         {(control) => (
-          <select
+          <Select
             {...control}
             disabled={isSubmitting}
             value={values.jobId}
             onChange={(event) => setField("jobId", event.target.value)}
-            className={INPUT_CLASSES}
           >
             <option value="">Choose a job</option>
             {jobs.map((job) => (
@@ -141,20 +136,19 @@ export function ShiftForm({
                 {job.name}
               </option>
             ))}
-          </select>
+          </Select>
         )}
       </Field>
 
       <Field label="Date" errors={errors.date}>
         {(control) => (
-          <input
+          <Input
             {...control}
             type="date"
             required
             disabled={isSubmitting}
             value={values.date}
             onChange={(event) => setField("date", event.target.value)}
-            className={INPUT_CLASSES}
           />
         )}
       </Field>
@@ -162,14 +156,13 @@ export function ShiftForm({
       <div className="grid grid-cols-2 gap-4">
         <Field label="Start time" errors={errors.startTime}>
           {(control) => (
-            <input
+            <Input
               {...control}
               type="time"
               required
               disabled={isSubmitting}
               value={values.startTime}
               onChange={(event) => setField("startTime", event.target.value)}
-              className={INPUT_CLASSES}
             />
           )}
         </Field>
@@ -180,14 +173,13 @@ export function ShiftForm({
           errors={errors.endTime}
         >
           {(control) => (
-            <input
+            <Input
               {...control}
               type="time"
               required
               disabled={isSubmitting}
               value={values.endTime}
               onChange={(event) => setField("endTime", event.target.value)}
-              className={INPUT_CLASSES}
             />
           )}
         </Field>
@@ -195,7 +187,7 @@ export function ShiftForm({
 
       <Field label="Break (minutes)" errors={errors.breakMinutes}>
         {(control) => (
-          <input
+          <Input
             {...control}
             type="number"
             inputMode="numeric"
@@ -204,49 +196,35 @@ export function ShiftForm({
             disabled={isSubmitting}
             value={values.breakMinutes}
             onChange={(event) => setField("breakMinutes", event.target.value)}
-            className={INPUT_CLASSES}
           />
         )}
       </Field>
 
       <Field label="Notes (optional)" errors={errors.notes}>
         {(control) => (
-          <textarea
+          <Textarea
             {...control}
             rows={3}
             maxLength={500}
             disabled={isSubmitting}
             value={values.notes}
             onChange={(event) => setField("notes", event.target.value)}
-            className={INPUT_CLASSES}
           />
         )}
       </Field>
 
       <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={PRIMARY_BUTTON_CLASSES}
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner />
-              Saving…
-            </>
-          ) : (
-            submitLabel
-          )}
-        </button>
+        <Button type="submit" loading={isSubmitting}>
+          {isSubmitting ? "Saving…" : submitLabel}
+        </Button>
         {onCancel && (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={onCancel}
             disabled={isSubmitting}
-            className={SECONDARY_BUTTON_CLASSES}
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
     </form>
