@@ -51,6 +51,14 @@ describe("Modal", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("draws its title with the shared section heading", () => {
+    renderModal(true);
+
+    const title = screen.getByRole("heading", { level: 2, name: "Edit job" });
+    expect(title.className).toContain("text-section");
+    expect(title.className).toContain("mb-4");
+  });
+
   it("uses the design tokens, not raw palette colours", () => {
     renderModal(true);
 

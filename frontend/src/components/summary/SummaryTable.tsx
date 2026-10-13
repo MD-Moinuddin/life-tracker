@@ -1,75 +1,54 @@
 import { formatEuro } from "../../lib/money";
 import { formatDateRange, formatDuration } from "../../lib/shift-format";
 import type { Summary } from "../../lib/summary-api";
+import { JobTypeBadge } from "../jobs/JobTypeBadge";
+import { Cell, HeaderCell, RowHeader, Table } from "../ui/Table";
 
 interface SummaryTableProps {
   summary: Summary;
 }
 
-const HEADER_CELL = "px-3 py-2 text-right font-medium";
-const NUMBER_CELL = "px-3 py-2 text-right tabular-nums";
-
 export function SummaryTable({ summary }: SummaryTableProps) {
   const { jobs, totals } = summary;
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-      <table className="w-full text-sm text-slate-900">
-        <caption className="px-3 py-2 text-left text-slate-700">
-          {`Hours and earnings per job, ${formatDateRange(summary.from, summary.to)}. Earned counts finished shifts, planned counts every shift in the period.`}
-        </caption>
-        <thead className="border-y border-slate-200 bg-slate-50 text-slate-700">
-          <tr>
-            <th scope="col" className="px-3 py-2 text-left font-medium">
-              Job
-            </th>
-            <th scope="col" className={HEADER_CELL}>
-              Earned hours
-            </th>
-            <th scope="col" className={HEADER_CELL}>
-              Earned
-            </th>
-            <th scope="col" className={HEADER_CELL}>
-              Planned hours
-            </th>
-            <th scope="col" className={HEADER_CELL}>
-              Planned
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200">
-          {jobs.map((job) => (
-            <tr key={job.jobId}>
-              <th scope="row" className="px-3 py-2 text-left font-medium">
+    <Table
+      caption={`Hours and earnings per job, ${formatDateRange(summary.from, summary.to)}. Earned counts finished shifts, planned counts every shift in the period.`}
+    >
+      <thead>
+        <tr>
+          <HeaderCell>Job</HeaderCell>
+          <HeaderCell align="right">Earned hours</HeaderCell>
+          <HeaderCell align="right">Earned</HeaderCell>
+          <HeaderCell align="right">Planned hours</HeaderCell>
+          <HeaderCell align="right">Planned</HeaderCell>
+        </tr>
+      </thead>
+      <tbody>
+        {jobs.map((job) => (
+          <tr key={job.jobId}>
+            <RowHeader>
+              <span className="flex flex-wrap items-center gap-2">
                 {job.name}
-              </th>
-              <td className={NUMBER_CELL}>
-                {formatDuration(job.earnedMinutes)}
-              </td>
-              <td className={NUMBER_CELL}>{formatEuro(job.earnedAmount)}</td>
-              <td className={NUMBER_CELL}>
-                {formatDuration(job.plannedMinutes)}
-              </td>
-              <td className={NUMBER_CELL}>{formatEuro(job.plannedAmount)}</td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot className="border-t border-slate-300 bg-slate-50 font-semibold">
-          <tr>
-            <th scope="row" className="px-3 py-2 text-left">
-              Total
-            </th>
-            <td className={NUMBER_CELL}>
-              {formatDuration(totals.earnedMinutes)}
-            </td>
-            <td className={NUMBER_CELL}>{formatEuro(totals.earnedAmount)}</td>
-            <td className={NUMBER_CELL}>
-              {formatDuration(totals.plannedMinutes)}
-            </td>
-            <td className={NUMBER_CELL}>{formatEuro(totals.plannedAmount)}</td>
+                <JobTypeBadge type={job.type} />
+              </span>
+            </RowHeader>
+            <Cell align="right">{formatDuration(job.earnedMinutes)}</Cell>
+            <Cell align="right">{formatEuro(job.earnedAmount)}</Cell>
+            <Cell align="right">{formatDuration(job.plannedMinutes)}</Cell>
+            <Cell align="right">{formatEuro(job.plannedAmount)}</Cell>
           </tr>
-        </tfoot>
-      </table>
-    </div>
+        ))}
+      </tbody>
+      <tfoot>
+        <tr>
+          <RowHeader>Total</RowHeader>
+          <Cell align="right">{formatDuration(totals.earnedMinutes)}</Cell>
+          <Cell align="right">{formatEuro(totals.earnedAmount)}</Cell>
+          <Cell align="right">{formatDuration(totals.plannedMinutes)}</Cell>
+          <Cell align="right">{formatEuro(totals.plannedAmount)}</Cell>
+        </tr>
+      </tfoot>
+    </Table>
   );
 }

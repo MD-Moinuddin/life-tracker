@@ -60,6 +60,7 @@ export function ShiftSections({ lists, onEdit, onDelete }: ShiftSectionsProps) {
           History
         </SectionHeading>
         <PeriodNavigator
+          className="mb-3"
           label={formatDateRange(lists.weekStart, lists.weekEnd)}
           unit="week"
           canGoNext={lists.canGoNext}

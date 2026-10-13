@@ -3,6 +3,8 @@ import { LoadBoundary } from "../components/LoadBoundary";
 import { MiniJobWarning } from "../components/summary/MiniJobWarning";
 import { SummaryControls } from "../components/summary/SummaryControls";
 import { SummaryTable } from "../components/summary/SummaryTable";
+import { EmptyState } from "../components/ui/EmptyState";
+import { PageHeader } from "../components/ui/PageHeader";
 import { useSummary } from "../hooks/useSummary";
 
 export function SummaryPage() {
@@ -11,7 +13,7 @@ export function SummaryPage() {
 
   return (
     <AppShell>
-      <h1 className="mb-4 text-2xl font-semibold text-slate-900">Summary</h1>
+      <PageHeader title="Summary" />
 
       <SummaryControls
         range={summary.range}
@@ -28,7 +30,7 @@ export function SummaryPage() {
       <LoadBoundary state={state} noun="your summary">
         {(data) =>
           data.jobs.length === 0 ? (
-            <p className="text-slate-600">No shifts in this period.</p>
+            <EmptyState icon="calendar">No shifts in this period.</EmptyState>
           ) : (
             <div
               aria-busy={summary.isStale}

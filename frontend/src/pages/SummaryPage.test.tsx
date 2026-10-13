@@ -60,6 +60,16 @@ describe("SummaryPage", () => {
     });
   });
 
+  it("lets the period navigator fill the row on a phone", async () => {
+    renderPage();
+    await screen.findByText("Warehouse");
+
+    const row = screen.getByRole("button", {
+      name: "Previous week",
+    }).parentElement;
+    expect(row?.className).toContain("max-sm:w-full");
+  });
+
   it("goes to the previous and next week", async () => {
     renderPage();
     await screen.findByText("Warehouse");
@@ -112,6 +122,24 @@ describe("SummaryPage", () => {
     renderPage();
 
     expect(await screen.findByText("No shifts in this period.")).toBeDefined();
+  });
+
+  it("has the page title in the shared header", async () => {
+    renderPage();
+
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Summary",
+    });
+    expect(heading.closest("header")).not.toBeNull();
+  });
+
+  it("shows an empty period as the shared empty card", async () => {
+    vi.mocked(getSummary).mockResolvedValue({ ...summary, jobs: [] });
+    renderPage();
+
+    const message = await screen.findByText("No shifts in this period.");
+    expect(message.parentElement?.className).toContain("border-dashed");
   });
 
   it("shows an error when the summary cannot be loaded", async () => {

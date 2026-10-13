@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { SectionHeading } from "./ui/SectionHeading";
 
 interface ModalProps {
   open: boolean;
@@ -30,9 +31,9 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
       onClose={onClose}
       className="m-auto w-full max-w-md rounded-card border border-border bg-surface p-6 text-ink shadow-card backdrop:bg-ink/50"
     >
-      <h2 id={titleId} className="mb-4 text-section font-semibold text-ink">
+      <SectionHeading id={titleId} className="mb-4">
         {title}
-      </h2>
+      </SectionHeading>
       {children}
     </dialog>
   );
