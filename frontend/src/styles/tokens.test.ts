@@ -32,6 +32,8 @@ const TEXT_PAIRS: [string, string][] = [
   ["accent", "surface"],
   ["accent", "page"],
   ["accent", "accent-soft"],
+  ["accent-hover", "surface"],
+  ["accent-hover", "page"],
   ["accent-ink", "accent-soft"],
   ["success", "surface"],
   ["success-ink", "success-soft"],
@@ -42,10 +44,32 @@ const TEXT_PAIRS: [string, string][] = [
   ["danger-ink", "danger-soft"],
 ];
 
+// [UI component colour, neighbouring colour]. Boundaries and indicators of
+// controls need 3:1 (WCAG 1.4.11 non-text contrast).
+const NON_TEXT_PAIRS: [string, string][] = [
+  ["control-border", "surface"],
+  ["control-border", "page"],
+  ["control-border", "neutral-soft"],
+  ["accent", "page"],
+  ["accent", "surface"],
+  ["accent", "neutral-soft"],
+  ["danger", "surface"],
+  ["danger", "page"],
+];
+
 describe("design tokens", () => {
   it.each(TEXT_PAIRS)("%s text on %s meets WCAG AA (4.5:1)", (text, bg) => {
     expect(contrastRatio(color(text), color(bg))).toBeGreaterThanOrEqual(4.5);
   });
+
+  it.each(NON_TEXT_PAIRS)(
+    "%s against %s meets WCAG non-text contrast (3:1)",
+    (component, neighbour) => {
+      expect(
+        contrastRatio(color(component), color(neighbour)),
+      ).toBeGreaterThanOrEqual(3);
+    },
+  );
 
   it("finds every token it is asked about", () => {
     expect(() => color("does-not-exist")).toThrow(/not found/);

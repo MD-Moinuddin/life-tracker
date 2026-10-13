@@ -11,7 +11,7 @@ describe("Input", () => {
     const input = screen.getByLabelText("Name");
     expect(input.tagName).toBe("INPUT");
     expect(input.className).toContain("rounded-control");
-    expect(input.className).toContain("border-border-strong");
+    expect(input.className).toContain("border-control-border");
     expect(input.className).toContain("min-h-11");
   });
 
@@ -62,7 +62,7 @@ describe("Textarea", () => {
     const textarea = screen.getByLabelText("Notes");
     expect(textarea.tagName).toBe("TEXTAREA");
     expect(textarea.className).toContain("rounded-control");
-    expect(textarea.className).toContain("border-border-strong");
+    expect(textarea.className).toContain("border-control-border");
     expect(textarea.className).toContain("resize-y");
   });
 
