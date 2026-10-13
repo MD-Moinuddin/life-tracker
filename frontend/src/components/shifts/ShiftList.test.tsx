@@ -88,7 +88,7 @@ describe("ShiftList", () => {
     renderList([makeShift()]);
 
     expect(screen.getByText("Part-time job").className).toContain(
-      "bg-success-soft",
+      "bg-neutral-soft",
     );
   });
 

@@ -92,7 +92,7 @@ describe("SummaryTable", () => {
     render(<SummaryTable summary={summary} />);
 
     expect(screen.getByText("Part-time job").className).toContain(
-      "bg-success-soft",
+      "bg-neutral-soft",
     );
     expect(screen.getByText("Mini-job").className).toContain("bg-accent-soft");
     expect(screen.getByRole("rowheader", { name: /Warehouse/ })).toBeDefined();

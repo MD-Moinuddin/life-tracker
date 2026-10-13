@@ -3,6 +3,7 @@ import { formatDateRange, formatDuration } from "../../lib/shift-format";
 import type { Summary } from "../../lib/summary-api";
 import { JobTypeBadge } from "../jobs/JobTypeBadge";
 import { Cell, HeaderCell, RowHeader, Table } from "../ui/Table";
+import { SUMMARY_EXPLANATION } from "./summary-copy";
 
 interface SummaryTableProps {
   summary: Summary;
@@ -13,7 +14,7 @@ export function SummaryTable({ summary }: SummaryTableProps) {
 
   return (
     <Table
-      caption={`Hours and earnings per job, ${formatDateRange(summary.from, summary.to)}. Earned counts finished shifts, planned counts every shift in the period.`}
+      caption={`Hours and earnings per job, ${formatDateRange(summary.from, summary.to)}. ${SUMMARY_EXPLANATION}`}
     >
       <thead>
         <tr>

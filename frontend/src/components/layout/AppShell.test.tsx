@@ -103,6 +103,13 @@ describe("AppShell layout", () => {
     expect(screen.getByText("content")).toBeDefined();
   });
 
+  it("links the brand to the dashboard", () => {
+    renderAt("/shifts");
+
+    const brand = screen.getByRole("link", { name: "Life Tracker" });
+    expect(brand.getAttribute("href")).toBe("/dashboard");
+  });
+
   it("has a skip link that targets the main content", () => {
     renderAt("/dashboard");
 

@@ -18,16 +18,17 @@
   /* Visible edge of a form control. Needs 3:1 on surface, page and neutral-soft. */
   --color-control-border: #7d83a6;
 
-  --color-accent: #4f46e5;
-  --color-accent-hover: #4338ca;
-  --color-accent-soft: #e0e7ff;
-  --color-accent-ink: #3730a3;
+  --color-accent: #0f766e;
+  --color-accent-hover: #115e59;
+  --color-accent-soft: #ccfbf1;
+  --color-accent-ink: #134e4a;
   --color-on-accent: #ffffff;
 
   --color-success: #047857;
   --color-success-soft: #d1fae5;
   --color-success-ink: #065f46;
 
+  --color-warning: #b45309;
   --color-warning-soft: #fffbeb;
   --color-warning-border: #f59e0b;
   --color-warning-ink: #78350f;

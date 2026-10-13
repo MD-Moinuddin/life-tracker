@@ -198,6 +198,7 @@ describe("accessibility", () => {
     fireEvent.click(screen.getByRole("button", { name: "Month" }));
     await screen.findByText("Mini-job warning.");
     await screen.findByRole("region", { name: /Hours and earnings per job/ });
+    await screen.findByRole("progressbar", { name: /mini-job earnings/i });
     expect((await axe(container)).violations).toHaveLength(0);
   });
 

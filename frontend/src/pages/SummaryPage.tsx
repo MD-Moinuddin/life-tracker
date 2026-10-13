@@ -1,7 +1,9 @@
 import { AppShell } from "../components/layout/AppShell";
 import { LoadBoundary } from "../components/LoadBoundary";
+import { MiniJobLimit } from "../components/summary/MiniJobLimit";
 import { MiniJobWarning } from "../components/summary/MiniJobWarning";
 import { SummaryControls } from "../components/summary/SummaryControls";
+import { SummaryCards } from "../components/summary/SummaryCards";
 import { SummaryTable } from "../components/summary/SummaryTable";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -36,7 +38,13 @@ export function SummaryPage() {
               aria-busy={summary.isStale}
               className={summary.isStale ? "opacity-60" : undefined}
             >
-              <SummaryTable summary={data} />
+              <MiniJobLimit summary={data} />
+              <div className="hidden sm:block">
+                <SummaryTable summary={data} />
+              </div>
+              <div className="sm:hidden">
+                <SummaryCards summary={data} />
+              </div>
             </div>
           )
         }
