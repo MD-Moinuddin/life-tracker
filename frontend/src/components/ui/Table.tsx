@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { classNames } from "../../lib/class-names";
 import { cardClassName } from "./Card";
 
@@ -15,10 +15,18 @@ interface TableProps {
 }
 
 export function Table({ caption, children }: TableProps) {
+  const captionId = useId();
   return (
-    <div className={cardClassName("plain", "overflow-x-auto")}>
+    <div
+      role="region"
+      aria-labelledby={captionId}
+      // A scrollable region must be focusable so keyboard users can scroll it.
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+      tabIndex={0}
+      className={cardClassName("plain", "overflow-x-auto")}
+    >
       <table className="w-full text-sm text-ink [&_tbody]:divide-y [&_tbody_th]:font-medium [&_tbody]:divide-border [&_tfoot]:border-t [&_tfoot]:border-border-strong [&_tfoot]:bg-page [&_tfoot]:font-semibold [&_thead]:bg-page">
-        <caption className="px-3 py-2 text-left text-ink-muted">
+        <caption id={captionId} className="px-3 py-2 text-left text-ink-muted">
           {caption}
         </caption>
         {children}
