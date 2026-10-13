@@ -11,6 +11,7 @@ import { Field } from "./Field";
 import { Input } from "./Input";
 import { PageHeader } from "./PageHeader";
 import { PasswordInput } from "./PasswordInput";
+import { ProgressBar } from "./ProgressBar";
 import { Select } from "./Select";
 import { Cell, HeaderCell, RowHeader, Table } from "./Table";
 
@@ -61,6 +62,13 @@ describe("shared UI components", () => {
             <Badge tone="success">Part-time</Badge>
             <Badge>Coming later</Badge>
           </Card>
+          <ProgressBar value={56} max={100} label="Hours worked" />
+          <ProgressBar
+            value={92}
+            max={100}
+            label="Mini-job limit"
+            tone="warning"
+          />
           <Link
             to="/shifts"
             className={cardClassName("interactive", "block p-4")}

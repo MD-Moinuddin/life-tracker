@@ -1,5 +1,5 @@
-// A whole-number percentage for a progress bar. It works on counts such as
-// minutes, never on money.
+// A whole-number percentage for drawing a progress bar. Display only: money
+// totals are always computed by the API, never from this.
 export function progressPercent(done: number, total: number): number {
   if (total <= 0) {
     return 0;

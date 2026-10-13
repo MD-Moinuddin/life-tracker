@@ -53,6 +53,8 @@ const NON_TEXT_PAIRS: [string, string][] = [
   ["accent", "page"],
   ["accent", "surface"],
   ["accent", "neutral-soft"],
+  ["warning", "neutral-soft"],
+  ["warning", "surface"],
   ["danger", "surface"],
   ["danger", "page"],
 ];

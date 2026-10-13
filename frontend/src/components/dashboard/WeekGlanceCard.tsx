@@ -2,13 +2,13 @@ import { Link } from "react-router-dom";
 import type { LoadState } from "../../hooks/useLoad";
 import { classNames } from "../../lib/class-names";
 import { formatEuro } from "../../lib/money";
-import { progressPercent } from "../../lib/progress";
 import { ROUTES } from "../../lib/routes";
 import { formatDateRange, formatDuration } from "../../lib/shift-format";
 import type { Summary } from "../../lib/summary-api";
 import { LoadBoundary } from "../LoadBoundary";
 import { Card } from "../ui/Card";
 import { LINK_CLASSES } from "../ui/links";
+import { ProgressBar } from "../ui/ProgressBar";
 import { SectionHeading } from "../ui/SectionHeading";
 
 interface WeekGlanceCardProps {
@@ -29,8 +29,6 @@ function WeekContent({ summary }: { summary: Summary }) {
     );
   }
 
-  const percent = progressPercent(totals.earnedMinutes, totals.plannedMinutes);
-
   return (
     <>
       <p className="text-sm text-ink-muted">
@@ -42,20 +40,13 @@ function WeekContent({ summary }: { summary: Summary }) {
       <p className="text-sm text-ink-muted">
         {`planned this week · ${formatDuration(totals.plannedMinutes)}`}
       </p>
-      <div
-        role="progressbar"
-        aria-label="Hours worked so far"
-        aria-valuemin={0}
-        aria-valuemax={totals.plannedMinutes}
-        aria-valuenow={totals.earnedMinutes}
-        aria-valuetext={`${formatDuration(totals.earnedMinutes)} of ${formatDuration(totals.plannedMinutes)}`}
-        className="mt-3 h-2 rounded-full bg-neutral-soft"
-      >
-        <div
-          className="h-2 rounded-full bg-accent"
-          style={{ width: `${percent}%` }}
-        />
-      </div>
+      <ProgressBar
+        value={totals.earnedMinutes}
+        max={totals.plannedMinutes}
+        label="Hours worked so far"
+        valueText={`${formatDuration(totals.earnedMinutes)} of ${formatDuration(totals.plannedMinutes)}`}
+        className="mt-3"
+      />
       <p className="mt-2 text-sm text-ink-muted">
         {`${formatEuro(totals.earnedAmount)} earned so far · ${formatDuration(totals.earnedMinutes)}`}
       </p>
