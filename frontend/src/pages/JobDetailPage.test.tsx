@@ -74,7 +74,7 @@ describe("JobDetailPage", () => {
       within(heading.closest("header") as HTMLElement).getByText(
         "Part-time job",
       ).className,
-    ).toContain("bg-success-soft");
+    ).toContain("bg-neutral-soft");
   });
 
   it("has a back link that is a comfortable tap target, and a header with no raw colours", async () => {
