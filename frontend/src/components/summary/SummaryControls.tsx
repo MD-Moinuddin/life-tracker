@@ -1,6 +1,7 @@
 import { rangeLabel, SUMMARY_RANGES } from "../../lib/summary-period";
 import type { SummaryRange } from "../../lib/summary-period";
 import { PeriodNavigator } from "../PeriodNavigator";
+import { SegmentedControl } from "../ui/SegmentedControl";
 
 interface SummaryControlsProps {
   range: SummaryRange;
@@ -10,13 +11,10 @@ interface SummaryControlsProps {
   onNext: () => void;
 }
 
-function toggleClassName(pressed: boolean) {
-  const base =
-    "px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";
-  return pressed
-    ? `${base} bg-indigo-600 text-white`
-    : `${base} bg-white text-slate-700 hover:bg-slate-100`;
-}
+const RANGE_OPTIONS = SUMMARY_RANGES.map((value) => ({
+  value,
+  label: rangeLabel(value),
+}));
 
 export function SummaryControls({
   range,
@@ -27,26 +25,16 @@ export function SummaryControls({
 }: SummaryControlsProps) {
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <div
-        role="group"
-        aria-label="Summary period"
-        className="flex overflow-hidden rounded-md border border-slate-300"
-      >
-        {SUMMARY_RANGES.map((value) => (
-          <button
-            key={value}
-            type="button"
-            aria-pressed={range === value}
-            onClick={() => onRangeChange(value)}
-            className={toggleClassName(range === value)}
-          >
-            {rangeLabel(value)}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        label="Summary period"
+        options={RANGE_OPTIONS}
+        value={range}
+        onChange={onRangeChange}
+      />
       <PeriodNavigator
         label={periodLabel}
         unit={range}
+        className="max-sm:w-full"
         onPrevious={onPrevious}
         onNext={onNext}
       />
