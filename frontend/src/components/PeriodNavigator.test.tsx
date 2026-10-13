@@ -104,4 +104,51 @@ describe("PeriodNavigator", () => {
 
     expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);
   });
+
+  it("has no spacing of its own and adds the caller's class", () => {
+    const { container } = render(
+      <PeriodNavigator
+        label="Oct 2026"
+        unit="month"
+        className="mb-3"
+        onPrevious={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    const row = container.firstElementChild as HTMLElement;
+    expect(row.className).toContain("mb-3");
+
+    const { container: bare } = render(
+      <PeriodNavigator
+        label="Oct 2026"
+        unit="month"
+        onPrevious={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+    expect((bare.firstElementChild as HTMLElement).className).not.toMatch(
+      /\bm[trblxy]?-\d/,
+    );
+  });
+
+  it("shows only the chevrons on phones but keeps the words in the names", () => {
+    render(
+      <PeriodNavigator
+        label="Oct 2026"
+        unit="month"
+        onPrevious={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    const previous = screen.getByRole("button", { name: "Previous month" });
+    expect(previous.querySelector("span")?.className).toContain(
+      "max-sm:sr-only",
+    );
+    expect(previous.className).toContain("max-sm:min-w-11");
+    expect(
+      screen.getByRole("button", { name: "Next month" }).className,
+    ).toContain("max-sm:min-w-11");
+  });
 });
