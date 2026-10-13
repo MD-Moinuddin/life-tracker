@@ -40,7 +40,7 @@ export function SegmentedControl<T extends string>({
             className={classNames(
               BUTTON,
               selected
-                ? "bg-surface text-ink shadow-card ring-1 ring-border-strong font-semibold"
+                ? "bg-surface text-ink shadow-card ring-1 ring-control-border font-semibold"
                 : "text-ink-muted hover:text-ink font-medium",
             )}
           >

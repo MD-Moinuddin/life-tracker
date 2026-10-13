@@ -69,6 +69,7 @@ describe("SegmentedControl", () => {
     const other = screen.getByRole("button", { name: "Month" });
     expect(selected.className).toContain("font-semibold");
     expect(selected.className).toContain("ring-1");
+    expect(selected.className).toContain("ring-control-border");
     expect(other.className).toContain("font-medium");
     expect(other.className).not.toContain("font-semibold");
     expect(other.className).not.toContain("ring-1");

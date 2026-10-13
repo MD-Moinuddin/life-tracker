@@ -85,4 +85,20 @@ describe("Table", () => {
 
     expect(container.firstElementChild?.className).toContain("overflow-x-auto");
   });
+
+  it("is a focusable region named by its caption, so a wide table can be scrolled with the keyboard", () => {
+    render(
+      <Table caption="Hours per job">
+        <tbody>
+          <tr>
+            <Cell>x</Cell>
+          </tr>
+        </tbody>
+      </Table>,
+    );
+
+    const region = screen.getByRole("region", { name: "Hours per job" });
+    expect(region.tabIndex).toBe(0);
+    expect(region.contains(screen.getByRole("table"))).toBe(true);
+  });
 });
