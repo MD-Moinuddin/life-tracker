@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { logout } from "../../lib/auth-api";
 import { ROUTES } from "../../lib/routes";
 import { useAuthStore } from "../../store/auth-store";
@@ -52,7 +52,9 @@ export function AppShell({ children }: AppShellProps) {
       </a>
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 px-4 sm:px-6">
-          <Brand className="min-h-11 shrink-0 text-base" />
+          <Link to={ROUTES.dashboard} className="shrink-0">
+            <Brand className="min-h-11 text-base" />
+          </Link>
           <nav
             aria-label="Main"
             className="order-last -mx-4 w-[calc(100%+2rem)] overflow-x-auto px-4 py-1 md:order-none md:mx-0 md:w-auto md:flex-1 md:overflow-visible md:px-0 md:py-0"
