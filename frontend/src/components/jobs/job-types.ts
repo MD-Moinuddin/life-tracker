@@ -7,6 +7,6 @@ export const JOB_TYPE_LABELS: Record<JobType, string> = {
 };
 
 export const JOB_TYPE_TONES: Record<JobType, BadgeTone> = {
-  part_time: "success",
+  part_time: "neutral",
   mini_job: "accent",
 };

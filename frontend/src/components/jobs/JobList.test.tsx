@@ -102,7 +102,7 @@ describe("JobList", () => {
     renderList();
 
     expect(screen.getByText("Part-time job").className).toContain(
-      "bg-success-soft",
+      "bg-neutral-soft",
     );
     expect(screen.getByText("Mini-job").className).toContain("bg-accent-soft");
   });
