@@ -87,4 +87,32 @@ describe("SummaryTable", () => {
       "€252.75",
     ]);
   });
+
+  it("shows each job's name with its type badge", () => {
+    render(<SummaryTable summary={summary} />);
+
+    expect(screen.getByText("Part-time job").className).toContain(
+      "bg-success-soft",
+    );
+    expect(screen.getByText("Mini-job").className).toContain("bg-accent-soft");
+    expect(screen.getByRole("rowheader", { name: /Warehouse/ })).toBeDefined();
+  });
+
+  it("is built on the shared table with no raw palette colours", () => {
+    const { container } = render(<SummaryTable summary={summary} />);
+
+    expect(container.firstElementChild?.className).toContain("rounded-card");
+    expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);
+  });
+
+  it("keeps the total row's label as strong as its numbers", () => {
+    render(<SummaryTable summary={summary} />);
+
+    const total = screen.getByRole("rowheader", { name: "Total" });
+    expect(total.className).not.toContain("font-medium");
+    expect(total.closest("tfoot")).not.toBeNull();
+    expect(total.closest("table")?.className).toContain(
+      "[&_tfoot]:font-semibold",
+    );
+  });
 });
