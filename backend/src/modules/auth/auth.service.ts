@@ -1,4 +1,6 @@
+import { ConflictError, UnauthorizedError } from "../../lib/errors";
 import { comparePassword, hashPassword } from "../../lib/password";
+import { hasPrismaCode } from "../../lib/prisma-errors";
 import {
   signAccessToken,
   signRefreshToken,
@@ -7,24 +9,21 @@ import {
 import { createUser, findUserByEmail, findUserById } from "./auth.repository";
 import type { LoginInput, SignupInput } from "./auth.schema";
 
-export class EmailAlreadyRegisteredError extends Error {
+export class EmailAlreadyRegisteredError extends ConflictError {
   constructor() {
     super("Email already registered");
-    this.name = "EmailAlreadyRegisteredError";
   }
 }
 
-export class InvalidCredentialsError extends Error {
+export class InvalidCredentialsError extends UnauthorizedError {
   constructor() {
     super("Invalid credentials");
-    this.name = "InvalidCredentialsError";
   }
 }
 
-export class InvalidRefreshTokenError extends Error {
+export class InvalidRefreshTokenError extends UnauthorizedError {
   constructor() {
     super("Invalid refresh token");
-    this.name = "InvalidRefreshTokenError";
   }
 }
 
@@ -35,10 +34,17 @@ export async function signup(input: SignupInput) {
   }
 
   const passwordHash = await hashPassword(input.password);
+  // The check above can race with a concurrent signup, so the unique index on
+  // email is the real guard.
   const user = await createUser({
     name: input.name,
     email: input.email,
     passwordHash,
+  }).catch((error: unknown) => {
+    if (hasPrismaCode(error, "P2002")) {
+      throw new EmailAlreadyRegisteredError();
+    }
+    throw error;
   });
 
   return {

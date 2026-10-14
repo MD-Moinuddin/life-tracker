@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
+import { ROUTES } from "../../lib/routes";
 import { useAuthStore } from "../../store/auth-store";
 
 interface ProtectedRouteProps {
@@ -15,7 +16,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!accessToken) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={ROUTES.login} replace />;
   }
 
   return children;

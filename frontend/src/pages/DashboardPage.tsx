@@ -1,24 +1,37 @@
 import { ModuleCard } from "../components/dashboard/ModuleCard";
+import { WeekGlanceCard } from "../components/dashboard/WeekGlanceCard";
 import { AppShell } from "../components/layout/AppShell";
+import type { IconName } from "../components/ui/Icon";
+import { PageHeader } from "../components/ui/PageHeader";
+import { SectionHeading } from "../components/ui/SectionHeading";
+import { useSummary } from "../hooks/useSummary";
+import { greeting } from "../lib/greeting";
+import { ROUTES } from "../lib/routes";
+import { useAuthStore } from "../store/auth-store";
 
-const MODULES = [
-  { icon: "🗓️", title: "Work Schedule" },
-  { icon: "💪", title: "Fitness" },
-  { icon: "🥗", title: "Nutrition" },
-  { icon: "💰", title: "Finance" },
+const MODULES: { icon: IconName; title: string; to?: string }[] = [
+  { icon: "calendar", title: "Work Schedule", to: ROUTES.shifts },
+  { icon: "activity", title: "Fitness" },
+  { icon: "leaf", title: "Nutrition" },
+  { icon: "wallet", title: "Finance" },
 ];
 
 export function DashboardPage() {
+  const user = useAuthStore((state) => state.user);
+  const { state, now } = useSummary();
+
   return (
     <AppShell>
-      <h1 className="mb-4 text-2xl font-semibold text-slate-900">Dashboard</h1>
-      <h2 className="mb-4 text-lg font-medium text-slate-700">Modules</h2>
+      <PageHeader title={greeting(now, user?.name)} />
+      <WeekGlanceCard state={state} />
+      <SectionHeading className="mt-8 mb-4">Modules</SectionHeading>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {MODULES.map((module) => (
           <ModuleCard
             key={module.title}
             icon={module.icon}
             title={module.title}
+            to={module.to}
           />
         ))}
       </div>

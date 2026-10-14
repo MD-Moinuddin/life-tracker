@@ -14,4 +14,39 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  jobs         Job[]
+}
+
+enum JobType {
+  part_time
+  mini_job
+}
+
+model Job {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  hourlyRate Decimal  @db.Decimal(8, 2)
+  type       JobType
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  shifts     Shift[]
+
+  @@index([userId])
+}
+
+model Shift {
+  id           String   @id @default(cuid())
+  jobId        String
+  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  date         DateTime @db.Date
+  startTime    String   @db.VarChar(5)
+  endTime      String   @db.VarChar(5)
+  breakMinutes Int      @default(0)
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([jobId, date])
 }

@@ -1,10 +1,15 @@
 import { useEffect } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { refresh } from "./lib/auth-api";
+import { ROUTES } from "./lib/routes";
 import { DashboardPage } from "./pages/DashboardPage";
+import { JobDetailPage } from "./pages/JobDetailPage";
+import { JobsPage } from "./pages/JobsPage";
 import { LoginPage } from "./pages/LoginPage";
+import { ShiftsPage } from "./pages/ShiftsPage";
 import { SignupPage } from "./pages/SignupPage";
+import { SummaryPage } from "./pages/SummaryPage";
 import { useAuthStore } from "./store/auth-store";
 
 function App() {
@@ -22,18 +27,26 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
       <Route
-        path="/dashboard"
+        path={ROUTES.home}
+        element={<Navigate to={ROUTES.dashboard} replace />}
+      />
+      <Route path={ROUTES.login} element={<LoginPage />} />
+      <Route path={ROUTES.signup} element={<SignupPage />} />
+      <Route
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <Outlet />
           </ProtectedRoute>
         }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      >
+        <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+        <Route path={ROUTES.jobs} element={<JobsPage />} />
+        <Route path={ROUTES.jobDetail} element={<JobDetailPage />} />
+        <Route path={ROUTES.shifts} element={<ShiftsPage />} />
+        <Route path={ROUTES.summary} element={<SummaryPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
     </Routes>
   );
 }

@@ -1,0 +1,145 @@
+import { useEffect, useState } from "react";
+import { AddButton } from "../components/AddButton";
+import { DeleteJobConfirmation } from "../components/jobs/DeleteJobConfirmation";
+import { JobForm } from "../components/jobs/JobForm";
+import { JobList } from "../components/jobs/JobList";
+import { JobsEmptyState } from "../components/jobs/JobsEmptyState";
+import { AppShell } from "../components/layout/AppShell";
+import { LoadMessage } from "../components/LoadBoundary";
+import { Modal } from "../components/Modal";
+import { PageHeader } from "../components/ui/PageHeader";
+import { createJob, deleteJob, listJobs, updateJob } from "../lib/jobs-api";
+import type { JobInput, JobWithShiftCount } from "../lib/jobs-api";
+
+type LoadStatus = "loading" | "ready" | "error";
+
+export function JobsPage() {
+  const [jobs, setJobs] = useState<JobWithShiftCount[]>([]);
+  const [status, setStatus] = useState<LoadStatus>("loading");
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<JobWithShiftCount | null>(null);
+  const [deletingJob, setDeletingJob] = useState<JobWithShiftCount | null>(
+    null,
+  );
+
+  useEffect(() => {
+    let ignore = false;
+
+    listJobs()
+      .then((loadedJobs) => {
+        if (!ignore) {
+          setJobs(loadedJobs);
+          setStatus("ready");
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setStatus("error");
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  async function handleCreate(values: JobInput) {
+    const created = await createJob(values);
+    setJobs((current) => [...current, { ...created, shiftCount: 0 }]);
+    setIsAddOpen(false);
+  }
+
+  async function handleUpdate(id: string, values: JobInput) {
+    const updated = await updateJob(id, values);
+    setJobs((current) =>
+      current.map((job) => (job.id === id ? { ...job, ...updated } : job)),
+    );
+    setEditingJob(null);
+  }
+
+  async function handleDelete(id: string) {
+    await deleteJob(id);
+    setJobs((current) => current.filter((job) => job.id !== id));
+    setDeletingJob(null);
+  }
+
+  const hasJobs = jobs.length > 0;
+
+  return (
+    <AppShell>
+      <PageHeader
+        title="Jobs"
+        action={
+          status === "ready" &&
+          hasJobs && (
+            <AddButton label="Add job" onClick={() => setIsAddOpen(true)} />
+          )
+        }
+      />
+
+      {status !== "ready" && <LoadMessage status={status} noun="your jobs" />}
+
+      {status === "ready" && (
+        <>
+          {hasJobs ? (
+            <JobList
+              jobs={jobs}
+              onEdit={setEditingJob}
+              onDelete={setDeletingJob}
+            />
+          ) : (
+            <JobsEmptyState onAdd={() => setIsAddOpen(true)} />
+          )}
+
+          <Modal
+            open={isAddOpen}
+            title="Add a job"
+            onClose={() => setIsAddOpen(false)}
+          >
+            {isAddOpen && (
+              <JobForm
+                submitLabel="Add job"
+                onSubmit={handleCreate}
+                onCancel={() => setIsAddOpen(false)}
+              />
+            )}
+          </Modal>
+
+          <Modal
+            open={editingJob !== null}
+            title="Edit job"
+            onClose={() => setEditingJob(null)}
+          >
+            {editingJob && (
+              <JobForm
+                key={editingJob.id}
+                initialValues={{
+                  name: editingJob.name,
+                  hourlyRate: editingJob.hourlyRate,
+                  type: editingJob.type,
+                }}
+                submitLabel="Save changes"
+                onSubmit={(values) => handleUpdate(editingJob.id, values)}
+                onCancel={() => setEditingJob(null)}
+              />
+            )}
+          </Modal>
+
+          <Modal
+            open={deletingJob !== null}
+            title="Delete job?"
+            onClose={() => setDeletingJob(null)}
+          >
+            {deletingJob && (
+              <DeleteJobConfirmation
+                job={deletingJob}
+                onConfirm={() => handleDelete(deletingJob.id)}
+                onCancel={() => setDeletingJob(null)}
+              />
+            )}
+          </Modal>
+        </>
+      )}
+    </AppShell>
+  );
+}

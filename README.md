@@ -1,8 +1,8 @@
 # Life Tracker
 
-Life Tracker is a personal app for tracking daily life. This first version covers user authentication and a dashboard. Later versions will add work scheduling, fitness tracking, nutrition tracking, and personal finance tracking.
+Life Tracker is a personal app for tracking daily life. Version 1 covers user authentication and a dashboard. Version 1.1 adds work and shift scheduling with a weekly and monthly earnings summary. Later versions will add fitness tracking, nutrition tracking, and personal finance tracking.
 
-**Live demo:** [life-tracker-brown-one.vercel.app](https://life-tracker-brown-one.vercel.app)
+**Live demo:** [lifetracker-md.vercel.app](https://lifetracker-md.vercel.app)
 
 ## Why this project exists
 
@@ -19,11 +19,19 @@ Version 1 only has two features, but they are built properly:
 - User authentication, including signup, login, and secure sessions
 - A dashboard that shows the logged in user's profile and placeholder cards for features that are coming later
 
+## Version 1.1: Work and schedule
+
+Version 1.1 is the first real tracking module. It lets me track hours and earnings across my jobs:
+
+- Jobs, each with an hourly rate and a type (part-time or mini-job)
+- Shifts for a job, with a date, start and end time, a break, and optional notes. They are shown in two lists: upcoming shifts and history
+- A weekly and monthly summary that shows what I have earned so far next to what I have planned
+- A mini-job warning that shows when my planned mini-job earnings for a month go over 540 euros. It never blocks me from adding more shifts
+
 ## What comes next
 
-After version 1 is finished, future versions will add:
+After version 1.1, future versions will add:
 
-- Work and shift scheduling
 - Fitness and workout tracking
 - Nutrition and protein tracking
 - Personal finance tracking
@@ -38,17 +46,17 @@ _Screenshots coming soon._
 
 ## Tech stack
 
-| Layer | Choice |
-|---|---|
-| Frontend | React, TypeScript, Vite, Tailwind CSS, React Router, Zustand |
-| Backend | Node.js, Express, TypeScript |
-| Database | PostgreSQL, Prisma |
-| Auth | JWT (short-lived access token in memory, httpOnly refresh cookie), bcrypt |
-| Containers | Docker, Docker Compose |
-| CI | GitHub Actions (lint, typecheck, test, build on every PR; required before merge) |
-| Testing | Vitest, Testing Library, jest-axe (accessibility) |
-| Code quality | ESLint, Prettier, Husky |
-| Hosting | Vercel (frontend), Render (backend), Neon (database) |
+| Layer        | Choice                                                                           |
+| ------------ | -------------------------------------------------------------------------------- |
+| Frontend     | React, TypeScript, Vite, Tailwind CSS, React Router, Zustand                     |
+| Backend      | Node.js, Express, TypeScript                                                     |
+| Database     | PostgreSQL, Prisma                                                               |
+| Auth         | JWT (short-lived access token in memory, httpOnly refresh cookie), bcrypt        |
+| Containers   | Docker, Docker Compose                                                           |
+| CI           | GitHub Actions (lint, typecheck, test, build on every PR; required before merge) |
+| Testing      | Vitest, Testing Library, jest-axe (accessibility)                                |
+| Code quality | ESLint, Prettier, Husky                                                          |
+| Hosting      | Vercel (frontend), Render (backend), Neon (database)                             |
 
 ## Architecture
 
@@ -89,6 +97,7 @@ You need Docker installed. You do not need Node or PostgreSQL installed on your 
 5. Open `http://localhost:5173` for the frontend, and `http://localhost:4000` for the backend.
 
 If you add a new npm dependency to either app while the containers are already running, a plain restart is not enough — Docker keeps each app's `node_modules` in its own anonymous volume, separate from your local files. Rebuild that service with a fresh volume instead:
+
 ```
 docker compose up -d --build -V <service>
 ```
