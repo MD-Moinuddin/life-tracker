@@ -6,6 +6,7 @@ import { ROUTES } from "./lib/routes";
 import { DashboardPage } from "./pages/DashboardPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
 import { JobsPage } from "./pages/JobsPage";
+import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ShiftsPage } from "./pages/ShiftsPage";
 import { SignupPage } from "./pages/SignupPage";
@@ -27,10 +28,7 @@ function App() {
 
   return (
     <Routes>
-      <Route
-        path={ROUTES.home}
-        element={<Navigate to={ROUTES.dashboard} replace />}
-      />
+      <Route path={ROUTES.home} element={<LandingPage />} />
       <Route path={ROUTES.login} element={<LoginPage />} />
       <Route path={ROUTES.signup} element={<SignupPage />} />
       <Route

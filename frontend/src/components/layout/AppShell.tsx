@@ -38,7 +38,7 @@ export function AppShell({ children }: AppShellProps) {
       // Best-effort: still clear the local session even if the request fails.
     } finally {
       clearAuth();
-      navigate(ROUTES.login);
+      navigate(ROUTES.home);
     }
   }
 

@@ -13,6 +13,7 @@ import { makeShift } from "../test/fixtures";
 import { DashboardPage } from "./DashboardPage";
 import { JobDetailPage } from "./JobDetailPage";
 import { JobsPage } from "./JobsPage";
+import { LandingPage } from "./LandingPage";
 import { LoginPage } from "./LoginPage";
 import { ShiftsPage } from "./ShiftsPage";
 import { SignupPage } from "./SignupPage";
@@ -124,6 +125,19 @@ describe("accessibility", () => {
     );
 
     const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
+  });
+
+  it("LandingPage has no violations", async () => {
+    useAuthStore.setState({ isInitialized: true });
+    const { container } = render(
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>,
+    );
+
+    const results = await axe(container);
+    useAuthStore.setState({ isInitialized: false });
     expect(results.violations).toHaveLength(0);
   });
 
