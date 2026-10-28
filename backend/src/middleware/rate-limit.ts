@@ -16,9 +16,16 @@ export const generalLimiter = rateLimit({
   message: TOO_MANY_REQUESTS_BODY,
 });
 
-export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 5,
-  skip: skipOutsideProduction,
-  message: TOO_MANY_REQUESTS_BODY,
-});
+function createAuthLimiter() {
+  return rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    skip: skipOutsideProduction,
+    message: TOO_MANY_REQUESTS_BODY,
+  });
+}
+
+export const authLimiter = createAuthLimiter();
+
+// Its own counter, so asking for resets does not use up login attempts.
+export const passwordResetLimiter = createAuthLimiter();

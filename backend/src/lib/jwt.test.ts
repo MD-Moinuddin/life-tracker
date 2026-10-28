@@ -19,7 +19,17 @@ describe("jwt helpers", () => {
     });
     expect(verifyRefreshToken(signRefreshToken("user-1"))).toEqual({
       sub: "user-1",
+      iat: expect.any(Number),
     });
+  });
+
+  it("reports when a refresh token was issued", () => {
+    const before = Math.floor(Date.now() / 1000);
+
+    const { iat } = verifyRefreshToken(signRefreshToken("user-1"));
+
+    expect(iat).toBeGreaterThanOrEqual(before);
+    expect(iat).toBeLessThanOrEqual(Math.floor(Date.now() / 1000));
   });
 
   it("signs with HS256", () => {

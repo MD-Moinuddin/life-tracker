@@ -1,8 +1,11 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { isValidEmail } from "../../lib/auth-validation";
+import { ROUTES } from "../../lib/routes";
 import { Button } from "../ui/Button";
 import { Field } from "../ui/Field";
 import { Input } from "../ui/Input";
+import { LINK_CLASSES } from "../ui/links";
 import { PasswordInput } from "../ui/PasswordInput";
 
 export interface LoginFormValues {
@@ -82,6 +85,12 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
           />
         )}
       </Field>
+
+      <p className="text-right text-sm">
+        <Link to={ROUTES.forgotPassword} className={LINK_CLASSES}>
+          Forgot password?
+        </Link>
+      </p>
 
       <Button type="submit" loading={isSubmitting} className="w-full">
         {isSubmitting ? "Logging in…" : "Log in"}
