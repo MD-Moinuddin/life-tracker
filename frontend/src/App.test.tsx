@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -55,6 +55,16 @@ describe("App routing for a logged-out visitor", () => {
 
     expect(
       await screen.findByRole("heading", { level: 1, name: "Welcome back" }),
+    ).toBeDefined();
+  });
+
+  it("takes the logo on the login page back to the landing page", async () => {
+    renderAt("/login");
+
+    fireEvent.click(await screen.findByRole("link", { name: "Life Tracker" }));
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: LANDING_HEADLINE }),
     ).toBeDefined();
   });
 
