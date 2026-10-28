@@ -36,3 +36,17 @@ export function refresh() {
 export function logout() {
   return apiFetch<void>("/api/auth/logout", { method: "POST" });
 }
+
+export function forgotPassword(email: string) {
+  return apiFetch<{ message: string }>("/api/auth/forgot-password", {
+    method: "POST",
+    body: { email },
+  });
+}
+
+export function resetPassword(input: { token: string; password: string }) {
+  return apiFetch<void>("/api/auth/reset-password", {
+    method: "POST",
+    body: input,
+  });
+}

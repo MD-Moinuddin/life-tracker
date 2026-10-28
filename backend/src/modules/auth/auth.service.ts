@@ -1,4 +1,6 @@
-import { ConflictError, UnauthorizedError } from "../../lib/errors";
+import { AppError, ConflictError, UnauthorizedError } from "../../lib/errors";
+import { sendMail } from "../../lib/mail/send-mail";
+import { buildResetPasswordEmail } from "../../lib/mail/reset-password-email";
 import { comparePassword, hashPassword } from "../../lib/password";
 import { hasPrismaCode } from "../../lib/prisma-errors";
 import {
@@ -6,8 +8,25 @@ import {
   signRefreshToken,
   verifyRefreshToken,
 } from "../../lib/jwt";
-import { createUser, findUserByEmail, findUserById } from "./auth.repository";
-import type { LoginInput, SignupInput } from "./auth.schema";
+import {
+  createUser,
+  findLatestResetTokenCreatedAt,
+  findUserByEmail,
+  findUserById,
+  replaceResetToken,
+  resetPasswordWithToken,
+} from "./auth.repository";
+import type {
+  LoginInput,
+  ResetPasswordInput,
+  SignupInput,
+} from "./auth.schema";
+import {
+  createResetToken,
+  hashResetToken,
+  PASSWORD_RESET_COOLDOWN_MS,
+  PASSWORD_RESET_TTL_MS,
+} from "./reset-token";
 
 export class EmailAlreadyRegisteredError extends ConflictError {
   constructor() {
@@ -24,6 +43,12 @@ export class InvalidCredentialsError extends UnauthorizedError {
 export class InvalidRefreshTokenError extends UnauthorizedError {
   constructor() {
     super("Invalid refresh token");
+  }
+}
+
+export class InvalidResetTokenError extends AppError {
+  constructor() {
+    super(400, "This reset link is invalid or has expired.");
   }
 }
 
@@ -78,16 +103,31 @@ export async function login(input: LoginInput) {
   };
 }
 
+// A refresh token issued before the last password change must stop working,
+// so a reset ends every other session. `iat` is in seconds.
+function wasIssuedBeforePasswordChange(
+  issuedAt: number,
+  passwordChangedAt: Date | null,
+): boolean {
+  return (
+    passwordChangedAt !== null &&
+    issuedAt < Math.floor(passwordChangedAt.getTime() / 1000)
+  );
+}
+
 export async function refresh(refreshToken: string) {
-  let userId: string;
+  let claims: { sub: string; iat: number };
   try {
-    userId = verifyRefreshToken(refreshToken).sub;
+    claims = verifyRefreshToken(refreshToken);
   } catch {
     throw new InvalidRefreshTokenError();
   }
 
-  const user = await findUserById(userId);
-  if (!user) {
+  const user = await findUserById(claims.sub);
+  if (
+    !user ||
+    wasIssuedBeforePasswordChange(claims.iat, user.passwordChangedAt)
+  ) {
     throw new InvalidRefreshTokenError();
   }
 
@@ -100,4 +140,55 @@ export async function refresh(refreshToken: string) {
       createdAt: user.createdAt,
     },
   };
+}
+
+// Never reveals whether the email is registered: it returns the same way for
+// every outcome, and the email is sent in the background so the response time
+// does not depend on the mail provider.
+export async function requestPasswordReset(email: string): Promise<void> {
+  const user = await findUserByEmail(email);
+  if (!user) {
+    return;
+  }
+
+  const now = new Date();
+  const lastRequestAt = await findLatestResetTokenCreatedAt(user.id);
+  if (
+    lastRequestAt &&
+    now.getTime() - lastRequestAt.getTime() < PASSWORD_RESET_COOLDOWN_MS
+  ) {
+    return;
+  }
+
+  const { token, tokenHash } = createResetToken();
+  await replaceResetToken(
+    {
+      userId: user.id,
+      tokenHash,
+      expiresAt: new Date(now.getTime() + PASSWORD_RESET_TTL_MS),
+    },
+    now,
+  );
+
+  void sendMail({
+    to: user.email,
+    ...buildResetPasswordEmail({
+      token,
+      expiresInMinutes: PASSWORD_RESET_TTL_MS / 60_000,
+    }),
+  }).catch((error: unknown) => {
+    console.error("Failed to send the password reset email", error);
+  });
+}
+
+export async function resetPassword(input: ResetPasswordInput): Promise<void> {
+  const passwordHash = await hashPassword(input.password);
+  const done = await resetPasswordWithToken({
+    tokenHash: hashResetToken(input.token),
+    passwordHash,
+    now: new Date(),
+  });
+  if (!done) {
+    throw new InvalidResetTokenError();
+  }
 }

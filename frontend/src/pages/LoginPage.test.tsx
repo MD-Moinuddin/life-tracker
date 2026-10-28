@@ -15,12 +15,13 @@ const user = {
   createdAt: "2026-10-01T09:00:00.000Z",
 };
 
-function renderPage() {
+function renderPage(state?: unknown) {
   render(
-    <MemoryRouter initialEntries={["/login"]}>
+    <MemoryRouter initialEntries={[{ pathname: "/login", state }]}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<p>Signup page</p>} />
+        <Route path="/forgot-password" element={<p>Forgot page</p>} />
         <Route path="/dashboard" element={<p>Dashboard page</p>} />
       </Routes>
     </MemoryRouter>,
@@ -46,6 +47,27 @@ afterEach(() => {
 });
 
 describe("LoginPage", () => {
+  it("shows the notice it was opened with", () => {
+    renderPage({ notice: "Password updated. Log in with your new password." });
+
+    const notice = screen.getByText(
+      "Password updated. Log in with your new password.",
+    );
+    expect(notice.closest('[role="status"]')).not.toBeNull();
+  });
+
+  it("shows no notice when opened normally", () => {
+    renderPage();
+
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("ignores a notice that is not text", () => {
+    renderPage({ notice: 42 });
+
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
   it("logs in, stores the session and opens the dashboard", async () => {
     vi.mocked(login).mockResolvedValue({ accessToken: "token", user });
     renderPage();

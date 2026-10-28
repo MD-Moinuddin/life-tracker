@@ -19,7 +19,7 @@ function renderAt(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/login" element={<p>Login page</p>} />
+        <Route path="/" element={<p>Landing page</p>} />
         <Route
           path="*"
           element={
@@ -128,13 +128,13 @@ describe("AppShell account", () => {
     expect(screen.getByText("md@example.com")).toBeDefined();
   });
 
-  it("logs out through the API, clears the session and goes to the login page", async () => {
+  it("logs out through the API, clears the session and goes to the landing page", async () => {
     renderAt("/dashboard");
     fireEvent.click(screen.getByRole("button", { name: /Account menu/ }));
 
     fireEvent.click(screen.getByRole("button", { name: "Log out" }));
 
-    expect(await screen.findByText("Login page")).toBeDefined();
+    expect(await screen.findByText("Landing page")).toBeDefined();
     expect(logout).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().user).toBeNull();
   });
@@ -146,7 +146,7 @@ describe("AppShell account", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Log out" }));
 
-    await waitFor(() => expect(screen.getByText("Login page")).toBeDefined());
+    await waitFor(() => expect(screen.getByText("Landing page")).toBeDefined());
     expect(useAuthStore.getState().user).toBeNull();
   });
 

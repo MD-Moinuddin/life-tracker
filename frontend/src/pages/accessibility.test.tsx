@@ -11,9 +11,12 @@ import type { Summary } from "../lib/summary-api";
 import { useAuthStore } from "../store/auth-store";
 import { makeShift } from "../test/fixtures";
 import { DashboardPage } from "./DashboardPage";
+import { ForgotPasswordPage } from "./ForgotPasswordPage";
 import { JobDetailPage } from "./JobDetailPage";
 import { JobsPage } from "./JobsPage";
+import { LandingPage } from "./LandingPage";
 import { LoginPage } from "./LoginPage";
+import { ResetPasswordPage } from "./ResetPasswordPage";
 import { ShiftsPage } from "./ShiftsPage";
 import { SignupPage } from "./SignupPage";
 import { SummaryPage } from "./SummaryPage";
@@ -116,6 +119,19 @@ describe("accessibility", () => {
     expect(results.violations).toHaveLength(0);
   });
 
+  it("LoginPage has no violations with a notice", async () => {
+    const { container } = render(
+      <MemoryRouter
+        initialEntries={[{ pathname: "/login", state: { notice: "Done." } }]}
+      >
+        <LoginPage />
+      </MemoryRouter>,
+    );
+
+    const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
+  });
+
   it("SignupPage has no violations", async () => {
     const { container } = render(
       <MemoryRouter>
@@ -124,6 +140,47 @@ describe("accessibility", () => {
     );
 
     const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
+  });
+
+  it("ForgotPasswordPage has no violations", async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <ForgotPasswordPage />
+      </MemoryRouter>,
+    );
+
+    const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
+  });
+
+  it("ResetPasswordPage has no violations, with a token and without", async () => {
+    const withToken = render(
+      <MemoryRouter initialEntries={["/reset-password?token=abc123"]}>
+        <ResetPasswordPage />
+      </MemoryRouter>,
+    );
+    expect((await axe(withToken.container)).violations).toHaveLength(0);
+    withToken.unmount();
+
+    const withoutToken = render(
+      <MemoryRouter initialEntries={["/reset-password"]}>
+        <ResetPasswordPage />
+      </MemoryRouter>,
+    );
+    expect((await axe(withoutToken.container)).violations).toHaveLength(0);
+  });
+
+  it("LandingPage has no violations", async () => {
+    useAuthStore.setState({ isInitialized: true });
+    const { container } = render(
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>,
+    );
+
+    const results = await axe(container);
+    useAuthStore.setState({ isInitialized: false });
     expect(results.violations).toHaveLength(0);
   });
 

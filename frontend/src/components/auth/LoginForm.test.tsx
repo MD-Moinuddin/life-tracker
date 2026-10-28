@@ -1,9 +1,14 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { LoginForm } from "./LoginForm";
 
 function renderForm(onSubmit = vi.fn().mockResolvedValue(undefined)) {
-  render(<LoginForm onSubmit={onSubmit} />);
+  render(
+    <MemoryRouter>
+      <LoginForm onSubmit={onSubmit} />
+    </MemoryRouter>,
+  );
   return { onSubmit };
 }
 
@@ -16,6 +21,13 @@ function submit() {
 }
 
 describe("LoginForm", () => {
+  it("links to the forgot password page", () => {
+    renderForm();
+
+    const link = screen.getByRole("link", { name: "Forgot password?" });
+    expect(link.getAttribute("href")).toBe("/forgot-password");
+  });
+
   it("has an email field, a password field and a submit button", () => {
     renderForm();
 
