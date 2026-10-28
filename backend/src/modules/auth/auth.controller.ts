@@ -1,15 +1,24 @@
 import type { Request, Response } from "express";
 import { env } from "../../config/env";
 import { parseOrThrow } from "../../lib/http";
-import { loginSchema, signupSchema } from "./auth.schema";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  resetPasswordSchema,
+  signupSchema,
+} from "./auth.schema";
 import {
   InvalidRefreshTokenError,
   login,
   refresh,
+  requestPasswordReset,
+  resetPassword,
   signup,
 } from "./auth.service";
 
 const REFRESH_TOKEN_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const FORGOT_PASSWORD_MESSAGE =
+  "If an account exists for that email, we've sent a link.";
 
 export async function signupHandler(req: Request, res: Response) {
   const input = parseOrThrow(signupSchema, req.body);
@@ -42,5 +51,17 @@ export async function refreshHandler(req: Request, res: Response) {
 
 export function logoutHandler(_req: Request, res: Response) {
   res.clearCookie("refreshToken", { path: "/api/auth" });
+  res.status(204).end();
+}
+
+export async function forgotPasswordHandler(req: Request, res: Response) {
+  const { email } = parseOrThrow(forgotPasswordSchema, req.body);
+  await requestPasswordReset(email);
+  res.status(202).json({ message: FORGOT_PASSWORD_MESSAGE });
+}
+
+export async function resetPasswordHandler(req: Request, res: Response) {
+  const input = parseOrThrow(resetPasswordSchema, req.body);
+  await resetPassword(input);
   res.status(204).end();
 }

@@ -21,6 +21,7 @@ export async function createTestUser(label: string) {
   return {
     id: login.body.user.id as string,
     token: login.body.accessToken as string,
+    email,
   };
 }
 
