@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { ApiError } from "./lib/api-client";
 import { refresh } from "./lib/auth-api";
 import { ROUTES } from "./lib/routes";
+import { hasSessionHint } from "./lib/session-hint";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
@@ -17,16 +19,27 @@ import { useAuthStore } from "./store/auth-store";
 
 function App() {
   const setAuth = useAuthStore((state) => state.setAuth);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const setInitialized = useAuthStore((state) => state.setInitialized);
 
   useEffect(() => {
+    // A visitor who never signed in here has no session to restore, so there is
+    // no reason to wait for the server (which may be waking up).
+    if (!hasSessionHint()) {
+      setInitialized();
+      return;
+    }
     refresh()
       .then(setAuth)
-      .catch(() => {
-        // No valid refresh cookie (new visitor or expired session) — stay logged out silently.
+      .catch((error: unknown) => {
+        // Stay logged out silently. Only a rejected session forgets the hint, so
+        // a network or server hiccup does not sign the visitor out for good.
+        if (error instanceof ApiError && error.status === 401) {
+          clearAuth();
+        }
       })
       .finally(setInitialized);
-  }, [setAuth, setInitialized]);
+  }, [setAuth, clearAuth, setInitialized]);
 
   return (
     <Routes>
