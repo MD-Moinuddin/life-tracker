@@ -1,12 +1,15 @@
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { AuthLayout } from "./AuthLayout";
 
 function renderLayout() {
   render(
-    <AuthLayout title="Welcome back" footer={<span>Footer text</span>}>
-      <p>Form goes here</p>
-    </AuthLayout>,
+    <MemoryRouter>
+      <AuthLayout title="Welcome back" footer={<span>Footer text</span>}>
+        <p>Form goes here</p>
+      </AuthLayout>
+    </MemoryRouter>,
   );
 }
 
@@ -18,6 +21,14 @@ describe("AuthLayout", () => {
     expect(
       screen.getByText("Track work, shifts and earnings in one place"),
     ).toBeDefined();
+  });
+
+  it("links the brand back to the home page", () => {
+    renderLayout();
+
+    expect(
+      screen.getByRole("link", { name: "Life Tracker" }).getAttribute("href"),
+    ).toBe("/");
   });
 
   it("has the title as the page heading", () => {
@@ -43,9 +54,11 @@ describe("AuthLayout", () => {
 
   it("uses no raw palette colours", () => {
     const { container } = render(
-      <AuthLayout title="x" footer="y">
-        z
-      </AuthLayout>,
+      <MemoryRouter>
+        <AuthLayout title="x" footer="y">
+          z
+        </AuthLayout>
+      </MemoryRouter>,
     );
 
     expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);

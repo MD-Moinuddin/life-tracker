@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Card } from "../ui/Card";
-import { Brand } from "./Brand";
+import { BrandLink } from "./BrandLink";
 
 const TAGLINE = "Track work, shifts and earnings in one place";
 
@@ -15,7 +15,7 @@ export function AuthLayout({ title, children, footer }: AuthLayoutProps) {
     <div className="flex min-h-screen items-center justify-center bg-page px-4 py-12">
       <main className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <Brand className="justify-center text-lg" />
+          <BrandLink className="text-lg" />
           <p className="mt-1 text-sm text-ink-muted">{TAGLINE}</p>
         </div>
         <Card className="p-6">
