@@ -3,7 +3,9 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { LANDING_HEADLINE } from "./components/landing/landing-content";
+import { ApiError } from "./lib/api-client";
 import { refresh } from "./lib/auth-api";
+import { hasSessionHint, saveSessionHint } from "./lib/session-hint";
 import { useAuthStore } from "./store/auth-store";
 
 vi.mock("./lib/auth-api", async (importOriginal) => ({
@@ -102,5 +104,45 @@ describe("App routing for a logged-out visitor", () => {
     renderAt("/reset-password?token=abc123");
 
     expect(await screen.findByLabelText("New password")).toBeDefined();
+  });
+});
+
+describe("App session restore", () => {
+  it("does not wait for the server when the visitor never signed in", async () => {
+    renderAt("/");
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: LANDING_HEADLINE }),
+    ).toBeDefined();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("tries to restore the session when the visitor signed in before", async () => {
+    saveSessionHint();
+
+    renderAt("/");
+
+    await screen.findByRole("heading", { level: 1, name: LANDING_HEADLINE });
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("forgets the hint when the server rejects the session", async () => {
+    saveSessionHint();
+    vi.mocked(refresh).mockRejectedValue(new ApiError(401, "Unauthorized"));
+
+    renderAt("/");
+
+    await screen.findByRole("heading", { level: 1, name: LANDING_HEADLINE });
+    expect(hasSessionHint()).toBe(false);
+  });
+
+  it("keeps the hint when the server cannot be reached", async () => {
+    saveSessionHint();
+    vi.mocked(refresh).mockRejectedValue(new TypeError("Failed to fetch"));
+
+    renderAt("/");
+
+    await screen.findByRole("heading", { level: 1, name: LANDING_HEADLINE });
+    expect(hasSessionHint()).toBe(true);
   });
 });
