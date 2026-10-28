@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
+import { SlowStartNotice } from "../SlowStartNotice";
 import { ROUTES } from "../../lib/routes";
 import { useAuthStore } from "../../store/auth-store";
 
@@ -12,7 +13,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const isInitialized = useAuthStore((state) => state.isInitialized);
 
   if (!isInitialized) {
-    return <p>Loading…</p>;
+    return (
+      <div>
+        <p>Loading…</p>
+        <SlowStartNotice />
+      </div>
+    );
   }
 
   if (!accessToken) {

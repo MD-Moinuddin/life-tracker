@@ -8,6 +8,7 @@ import { LandingHero } from "../components/landing/LandingHero";
 import { SummaryPreview } from "../components/landing/SummaryPreview";
 import { BrandLink } from "../components/layout/BrandLink";
 import { buttonClassName } from "../components/ui/Button";
+import { SlowStartNotice } from "../components/SlowStartNotice";
 import { Spinner } from "../components/Spinner";
 import { ROUTES } from "../lib/routes";
 import { useAuthStore } from "../store/auth-store";
@@ -24,10 +25,13 @@ export function LandingPage() {
   if (!isInitialized) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-page text-ink-muted">
-        <p role="status" className="flex items-center gap-2 text-sm">
-          <Spinner />
-          Loading…
-        </p>
+        <div className="flex flex-col items-center">
+          <p role="status" className="flex items-center gap-2 text-sm">
+            <Spinner />
+            Loading…
+          </p>
+          <SlowStartNotice />
+        </div>
       </div>
     );
   }
