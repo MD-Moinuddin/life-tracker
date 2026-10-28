@@ -4,10 +4,12 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { refresh } from "./lib/auth-api";
 import { ROUTES } from "./lib/routes";
 import { DashboardPage } from "./pages/DashboardPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
 import { JobsPage } from "./pages/JobsPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { ShiftsPage } from "./pages/ShiftsPage";
 import { SignupPage } from "./pages/SignupPage";
 import { SummaryPage } from "./pages/SummaryPage";
@@ -31,6 +33,8 @@ function App() {
       <Route path={ROUTES.home} element={<LandingPage />} />
       <Route path={ROUTES.login} element={<LoginPage />} />
       <Route path={ROUTES.signup} element={<SignupPage />} />
+      <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
+      <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
       <Route
         element={
           <ProtectedRoute>

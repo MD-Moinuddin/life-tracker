@@ -68,4 +68,29 @@ describe("App routing for a logged-out visitor", () => {
     renderAt("/signup");
     expect(await screen.findByRole("heading", { level: 1 })).toBeDefined();
   });
+
+  it("shows the forgot password page", async () => {
+    renderAt("/forgot-password");
+
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Reset your password",
+      }),
+    ).toBeDefined();
+  });
+
+  it("shows the reset password page, and an invalid-link message without a token", async () => {
+    renderAt("/reset-password");
+
+    expect(
+      await screen.findByText("This reset link is invalid or has expired."),
+    ).toBeDefined();
+  });
+
+  it("shows the new password form when the link has a token", async () => {
+    renderAt("/reset-password?token=abc123");
+
+    expect(await screen.findByLabelText("New password")).toBeDefined();
+  });
 });
