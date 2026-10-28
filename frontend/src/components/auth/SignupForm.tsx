@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { isValidEmail } from "../../lib/auth-validation";
+import { isValidEmail, passwordErrors } from "../../lib/auth-validation";
 import { Button } from "../ui/Button";
 import { Field } from "../ui/Field";
 import { Input } from "../ui/Input";
@@ -32,24 +32,9 @@ function validate(name: string, email: string, password: string): FormErrors {
     errors.email = "Enter a valid email address";
   }
 
-  const passwordErrors: string[] = [];
-  if (password.length < 8) {
-    passwordErrors.push("Password must be at least 8 characters");
-  }
-  if (password.length > 72) {
-    passwordErrors.push("Password must be at most 72 characters");
-  }
-  if (!/[a-z]/.test(password)) {
-    passwordErrors.push("Password must contain a lowercase letter");
-  }
-  if (!/[A-Z]/.test(password)) {
-    passwordErrors.push("Password must contain an uppercase letter");
-  }
-  if (!/[0-9]/.test(password)) {
-    passwordErrors.push("Password must contain a number");
-  }
-  if (passwordErrors.length > 0) {
-    errors.password = passwordErrors;
+  const passwordMessages = passwordErrors(password);
+  if (passwordMessages.length > 0) {
+    errors.password = passwordMessages;
   }
 
   return errors;

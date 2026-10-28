@@ -14,3 +14,10 @@ describe("jobPath", () => {
     expect(ROUTES.jobDetail).toBe(`${ROUTES.jobs}/:id`);
   });
 });
+
+describe("password reset routes", () => {
+  it("has the forgot and reset URLs the reset email links to", () => {
+    expect(ROUTES.forgotPassword).toBe("/forgot-password");
+    expect(ROUTES.resetPassword).toBe("/reset-password");
+  });
+});
