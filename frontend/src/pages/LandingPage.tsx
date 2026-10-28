@@ -6,7 +6,7 @@ import {
 } from "../components/landing/landing-content";
 import { LandingHero } from "../components/landing/LandingHero";
 import { SummaryPreview } from "../components/landing/SummaryPreview";
-import { Brand } from "../components/layout/Brand";
+import { BrandLink } from "../components/layout/BrandLink";
 import { buttonClassName } from "../components/ui/Button";
 import { Spinner } from "../components/Spinner";
 import { ROUTES } from "../lib/routes";
@@ -39,7 +39,7 @@ export function LandingPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-page">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <Brand className="text-lg" />
+        <BrandLink className="text-lg" />
         <nav aria-label={LANDING_NAV_LABEL} className="flex items-center gap-2">
           <Link
             to={ROUTES.login}
