@@ -41,6 +41,16 @@
 
   --color-neutral-soft: #eef0f7;
 
+  /* Identity colours for jobs, drawn as the left edge of a shift. They only
+     tell jobs apart; the job name is always written out. Each needs 3:1 on
+     surface. */
+  --color-job-1: #4f46e5;
+  --color-job-2: #0f766e;
+  --color-job-3: #b45309;
+  --color-job-4: #be185d;
+  --color-job-5: #0369a1;
+  --color-job-6: #7e22ce;
+
   --radius-control: 0.625rem;
   --radius-card: 1rem;
 

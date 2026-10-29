@@ -57,6 +57,12 @@ const NON_TEXT_PAIRS: [string, string][] = [
   ["warning", "surface"],
   ["danger", "surface"],
   ["danger", "page"],
+  ["job-1", "surface"],
+  ["job-2", "surface"],
+  ["job-3", "surface"],
+  ["job-4", "surface"],
+  ["job-5", "surface"],
+  ["job-6", "surface"],
 ];
 
 describe("design tokens", () => {
