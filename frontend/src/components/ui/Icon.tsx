@@ -3,6 +3,13 @@ import type { ReactNode } from "react";
 // Stroke icons on a 24x24 grid. Shapes adapted from Lucide (ISC license).
 const ICONS = {
   plus: <path d="M12 5v14M5 12h14" />,
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+    </>
+  ),
   eye: (
     <>
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
