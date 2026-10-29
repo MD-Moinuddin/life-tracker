@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { listJobs } from "../lib/jobs-api";
@@ -96,30 +96,32 @@ describe("JobDetailPage", () => {
     renderPage();
 
     const upcoming = within(
-      await screen.findByRole("region", { name: "Upcoming" }),
+      await screen.findByRole("region", { name: "Upcoming shifts" }),
     );
     expect(await upcoming.findAllByRole("listitem")).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "History" }));
+
     expect(
-      within(screen.getByRole("region", { name: "History" })).getAllByRole(
-        "listitem",
-      ),
+      within(
+        screen.getByRole("region", { name: "Shift history" }),
+      ).getAllByRole("listitem"),
     ).toHaveLength(1);
     expect(listShifts).toHaveBeenCalledWith(
       expect.objectContaining({ jobId: "job-1" }),
     );
   });
 
-  it("is read-only: no Edit or Delete buttons on the shifts", async () => {
+  it("is read-only: no action menu on the shifts", async () => {
     renderPage();
     const upcoming = within(
-      await screen.findByRole("region", { name: "Upcoming" }),
+      await screen.findByRole("region", { name: "Upcoming shifts" }),
     );
     const rows = await upcoming.findAllByRole("listitem");
     expect(rows).toHaveLength(1);
     expect(rows[0]?.textContent).toContain("09:00");
 
-    expect(screen.queryByRole("button", { name: /^Edit / })).toBeNull();
-    expect(screen.queryByRole("button", { name: /^Delete / })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Actions for / })).toBeNull();
   });
 
   it("explains that the job does not exist, and asks for no shifts", async () => {

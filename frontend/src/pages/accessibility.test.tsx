@@ -224,13 +224,25 @@ describe("accessibility", () => {
     expect((await axe(container)).violations).toHaveLength(0);
   });
 
-  it("ShiftsPage has no violations, with the add dialog open", async () => {
+  it("ShiftsPage has no violations in the list, its menu, the week view and the add dialog", async () => {
     const { container } = render(
       <MemoryRouter>
         <ShiftsPage />
       </MemoryRouter>,
     );
 
+    const menu = await screen.findByRole("button", {
+      name: `Actions for ${futureLabel}`,
+    });
+    expect((await axe(container)).violations).toHaveLength(0);
+
+    fireEvent.click(menu);
+    await screen.findByRole("menu");
+    expect((await axe(container)).violations).toHaveLength(0);
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Week" }));
+    await screen.findByRole("region", { name: "Week view" });
     await screen.findByRole("button", { name: `Edit ${futureLabel}` });
     expect((await axe(container)).violations).toHaveLength(0);
 

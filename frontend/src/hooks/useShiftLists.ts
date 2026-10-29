@@ -7,7 +7,8 @@ const MAX_PAGE_SIZE = 500;
 
 export function useShiftLists(jobId?: string) {
   const [now] = useState(localNow);
-  const currentWeekStart = weekBounds(now.slice(0, 10)).from;
+  const today = now.slice(0, 10);
+  const currentWeekStart = weekBounds(today).from;
   const [weekStart, setWeekStart] = useState(currentWeekStart);
 
   const loadUpcoming = useCallback(async () => {
@@ -33,6 +34,7 @@ export function useShiftLists(jobId?: string) {
   const history = useLoad(loadHistory);
 
   return {
+    today,
     upcoming: upcoming.state,
     history: history.state,
     weekStart,

@@ -8,6 +8,8 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { NoJobsNotice } from "../components/shifts/NoJobsNotice";
 import { ShiftForm } from "../components/shifts/ShiftForm";
 import { ShiftSections } from "../components/shifts/ShiftSections";
+import { WeekView } from "../components/shifts/WeekView";
+import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { useLoad } from "../hooks/useLoad";
 import type { LoadState } from "../hooks/useLoad";
 import { useShiftLists } from "../hooks/useShiftLists";
@@ -66,7 +68,17 @@ function toShiftInput(shift: Shift): ShiftInput {
   };
 }
 
+type View = "list" | "week";
+
+const VIEW_OPTIONS: { value: View; label: string }[] = [
+  { value: "list", label: "List" },
+  { value: "week", label: "Week" },
+];
+
 export function ShiftsPage() {
+  const [view, setView] = useState<View>("list");
+  // Counts changes, so the week view knows to fetch again.
+  const [version, setVersion] = useState(0);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<Shift | null>(null);
   const [deletingShift, setDeletingShift] = useState<Shift | null>(null);
@@ -75,23 +87,37 @@ export function ShiftsPage() {
   const jobs = useLoad(loadJobs);
   const lists = useShiftLists();
 
+  function reloadShifts() {
+    lists.reload();
+    setVersion((current) => current + 1);
+  }
+
   async function handleCreate(values: ShiftInput) {
     await createShift(values);
     setIsAddOpen(false);
-    lists.reload();
+    reloadShifts();
   }
 
   async function handleUpdate(id: string, values: ShiftInput) {
     await updateShift(id, values);
     setEditingShift(null);
-    lists.reload();
+    reloadShifts();
   }
 
   async function handleDelete(id: string) {
     await deleteShift(id);
     setDeletingShift(null);
-    lists.reload();
+    reloadShifts();
   }
+
+  const viewSwitch = (
+    <SegmentedControl
+      label="View"
+      options={VIEW_OPTIONS}
+      value={view}
+      onChange={setView}
+    />
+  );
 
   return (
     <AppShell>
@@ -102,11 +128,20 @@ export function ShiftsPage() {
         }
       />
 
-      <ShiftSections
-        lists={lists}
-        onEdit={setEditingShift}
-        onDelete={setDeletingShift}
-      />
+      {view === "list" ? (
+        <ShiftSections
+          lists={lists}
+          toolbarEnd={viewSwitch}
+          onEdit={setEditingShift}
+          onDelete={setDeletingShift}
+        />
+      ) : (
+        <WeekView
+          version={version}
+          toolbarEnd={viewSwitch}
+          onEdit={setEditingShift}
+        />
+      )}
 
       <Modal
         open={isAddOpen}

@@ -82,6 +82,17 @@ function section(name: string) {
   return within(screen.getByRole("region", { name }));
 }
 
+function showHistory() {
+  fireEvent.click(screen.getByRole("button", { name: "History" }));
+}
+
+async function chooseAction(label: string, action: string) {
+  fireEvent.click(
+    await screen.findByRole("button", { name: `Actions for ${label}` }),
+  );
+  fireEvent.click(screen.getByRole("menuitem", { name: action }));
+}
+
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(listJobs).mockResolvedValue([warehouse]);
@@ -109,6 +120,7 @@ describe("ShiftsPage", () => {
 
     renderPage();
     await screen.findByText("No upcoming shifts.");
+    showHistory();
 
     expect(listShifts).toHaveBeenCalledWith({ from: "2026-10-06", limit: 500 });
     expect(listShifts).toHaveBeenCalledWith({
@@ -124,25 +136,36 @@ describe("ShiftsPage", () => {
 
     renderPage();
 
-    const upcomingRows = await section("Upcoming").findAllByRole("listitem");
+    const upcomingRows =
+      await section("Upcoming shifts").findAllByRole("listitem");
     expect(upcomingRows).toHaveLength(2);
-    expect(
-      section("Upcoming").getByText("Wed 7 Oct, 10:00 to 14:00"),
-    ).toBeDefined();
-    expect(
-      section("Upcoming").getByText("Fri 9 Oct, 09:00 to 17:00"),
-    ).toBeDefined();
-    expect(section("History").getAllByRole("listitem")).toHaveLength(2);
+    expect(upcomingRows[0]?.textContent).toContain("Wed 7 Oct, 10:00 to 14:00");
+    expect(upcomingRows[1]?.textContent).toContain("Fri 9 Oct, 09:00 to 17:00");
+
+    showHistory();
+
+    expect(section("Shift history").getAllByRole("listitem")).toHaveLength(2);
   });
 
   it("lists History with the newest shift first", async () => {
     mockShifts([ended, endedOvernight]);
+    renderPage();
+    await screen.findByText("No upcoming shifts.");
+
+    showHistory();
+
+    const rows = await section("Shift history").findAllByRole("listitem");
+    expect(rows[0]?.textContent).toContain("Tue 6 Oct");
+    expect(rows[1]?.textContent).toContain("Mon 5 Oct");
+  });
+
+  it("groups the shifts by week, with the week's total under the title", async () => {
+    mockShifts([inProgress, future]);
 
     renderPage();
 
-    const rows = await section("History").findAllByRole("listitem");
-    expect(rows[0]?.textContent).toContain("Tue 6 Oct");
-    expect(rows[1]?.textContent).toContain("Mon 5 Oct");
+    expect(await screen.findByText("This week")).toBeDefined();
+    expect(screen.getByText("2 shifts · 12h · €144.00")).toBeDefined();
   });
 
   it("shows a message in each section when there is nothing to list", async () => {
@@ -151,6 +174,7 @@ describe("ShiftsPage", () => {
     renderPage();
 
     expect(await screen.findByText("No upcoming shifts.")).toBeDefined();
+    showHistory();
     expect(screen.getByText("No finished shifts in this week.")).toBeDefined();
   });
 
@@ -159,13 +183,16 @@ describe("ShiftsPage", () => {
 
     renderPage();
 
-    expect(await screen.findAllByRole("alert")).toHaveLength(2);
+    expect(await screen.findByRole("alert")).toBeDefined();
+    showHistory();
+    expect(await screen.findByRole("alert")).toBeDefined();
   });
 
   it("moves the History week back and forward, but not past the current week", async () => {
     mockShifts([]);
     renderPage();
     await screen.findByText("No upcoming shifts.");
+    showHistory();
     const next = screen.getByRole("button", { name: "Next week" });
     expect((next as HTMLButtonElement).disabled).toBe(true);
 
@@ -183,6 +210,70 @@ describe("ShiftsPage", () => {
 
     expect(await screen.findByText("5 Oct to 11 Oct 2026")).toBeDefined();
     expect((next as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("switches to a week view with a column per day, and back", async () => {
+    mockShifts([future]);
+    renderPage();
+    await screen.findByText("This week");
+
+    fireEvent.click(screen.getByRole("button", { name: "Week" }));
+
+    const week = await screen.findByRole("region", { name: "Week view" });
+    expect(within(week).getAllByRole("heading", { level: 2 })).toHaveLength(7);
+    expect(within(week).getByText("Mon 5 Oct")).toBeDefined();
+    expect(within(week).getByText("Sun 11 Oct")).toBeDefined();
+    expect(
+      await within(week).findByRole("button", { name: `Edit ${futureLabel}` }),
+    ).toBeDefined();
+    expect(screen.queryByRole("button", { name: "Upcoming" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "List" }));
+
+    expect(
+      await screen.findByRole("button", { name: "Upcoming" }),
+    ).toBeDefined();
+  });
+
+  it("loads the week that is shown, and the neighbouring weeks", async () => {
+    mockShifts([]);
+    renderPage();
+    await screen.findByText("No upcoming shifts.");
+    fireEvent.click(screen.getByRole("button", { name: "Week" }));
+    expect(await screen.findAllByText("No shifts")).toHaveLength(7);
+
+    fireEvent.click(screen.getByRole("button", { name: "Next week" }));
+
+    expect(await screen.findByText("12 Oct to 18 Oct 2026")).toBeDefined();
+    expect(listShifts).toHaveBeenCalledWith({
+      from: "2026-10-12",
+      to: "2026-10-18",
+      limit: 500,
+    });
+  });
+
+  it("edits a shift from the week view and fetches the week again", async () => {
+    mockShifts([future]);
+    vi.mocked(updateShift).mockResolvedValue(future);
+    renderPage();
+    await screen.findByText("This week");
+    fireEvent.click(screen.getByRole("button", { name: "Week" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: `Edit ${futureLabel}` }),
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Edit shift" });
+    await within(dialog).findByLabelText("Job");
+    const callsBefore = vi.mocked(listShifts).mock.calls.length;
+
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save changes" }),
+    );
+
+    await waitFor(() => expect(updateShift).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() =>
+      expect(vi.mocked(listShifts).mock.calls.length).toBe(callsBefore + 3),
+    );
   });
 
   it("opens a dialog with the shift form from the Add shift button", async () => {
@@ -274,9 +365,7 @@ describe("ShiftsPage", () => {
     mockShifts([future]);
     vi.mocked(updateShift).mockResolvedValue(future);
     renderPage();
-    fireEvent.click(
-      await screen.findByRole("button", { name: `Edit ${futureLabel}` }),
-    );
+    await chooseAction(futureLabel, "Edit shift");
 
     const dialog = await screen.findByRole("dialog", { name: "Edit shift" });
     const job = (await within(dialog).findByLabelText(
@@ -318,9 +407,7 @@ describe("ShiftsPage", () => {
       }),
     );
     renderPage();
-    fireEvent.click(
-      await screen.findByRole("button", { name: `Edit ${futureLabel}` }),
-    );
+    await chooseAction(futureLabel, "Edit shift");
     const dialog = await screen.findByRole("dialog", { name: "Edit shift" });
 
     fireEvent.click(
@@ -339,9 +426,7 @@ describe("ShiftsPage", () => {
     mockShifts([future]);
     renderPage();
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: `Delete ${futureLabel}` }),
-    );
+    await chooseAction(futureLabel, "Delete shift…");
 
     const dialog = screen.getByRole("dialog", { name: "Delete shift?" });
     expect(
@@ -356,9 +441,7 @@ describe("ShiftsPage", () => {
     mockShifts([future]);
     vi.mocked(deleteShift).mockResolvedValue(undefined);
     renderPage();
-    fireEvent.click(
-      await screen.findByRole("button", { name: `Delete ${futureLabel}` }),
-    );
+    await chooseAction(futureLabel, "Delete shift…");
     const callsBefore = vi.mocked(listShifts).mock.calls.length;
 
     fireEvent.click(
@@ -377,9 +460,7 @@ describe("ShiftsPage", () => {
   it("keeps the shift when the delete is cancelled", async () => {
     mockShifts([future]);
     renderPage();
-    fireEvent.click(
-      await screen.findByRole("button", { name: `Delete ${futureLabel}` }),
-    );
+    await chooseAction(futureLabel, "Delete shift…");
 
     fireEvent.click(
       within(screen.getByRole("dialog")).getByRole("button", {
@@ -397,9 +478,7 @@ describe("ShiftsPage", () => {
       new ApiError(404, "Shift not found"),
     );
     renderPage();
-    fireEvent.click(
-      await screen.findByRole("button", { name: `Delete ${futureLabel}` }),
-    );
+    await chooseAction(futureLabel, "Delete shift…");
     const dialog = screen.getByRole("dialog", { name: "Delete shift?" });
 
     fireEvent.click(
