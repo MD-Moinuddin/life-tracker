@@ -6,6 +6,7 @@ import {
   formatDay,
   formatDuration,
   formatTimeRange,
+  formatTimeSpan,
 } from "../../lib/shift-format";
 import type { Shift } from "../../lib/shifts-api";
 import { JobTypeBadge } from "../jobs/JobTypeBadge";
@@ -20,6 +21,9 @@ interface ShiftRowProps {
   isNext?: boolean;
   // Show the job's type badge. Rows of one type leave it to the group.
   showType?: boolean;
+  // Name the day ("Today", "Tomorrow") on the row. Off where a heading already
+  // names the day.
+  showRelativeDay?: boolean;
   onEdit?: (shift: Shift) => void;
   onDelete?: (shift: Shift) => void;
 }
@@ -33,10 +37,11 @@ export function ShiftRow({
   today,
   isNext = false,
   showType = false,
+  showRelativeDay = true,
   onEdit,
   onDelete,
 }: ShiftRowProps) {
-  const relative = relativeDayLabel(shift.date, today);
+  const relative = showRelativeDay ? relativeDayLabel(shift.date, today) : null;
   const actions: ActionMenuItem[] = [];
   if (onEdit) {
     actions.push({ label: "Edit shift", onSelect: () => onEdit(shift) });
@@ -52,45 +57,51 @@ export function ShiftRow({
   return (
     <li
       className={classNames(
-        "flex items-center gap-4 border-l-4 py-3 pr-3 pl-4 first:rounded-t-card last:rounded-b-card",
+        "flex items-center gap-3 border-l-4 py-2.5 pr-1 pl-3 first:rounded-t-card last:rounded-b-card sm:gap-4 sm:py-3 sm:pr-3 sm:pl-4",
         jobColor(shift.jobId).edge,
         isNext && "bg-accent-soft/40",
       )}
     >
       <DateTile date={shift.date} />
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-semibold text-ink">{shift.job.name}</p>
-          {showType && <JobTypeBadge type={shift.job.type} />}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <p className="min-w-0 truncate font-semibold text-ink">
+            {shift.job.name}
+          </p>
+          {relative && (
+            <span
+              className={classNames(
+                "shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
+                relative === "Today"
+                  ? "bg-accent text-on-accent"
+                  : "bg-neutral-soft text-ink-muted",
+              )}
+            >
+              {relative}
+            </span>
+          )}
+          {/* The colour edge and the name tell jobs apart on a phone. */}
+          {showType && (
+            <span className="max-sm:hidden">
+              <JobTypeBadge type={shift.job.type} />
+            </span>
+          )}
         </div>
-        <p className="text-sm text-ink-muted">
-          <span className="sr-only">{`${formatDay(shift.date)}, `}</span>
-          {formatTimeRange(shift)}
+        <p className="text-sm whitespace-nowrap text-ink-muted tabular-nums">
+          <span className="sr-only">
+            {`${formatDay(shift.date)}, ${formatTimeRange(shift)}, ${formatDuration(shift.workedMinutes)}`}
+          </span>
+          <span aria-hidden="true">
+            {`${formatTimeSpan(shift)} · ${formatDuration(shift.workedMinutes)}`}
+          </span>
         </p>
         {shift.notes && (
           <p className="mt-1 text-sm text-ink-muted">{shift.notes}</p>
         )}
       </div>
-      {relative && (
-        <span
-          className={classNames(
-            "rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap",
-            relative === "Today"
-              ? "bg-accent text-on-accent"
-              : "bg-neutral-soft text-ink-muted",
-          )}
-        >
-          {relative}
-        </span>
-      )}
-      <div className="min-w-24 text-right">
-        <p className="font-semibold text-ink">
-          {formatCents(shiftEarningsCents(shift))}
-        </p>
-        <p className="text-sm text-ink-muted">
-          {formatDuration(shift.workedMinutes)}
-        </p>
-      </div>
+      <p className="font-semibold text-ink tabular-nums">
+        {formatCents(shiftEarningsCents(shift))}
+      </p>
       {actions.length > 0 ? (
         <ActionMenu
           label={`Actions for ${describeShift(shift)}`}
