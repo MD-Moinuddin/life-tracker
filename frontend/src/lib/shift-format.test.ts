@@ -4,6 +4,7 @@ import {
   formatDuration,
   formatMonth,
   formatTimeRange,
+  formatTimeSpan,
   formatDateRange,
   formatTileDate,
 } from "./shift-format";
@@ -76,5 +77,29 @@ describe("formatTileDate", () => {
   it("gives the weekday and the day of the month", () => {
     expect(formatTileDate("2026-10-03")).toEqual({ weekday: "Sat", day: 3 });
     expect(formatTileDate("2026-12-28")).toEqual({ weekday: "Mon", day: 28 });
+  });
+});
+
+describe("formatTimeSpan", () => {
+  it("shows start and end in the least room", () => {
+    expect(
+      formatTimeSpan({
+        date: "2026-10-03",
+        startTime: "09:00",
+        endTime: "17:00",
+        endDate: "2026-10-03",
+      }),
+    ).toBe("09:00–17:00");
+  });
+
+  it("marks a shift that ends the next day with +1", () => {
+    expect(
+      formatTimeSpan({
+        date: "2026-10-03",
+        startTime: "22:00",
+        endTime: "02:00",
+        endDate: "2026-10-04",
+      }),
+    ).toBe("22:00–02:00 +1");
   });
 });

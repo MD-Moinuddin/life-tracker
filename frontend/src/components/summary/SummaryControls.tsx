@@ -3,6 +3,7 @@ import { rangeLabel, SUMMARY_RANGES } from "../../lib/summary-period";
 import type { SummaryRange } from "../../lib/summary-period";
 import { PeriodNavigator } from "../PeriodNavigator";
 import { Button } from "../ui/Button";
+import { STICKY_ON_PHONE } from "../ui/sticky-on-phone";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { SUMMARY_LAYOUTS } from "./summary-layout";
 import type { SummaryLayout } from "./summary-layout";
@@ -18,12 +19,6 @@ interface SummaryControlsProps {
   onNext: () => void;
   onCurrent: () => void;
 }
-
-// Phone only: pin the controls under the top edge while the cards scroll.
-// Opaque and full-bleed (the page has px-4); z-10 stays under the account
-// menu popover (z-20).
-const STICKY_ON_PHONE =
-  "max-sm:sticky max-sm:top-0 max-sm:z-10 max-sm:-mx-4 max-sm:bg-page max-sm:px-4 max-sm:py-3";
 
 const RANGE_OPTIONS = SUMMARY_RANGES.map((value) => ({
   value,

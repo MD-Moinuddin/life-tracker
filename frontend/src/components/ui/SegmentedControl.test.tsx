@@ -99,4 +99,45 @@ describe("SegmentedControl", () => {
       expect(button.getAttribute("type")).toBe("button");
     }
   });
+
+  it("draws an option's icon on a phone and keeps its label as the name", () => {
+    render(
+      <SegmentedControl
+        label="View"
+        options={[
+          { value: "list", label: "List", icon: "list" },
+          { value: "week", label: "Week" },
+        ]}
+        value="list"
+        onChange={() => {}}
+      />,
+    );
+
+    const list = screen.getByRole("button", { name: "List" });
+    expect(list.querySelector("svg")?.getAttribute("class")).toContain(
+      "sm:hidden",
+    );
+    expect(screen.getByText("List").className).toContain("max-sm:sr-only");
+    expect(screen.getByText("Week").className).toBe("");
+  });
+
+  it("can fill the row on a phone", () => {
+    render(
+      <SegmentedControl
+        label="Period"
+        options={[
+          { value: "a", label: "A" },
+          { value: "b", label: "B" },
+        ]}
+        value="a"
+        onChange={() => {}}
+        fillOnPhone
+      />,
+    );
+
+    expect(screen.getByRole("group").className).toContain("max-sm:flex-1");
+    expect(screen.getByRole("button", { name: "A" }).className).toContain(
+      "max-sm:flex-1",
+    );
+  });
 });
