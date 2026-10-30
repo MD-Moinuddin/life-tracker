@@ -56,6 +56,11 @@
 
   --shadow-card: 0 1px 3px rgb(30 40 90 / 0.07);
 
+  /* The height of the phone's bottom navigation bar, including the phone's own
+     bottom safe area. The bar, the page padding that clears it and the
+     floating button above it all read this one value. */
+  --spacing-tabbar: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+
   --text-title: 1.75rem;
   --text-title--line-height: 2.25rem;
   --text-section: 1.125rem;
