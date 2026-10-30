@@ -19,4 +19,13 @@ describe("jobColor", () => {
 
     expect(used.size).toBeGreaterThan(1);
   });
+
+  it("gives every colour an edge, a dot and a tint written out in full", () => {
+    JOB_COLORS.forEach((color, index) => {
+      const n = index + 1;
+      expect(color.edge).toBe(`border-job-${n}`);
+      expect(color.dot).toBe(`bg-job-${n}`);
+      expect(color.tile).toBe(`bg-job-${n}/12 text-job-${n}`);
+    });
+  });
 });

@@ -1,12 +1,14 @@
 // Tailwind only generates classes it can read in the source, so every class is
 // written out in full. The colours are the --color-job-* tokens.
+// edge: a card's left edge. dot: a small solid swatch. tile: a soft tint with
+// the colour as its text, for a monogram.
 export const JOB_COLORS = [
-  { edge: "border-job-1", dot: "bg-job-1" },
-  { edge: "border-job-2", dot: "bg-job-2" },
-  { edge: "border-job-3", dot: "bg-job-3" },
-  { edge: "border-job-4", dot: "bg-job-4" },
-  { edge: "border-job-5", dot: "bg-job-5" },
-  { edge: "border-job-6", dot: "bg-job-6" },
+  { edge: "border-job-1", dot: "bg-job-1", tile: "bg-job-1/12 text-job-1" },
+  { edge: "border-job-2", dot: "bg-job-2", tile: "bg-job-2/12 text-job-2" },
+  { edge: "border-job-3", dot: "bg-job-3", tile: "bg-job-3/12 text-job-3" },
+  { edge: "border-job-4", dot: "bg-job-4", tile: "bg-job-4/12 text-job-4" },
+  { edge: "border-job-5", dot: "bg-job-5", tile: "bg-job-5/12 text-job-5" },
+  { edge: "border-job-6", dot: "bg-job-6", tile: "bg-job-6/12 text-job-6" },
 ] as const;
 
 // The same job always gets the same colour, on every page and every visit,
