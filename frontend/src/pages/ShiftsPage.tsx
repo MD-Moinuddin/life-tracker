@@ -2,60 +2,18 @@ import { useCallback, useState } from "react";
 import { AddButton } from "../components/AddButton";
 import { ConfirmDelete } from "../components/ConfirmDelete";
 import { AppShell } from "../components/layout/AppShell";
-import { LoadBoundary } from "../components/LoadBoundary";
 import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/ui/PageHeader";
-import { NoJobsNotice } from "../components/shifts/NoJobsNotice";
-import { ShiftForm } from "../components/shifts/ShiftForm";
+import { ShiftDialogContent } from "../components/shifts/ShiftDialogContent";
 import { ShiftSections } from "../components/shifts/ShiftSections";
 import { WeekView } from "../components/shifts/WeekView";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { useLoad } from "../hooks/useLoad";
-import type { LoadState } from "../hooks/useLoad";
 import { useShiftLists } from "../hooks/useShiftLists";
 import { listJobs } from "../lib/jobs-api";
-import type { JobWithShiftCount } from "../lib/jobs-api";
 import { formatDay, formatTimeRange } from "../lib/shift-format";
 import { createShift, deleteShift, updateShift } from "../lib/shifts-api";
 import type { Shift, ShiftInput } from "../lib/shifts-api";
-
-interface ShiftDialogContentProps {
-  jobs: LoadState<JobWithShiftCount[]>;
-  initialValues?: ShiftInput;
-  submitLabel: string;
-  onSubmit: (values: ShiftInput) => Promise<void>;
-  onClose: () => void;
-}
-
-function ShiftDialogContent({
-  jobs,
-  initialValues,
-  submitLabel,
-  onSubmit,
-  onClose,
-}: ShiftDialogContentProps) {
-  return (
-    <LoadBoundary
-      state={jobs}
-      noun="your jobs"
-      retryHint="Close this dialog and try again."
-    >
-      {(loadedJobs) =>
-        loadedJobs.length === 0 ? (
-          <NoJobsNotice onClose={onClose} />
-        ) : (
-          <ShiftForm
-            jobs={loadedJobs}
-            initialValues={initialValues}
-            submitLabel={submitLabel}
-            onSubmit={onSubmit}
-            onCancel={onClose}
-          />
-        )
-      }
-    </LoadBoundary>
-  );
-}
 
 function toShiftInput(shift: Shift): ShiftInput {
   return {

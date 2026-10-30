@@ -15,12 +15,13 @@ export function useSummary() {
     () => getSummary({ range, date, now }),
     [range, date, now],
   );
-  const { state, isStale } = useLoad(load, { keepPreviousData: true });
+  const { state, isStale, reload } = useLoad(load, { keepPreviousData: true });
 
   return {
     now,
     state,
     isStale,
+    reload,
     range,
     periodLabel: formatPeriod(range, date),
     // Compared by label, which is unique per period, so any day of the current
