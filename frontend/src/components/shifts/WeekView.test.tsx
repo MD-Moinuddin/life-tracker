@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PHONE_QUERY } from "../../lib/breakpoints";
 import { listShifts } from "../../lib/shifts-api";
 import { makeShift } from "../../test/fixtures";
 import { WeekView } from "./WeekView";
@@ -22,6 +23,18 @@ function mockShifts(items = [makeShift({ date: "2026-10-09" })]) {
 beforeEach(() => {
   vi.resetAllMocks();
 });
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+function stubPhone() {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === PHONE_QUERY,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
+}
 
 describe("WeekView", () => {
   it("shows seven days, Monday to Sunday, with today marked", async () => {
@@ -156,5 +169,45 @@ describe("WeekView", () => {
     );
 
     expect(await screen.findByRole("button", { name: "Extra" })).toBeDefined();
+  });
+
+  it("shows the day columns on a wide screen", async () => {
+    mockShifts();
+
+    render(<WeekView version={0} onEdit={vi.fn()} />);
+
+    expect(
+      await screen.findByRole("button", { name: /^Edit Warehouse, Fri 9 Oct/ }),
+    ).toBeDefined();
+    expect(screen.queryByRole("button", { name: /^Actions for / })).toBeNull();
+  });
+
+  it("shows a day-by-day agenda with menus on a phone", async () => {
+    stubPhone();
+    mockShifts();
+    const onDelete = vi.fn();
+
+    render(<WeekView version={0} onEdit={vi.fn()} onDelete={onDelete} />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /^Actions for Warehouse/ }),
+    );
+    fireEvent.click(screen.getByRole("menuitem", { name: "Delete shift…" }));
+
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("button", { name: /^Edit Warehouse/ }),
+    ).toBeNull();
+  });
+
+  it("pins the toolbar to the top on a phone", async () => {
+    mockShifts([]);
+
+    render(<WeekView version={0} onEdit={vi.fn()} />);
+    await screen.findByText("Mon 5 Oct");
+
+    const toolbar = screen.getByRole("button", { name: "Previous week" })
+      .parentElement?.parentElement;
+    expect(toolbar?.className).toContain("max-sm:sticky");
   });
 });

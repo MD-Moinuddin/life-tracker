@@ -21,18 +21,43 @@ describe("ShiftRow", () => {
 
     expect(screen.getByText("Warehouse")).toBeDefined();
     expect(screen.getByRole("listitem").textContent).toContain(
-      "Sat 3 Oct, 09:00 to 17:00",
+      "Sat 3 Oct, 09:00 to 17:00, 7h 30m",
     );
+    expect(screen.getByText("09:00–17:00 · 7h 30m")).toBeDefined();
     expect(screen.getByText("€90.00")).toBeDefined();
-    expect(screen.getByText("7h 30m")).toBeDefined();
     expect(screen.getByText("Early start")).toBeDefined();
   });
 
-  it("says the day once, in text for screen readers beside the tile", () => {
+  it("keeps the times on one line, short on screen and in full for screen readers", () => {
     renderRow();
 
-    expect(screen.getByText("Sat 3 Oct,").className).toContain("sr-only");
-    expect(screen.queryByText("Sat 3 Oct, 09:00 to 17:00")).toBeNull();
+    const visible = screen.getByText("09:00–17:00 · 8h");
+    expect(visible.getAttribute("aria-hidden")).toBe("true");
+    expect(visible.parentElement?.className).toContain("whitespace-nowrap");
+    expect(
+      screen.getByText("Sat 3 Oct, 09:00 to 17:00, 8h").className,
+    ).toContain("sr-only");
+  });
+
+  it("marks a shift that ends the next day with +1 on screen", () => {
+    renderRow(
+      makeShift({
+        startTime: "22:00",
+        endTime: "02:00",
+        endDate: "2026-10-04",
+        workedMinutes: 240,
+      }),
+    );
+
+    expect(screen.getByText("22:00–02:00 +1 · 4h")).toBeDefined();
+  });
+
+  it("hides the job type badge on a phone, where the colour and name are enough", () => {
+    renderRow(makeShift(), { showType: true });
+
+    expect(
+      screen.getByText("Part-time job").closest("span.max-sm\\:hidden"),
+    ).not.toBeNull();
   });
 
   it("marks a shift that ends the next day", () => {
@@ -60,6 +85,15 @@ describe("ShiftRow", () => {
     renderRow(makeShift({ date: "2026-10-01" }), { today: "2026-10-01" });
 
     expect(screen.getByText("Today").className).toContain("bg-accent");
+  });
+
+  it("can leave the day label out where a heading already says it", () => {
+    renderRow(makeShift({ date: "2026-10-01" }), {
+      today: "2026-10-01",
+      showRelativeDay: false,
+    });
+
+    expect(screen.queryByText("Today")).toBeNull();
   });
 
   it("has no label for a day further away", () => {

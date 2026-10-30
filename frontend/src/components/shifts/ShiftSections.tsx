@@ -9,6 +9,7 @@ import { LoadBoundary } from "../LoadBoundary";
 import { PeriodNavigator } from "../PeriodNavigator";
 import { EmptyState } from "../ui/EmptyState";
 import { SegmentedControl } from "../ui/SegmentedControl";
+import { STICKY_ON_PHONE } from "../ui/sticky-on-phone";
 import { ShiftGroup } from "./ShiftGroup";
 
 type Tab = "upcoming" | "history";
@@ -76,14 +77,27 @@ export function ShiftSections({
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <SegmentedControl
-          label="Shift period"
-          options={TAB_OPTIONS}
-          value={tab}
-          onChange={setTab}
-        />
-        {toolbarEnd}
+      <div className={STICKY_ON_PHONE}>
+        <div className="mb-4 flex items-center justify-between gap-3 max-sm:mb-2">
+          <SegmentedControl
+            label="Shift period"
+            options={TAB_OPTIONS}
+            value={tab}
+            onChange={setTab}
+            fillOnPhone
+          />
+          {toolbarEnd}
+        </div>
+        {tab === "history" && (
+          <PeriodNavigator
+            className="mb-3 max-sm:mb-0"
+            label={formatDateRange(lists.weekStart, lists.weekEnd)}
+            unit="week"
+            canGoNext={lists.canGoNext}
+            onPrevious={lists.previousWeek}
+            onNext={lists.nextWeek}
+          />
+        )}
       </div>
 
       {tab === "upcoming" ? (
@@ -99,14 +113,6 @@ export function ShiftSections({
         </section>
       ) : (
         <section aria-label="Shift history">
-          <PeriodNavigator
-            className="mb-3"
-            label={formatDateRange(lists.weekStart, lists.weekEnd)}
-            unit="week"
-            canGoNext={lists.canGoNext}
-            onPrevious={lists.previousWeek}
-            onNext={lists.nextWeek}
-          />
           <ShiftsBlock
             state={lists.history}
             emptyMessage="No finished shifts in this week."

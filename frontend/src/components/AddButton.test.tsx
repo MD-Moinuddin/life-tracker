@@ -27,4 +27,19 @@ describe("AddButton", () => {
       "true",
     );
   });
+
+  it("floats at the bottom right on a phone only when asked to", () => {
+    const { unmount } = render(
+      <AddButton label="Add job" onClick={() => {}} />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Add job" }).className,
+    ).not.toContain("max-sm:fixed");
+    unmount();
+
+    render(<AddButton label="Add job" floating onClick={() => {}} />);
+    const button = screen.getByRole("button", { name: "Add job" });
+    expect(button.className).toContain("max-sm:fixed");
+    expect(button.className).toContain("max-sm:rounded-full");
+  });
 });

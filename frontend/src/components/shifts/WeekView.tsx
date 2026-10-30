@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useWeekShifts } from "../../hooks/useWeekShifts";
+import { PHONE_QUERY } from "../../lib/breakpoints";
 import { addDays } from "../../lib/dates";
 import { classNames } from "../../lib/class-names";
 import { jobColor } from "../../lib/job-color";
@@ -15,6 +17,8 @@ import { totalsOf } from "../../lib/shift-groups";
 import type { Shift } from "../../lib/shifts-api";
 import { LoadBoundary } from "../LoadBoundary";
 import { PeriodNavigator } from "../PeriodNavigator";
+import { STICKY_ON_PHONE } from "../ui/sticky-on-phone";
+import { WeekAgenda } from "./WeekAgenda";
 
 interface WeekViewProps {
   // Bumped by the page after a shift changes, so the week fetches again.
@@ -22,6 +26,8 @@ interface WeekViewProps {
   // Sits at the right above the week, e.g. a view switch.
   toolbarEnd?: ReactNode;
   onEdit: (shift: Shift) => void;
+  // Only the phone agenda has a delete; the day columns open the shift to edit.
+  onDelete?: (shift: Shift) => void;
 }
 
 function describeShift(shift: Shift) {
@@ -121,29 +127,48 @@ function WeekGrid({
   );
 }
 
-// One week as seven day columns. Pressing a shift opens it for editing.
-export function WeekView({ version, toolbarEnd, onEdit }: WeekViewProps) {
+// One week as seven day columns, or as a day-by-day agenda on a phone.
+// Pressing a shift in the columns opens it for editing.
+export function WeekView({
+  version,
+  toolbarEnd,
+  onEdit,
+  onDelete,
+}: WeekViewProps) {
   const week = useWeekShifts(version);
+  const isPhone = useMediaQuery(PHONE_QUERY);
 
   return (
     <section aria-label="Week view">
-      <div className="mb-4 flex justify-end">{toolbarEnd}</div>
-      <PeriodNavigator
-        className="mb-2"
-        label={formatDateRange(week.weekStart, week.weekEnd)}
-        unit="week"
-        onPrevious={week.previousWeek}
-        onNext={week.nextWeek}
-      />
+      <div className={STICKY_ON_PHONE}>
+        <div className="mb-4 flex justify-end max-sm:mb-2">{toolbarEnd}</div>
+        <PeriodNavigator
+          className="mb-2 max-sm:mb-0"
+          label={formatDateRange(week.weekStart, week.weekEnd)}
+          unit="week"
+          onPrevious={week.previousWeek}
+          onNext={week.nextWeek}
+        />
+      </div>
       <LoadBoundary state={week.state} noun="your shifts">
-        {(shifts) => (
-          <WeekGrid
-            shifts={shifts}
-            weekStart={week.weekStart}
-            today={week.today}
-            onEdit={onEdit}
-          />
-        )}
+        {(shifts) =>
+          isPhone ? (
+            <WeekAgenda
+              shifts={shifts}
+              weekStart={week.weekStart}
+              today={week.today}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          ) : (
+            <WeekGrid
+              shifts={shifts}
+              weekStart={week.weekStart}
+              today={week.today}
+              onEdit={onEdit}
+            />
+          )
+        }
       </LoadBoundary>
     </section>
   );

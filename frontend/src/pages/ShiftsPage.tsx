@@ -70,10 +70,10 @@ function toShiftInput(shift: Shift): ShiftInput {
 
 type View = "list" | "week";
 
-const VIEW_OPTIONS: { value: View; label: string }[] = [
-  { value: "list", label: "List" },
-  { value: "week", label: "Week" },
-];
+const VIEW_OPTIONS = [
+  { value: "list", label: "List", icon: "list" },
+  { value: "week", label: "Week", icon: "calendar" },
+] as const;
 
 export function ShiftsPage() {
   const [view, setView] = useState<View>("list");
@@ -124,24 +124,32 @@ export function ShiftsPage() {
       <PageHeader
         title="Shifts"
         action={
-          <AddButton label="Add shift" onClick={() => setIsAddOpen(true)} />
+          <AddButton
+            label="Add shift"
+            floating
+            onClick={() => setIsAddOpen(true)}
+          />
         }
       />
 
-      {view === "list" ? (
-        <ShiftSections
-          lists={lists}
-          toolbarEnd={viewSwitch}
-          onEdit={setEditingShift}
-          onDelete={setDeletingShift}
-        />
-      ) : (
-        <WeekView
-          version={version}
-          toolbarEnd={viewSwitch}
-          onEdit={setEditingShift}
-        />
-      )}
+      {/* Room at the bottom of a phone for the floating Add shift button. */}
+      <div className="max-sm:pb-20">
+        {view === "list" ? (
+          <ShiftSections
+            lists={lists}
+            toolbarEnd={viewSwitch}
+            onEdit={setEditingShift}
+            onDelete={setDeletingShift}
+          />
+        ) : (
+          <WeekView
+            version={version}
+            toolbarEnd={viewSwitch}
+            onEdit={setEditingShift}
+            onDelete={setDeletingShift}
+          />
+        )}
+      </div>
 
       <Modal
         open={isAddOpen}

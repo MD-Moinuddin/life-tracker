@@ -29,8 +29,9 @@ export function ShiftGroup({
   const types = new Set(week.shifts.map((shift) => shift.job.type));
 
   return (
-    <section className="mb-6">
-      <div className="sticky top-0 z-10 flex flex-wrap items-baseline gap-x-3 bg-page py-2">
+    <section className="mb-4 sm:mb-6">
+      {/* Pinned from sm up; on a phone the toolbar above is the pinned part. */}
+      <div className="flex flex-wrap items-baseline gap-x-3 bg-page py-2 sm:sticky sm:top-0 sm:z-10">
         <h2 className={EYEBROW_CLASSES}>{title}</h2>
         <p className="text-sm text-ink-muted">
           {[
