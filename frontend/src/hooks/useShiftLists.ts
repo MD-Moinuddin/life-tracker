@@ -5,13 +5,10 @@ import { useLoad } from "./useLoad";
 
 const MAX_PAGE_SIZE = 500;
 
-export function useShiftLists(jobId?: string) {
-  const [now] = useState(localNow);
-  const today = now.slice(0, 10);
-  const currentWeekStart = weekBounds(today).from;
-  const [weekStart, setWeekStart] = useState(currentWeekStart);
-
-  const loadUpcoming = useCallback(async () => {
+// The shifts that have not ended yet, soonest first. `now` is the browser's
+// wall-clock time, so the caller decides which "now" the page works with.
+export function useUpcomingShifts(now: string, jobId?: string) {
+  const load = useCallback(async () => {
     const page = await listShifts({
       jobId,
       from: addDays(now.slice(0, 10), -1),
@@ -19,6 +16,15 @@ export function useShiftLists(jobId?: string) {
     });
     return page.items.filter((shift) => !hasEnded(shift, now));
   }, [jobId, now]);
+
+  return useLoad(load);
+}
+
+export function useShiftLists(jobId?: string) {
+  const [now] = useState(localNow);
+  const today = now.slice(0, 10);
+  const currentWeekStart = weekBounds(today).from;
+  const [weekStart, setWeekStart] = useState(currentWeekStart);
 
   const loadHistory = useCallback(async () => {
     const page = await listShifts({
@@ -30,7 +36,7 @@ export function useShiftLists(jobId?: string) {
     return page.items.filter((shift) => hasEnded(shift, now)).reverse();
   }, [jobId, weekStart, now]);
 
-  const upcoming = useLoad(loadUpcoming);
+  const upcoming = useUpcomingShifts(now, jobId);
   const history = useLoad(loadHistory);
 
   return {

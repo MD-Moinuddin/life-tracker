@@ -85,4 +85,34 @@ describe("LoadBoundary", () => {
 
     expect(screen.getByText("a,b")).toBeDefined();
   });
+
+  it("draws the given placeholder while loading, instead of the message", () => {
+    render(
+      <LoadBoundary
+        state={{ status: "loading" }}
+        noun="your week"
+        loading={<p>Skeleton</p>}
+      >
+        {() => <p>Loaded</p>}
+      </LoadBoundary>,
+    );
+
+    expect(screen.getByText("Skeleton")).toBeDefined();
+    expect(screen.queryByText("Loading your week…")).toBeNull();
+  });
+
+  it("still shows the error message when a placeholder is given", () => {
+    render(
+      <LoadBoundary
+        state={{ status: "error" }}
+        noun="your week"
+        loading={<p>Skeleton</p>}
+      >
+        {() => <p>Loaded</p>}
+      </LoadBoundary>,
+    );
+
+    expect(screen.queryByText("Skeleton")).toBeNull();
+    expect(screen.getByRole("alert")).toBeDefined();
+  });
 });

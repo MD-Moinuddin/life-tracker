@@ -73,3 +73,15 @@ export function formatTimeSpan(
   const nextDay = shift.endDate === shift.date ? "" : " +1";
   return `${shift.startTime}–${shift.endTime}${nextDay}`;
 }
+
+const longDate = new Intl.DateTimeFormat("en-GB", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
+
+// "Friday 30 October".
+export function formatLongDate(date: string): string {
+  return longDate.format(new Date(`${date}T00:00:00Z`)).replace(",", "");
+}
