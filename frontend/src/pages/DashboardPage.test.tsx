@@ -1,13 +1,22 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { axe } from "jest-axe";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { listJobs } from "../lib/jobs-api";
+import type { JobWithShiftCount } from "../lib/jobs-api";
+import { createShift, listShifts } from "../lib/shifts-api";
 import { getSummary } from "../lib/summary-api";
 import type { Summary } from "../lib/summary-api";
 import { useAuthStore } from "../store/auth-store";
+import { makeShift } from "../test/fixtures";
 import { DashboardPage } from "./DashboardPage";
 
 vi.mock("../lib/summary-api", () => ({ getSummary: vi.fn() }));
+vi.mock("../lib/jobs-api", () => ({ listJobs: vi.fn() }));
+vi.mock("../lib/shifts-api", () => ({
+  listShifts: vi.fn(),
+  createShift: vi.fn(),
+}));
 vi.mock("../lib/dates", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/dates")>()),
   localNow: () => "2026-10-07T19:30",
@@ -43,6 +52,35 @@ const summary: Summary = {
   },
 };
 
+const warehouse: JobWithShiftCount = {
+  id: "job-1",
+  name: "Warehouse",
+  hourlyRate: "12.00",
+  type: "part_time",
+  createdAt: "2026-10-01T09:00:00.000Z",
+  updatedAt: "2026-10-01T09:00:00.000Z",
+  shiftCount: 3,
+};
+
+// An evening shift today, so it has not ended at the mocked time (19:30).
+const eveningShift = makeShift({
+  id: "today",
+  date: "2026-10-07",
+  startTime: "20:00",
+  endTime: "23:00",
+  endDate: "2026-10-07",
+  workedMinutes: 180,
+});
+
+function mockShifts(items = [eveningShift]) {
+  vi.mocked(listShifts).mockResolvedValue({
+    items,
+    total: items.length,
+    limit: 500,
+    offset: 0,
+  });
+}
+
 function renderPage() {
   return render(
     <MemoryRouter>
@@ -54,6 +92,8 @@ function renderPage() {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(getSummary).mockResolvedValue(summary);
+  vi.mocked(listJobs).mockResolvedValue([warehouse]);
+  mockShifts();
   useAuthStore.setState({ user, accessToken: "token" });
 });
 
@@ -62,19 +102,20 @@ afterEach(() => {
 });
 
 describe("DashboardPage", () => {
-  it("greets the user by first name for the time of day", async () => {
+  it("greets the user by first name for the time of day, with the date", async () => {
     renderPage();
 
     expect(
       screen.getByRole("heading", { level: 1, name: "Good evening, Md" }),
     ).toBeDefined();
-    await screen.findByText("€252.75");
+    expect(screen.getByText("Wednesday 7 October")).toBeDefined();
+    await screen.findByText("€96.00");
   });
 
   it("asks for this week's summary with the browser's local time", async () => {
     renderPage();
 
-    await screen.findByText("€252.75");
+    await screen.findByText("€96.00");
     expect(getSummary).toHaveBeenCalledWith({
       range: "week",
       date: "2026-10-07",
@@ -82,14 +123,43 @@ describe("DashboardPage", () => {
     });
   });
 
-  it("shows the week at a glance once it loads", async () => {
+  it("leads the week card with what was earned", async () => {
     renderPage();
 
-    expect(await screen.findByText("€252.75")).toBeDefined();
-    expect(screen.getByText("planned this week · 20h 30m")).toBeDefined();
+    expect(await screen.findByText("€96.00")).toBeDefined();
+    expect(screen.getByText("earned · 8h finished")).toBeDefined();
+    expect(screen.getByText("€252.75 · 20h 30m")).toBeDefined();
   });
 
-  it("still shows the greeting and every module when the week cannot be loaded", async () => {
+  it("shows today's shifts next to the week", async () => {
+    renderPage();
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Today" }),
+    ).toBeDefined();
+    expect(screen.getByText("Warehouse")).toBeDefined();
+  });
+
+  it("asks for the upcoming shifts once, not the whole history", async () => {
+    renderPage();
+    await screen.findByText("€96.00");
+
+    expect(listShifts).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the planned modules as quiet chips, not cards", async () => {
+    renderPage();
+    await screen.findByText("€96.00");
+
+    const soon = screen.getByRole("region", { name: "Coming soon" });
+    expect(
+      within(soon)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual(["Fitness", "Nutrition", "Finance"]);
+  });
+
+  it("still shows the greeting and the chips when the week cannot be loaded", async () => {
     vi.mocked(getSummary).mockRejectedValue(new Error("network down"));
     renderPage();
 
@@ -97,39 +167,64 @@ describe("DashboardPage", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Good evening, Md" }),
     ).toBeDefined();
-    for (const title of ["Work Schedule", "Fitness", "Nutrition", "Finance"]) {
-      expect(
-        screen.getByRole("heading", { level: 3, name: title }),
-      ).toBeDefined();
-    }
+    expect(screen.getByRole("region", { name: "Coming soon" })).toBeDefined();
   });
 
-  it("makes Work Schedule the only module link", async () => {
+  it("floats the Add shift button on a phone", async () => {
     renderPage();
 
-    const main = within(screen.getByRole("main"));
-    expect(
-      main.getByRole("link", { name: "Work Schedule" }).getAttribute("href"),
-    ).toBe("/shifts");
-    for (const title of ["Fitness", "Nutrition", "Finance"]) {
-      expect(main.queryByRole("link", { name: title })).toBeNull();
-    }
-    expect(main.getAllByText("Coming later")).toHaveLength(3);
-    await screen.findByText("€252.75");
+    const add = await screen.findByRole("button", { name: "Add shift" });
+    expect(add.className).toContain("max-sm:fixed");
   });
 
-  it("has a Modules section heading under the week card", async () => {
+  it("adds a shift from a dialog and refreshes the week and the shifts", async () => {
+    vi.mocked(createShift).mockResolvedValue(makeShift());
+    renderPage();
+    await screen.findByText("€96.00");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add shift" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add a shift" });
+    fireEvent.change(await within(dialog).findByLabelText("Job"), {
+      target: { value: "job-1" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Start time"), {
+      target: { value: "09:00" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("End time"), {
+      target: { value: "17:00" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add shift" }));
+
+    await vi.waitFor(() => expect(createShift).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(getSummary).toHaveBeenCalledTimes(2));
+    expect(listShifts).toHaveBeenCalledTimes(2);
+    expect(listJobs).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows the set-up steps, and no Add shift button, with no job yet", async () => {
+    vi.mocked(listJobs).mockResolvedValue([]);
     renderPage();
 
+    expect(await screen.findByText("Add your first job")).toBeDefined();
+    expect(screen.queryByRole("button", { name: "Add shift" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Today" })).toBeNull();
+  });
+
+  it("keeps the set-up steps until the first shift, and then offers the shift dialog", async () => {
+    vi.mocked(listJobs).mockResolvedValue([{ ...warehouse, shiftCount: 0 }]);
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Add shift" }));
+
     expect(
-      screen.getByRole("heading", { level: 2, name: "Modules" }),
+      await screen.findByRole("dialog", { name: "Add a shift" }),
     ).toBeDefined();
-    await screen.findByText("€252.75");
   });
 
-  it("has no accessibility violations once the week has loaded", async () => {
+  it("has no accessibility violations once everything has loaded", async () => {
     const { container } = renderPage();
-    await screen.findByText("€252.75");
+    await screen.findByText("€96.00");
+    await screen.findByRole("heading", { level: 2, name: "Today" });
 
     expect((await axe(container)).violations).toHaveLength(0);
   });
@@ -138,6 +233,14 @@ describe("DashboardPage", () => {
     vi.mocked(getSummary).mockRejectedValue(new Error("network down"));
     const { container } = renderPage();
     await screen.findByRole("alert");
+
+    expect((await axe(container)).violations).toHaveLength(0);
+  });
+
+  it("has no accessibility violations in the set-up state", async () => {
+    vi.mocked(listJobs).mockResolvedValue([]);
+    const { container } = renderPage();
+    await screen.findByText("Add your first job");
 
     expect((await axe(container)).violations).toHaveLength(0);
   });

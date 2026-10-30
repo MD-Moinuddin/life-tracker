@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { classNames } from "../../lib/class-names";
 import { logout } from "../../lib/auth-api";
 import { ROUTES } from "../../lib/routes";
 import { useAuthStore } from "../../store/auth-store";
+import { Icon } from "../ui/Icon";
+import type { IconName } from "../ui/Icon";
 import { AccountMenu } from "./AccountMenu";
 import { BrandLink } from "./BrandLink";
 
@@ -10,19 +13,22 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-const NAV_LINKS = [
-  { to: ROUTES.dashboard, label: "Dashboard" },
-  { to: ROUTES.jobs, label: "Jobs" },
-  { to: ROUTES.shifts, label: "Shifts" },
-  { to: ROUTES.summary, label: "Summary" },
+// The one list of main pages. Below md they are the tabs of a bar fixed to the
+// bottom of the screen, where a thumb reaches; from md up they are links in the
+// header.
+const NAV_LINKS: { to: string; label: string; icon: IconName }[] = [
+  { to: ROUTES.dashboard, label: "Dashboard", icon: "layout-dashboard" },
+  { to: ROUTES.jobs, label: "Jobs", icon: "briefcase" },
+  { to: ROUTES.shifts, label: "Shifts", icon: "clock" },
+  { to: ROUTES.summary, label: "Summary", icon: "bar-chart" },
 ];
 
 const NAV_LINK_BASE_CLASSES =
-  "flex min-h-11 items-center whitespace-nowrap border-b-2 px-3 text-sm font-medium transition-colors";
+  "flex items-center whitespace-nowrap font-medium transition-colors max-md:min-h-14 max-md:w-full max-md:flex-col max-md:justify-center max-md:gap-0.5 max-md:text-xs md:min-h-11 md:border-b-2 md:px-3 md:text-sm";
 
 function navLinkClassName({ isActive }: { isActive: boolean }) {
   return isActive
-    ? `${NAV_LINK_BASE_CLASSES} border-accent text-accent`
+    ? `${NAV_LINK_BASE_CLASSES} border-accent text-accent max-md:font-bold`
     : `${NAV_LINK_BASE_CLASSES} border-transparent text-ink-muted hover:text-ink`;
 }
 
@@ -51,17 +57,30 @@ export function AppShell({ children }: AppShellProps) {
         Skip to content
       </a>
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 px-4 max-md:py-1 sm:px-6">
           <BrandLink to={ROUTES.dashboard} className="min-h-11 text-base" />
           <nav
             aria-label="Main"
-            className="order-last -mx-4 w-[calc(100%+2rem)] overflow-x-auto px-4 py-1 md:order-none md:mx-0 md:w-auto md:flex-1 md:overflow-visible md:px-0 md:py-0"
+            className="max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-20 max-md:h-tabbar max-md:border-t max-md:border-border max-md:bg-surface max-md:px-2 max-md:pt-1.5 max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-card md:flex-1"
           >
-            <ul className="flex gap-1">
-              {NAV_LINKS.map(({ to, label }) => (
-                <li key={to}>
+            <ul className="flex gap-1 max-md:justify-around">
+              {NAV_LINKS.map(({ to, label, icon }) => (
+                <li key={to} className="max-md:flex-1">
                   <NavLink to={to} className={navLinkClassName}>
-                    {label}
+                    {({ isActive }) => (
+                      <>
+                        <span
+                          aria-hidden="true"
+                          className={classNames(
+                            "flex h-7.5 w-14 items-center justify-center rounded-full md:hidden",
+                            isActive && "bg-accent-soft",
+                          )}
+                        >
+                          <Icon name={icon} className="h-5.5 w-5.5" />
+                        </span>
+                        {label}
+                      </>
+                    )}
                   </NavLink>
                 </li>
               ))}
@@ -74,7 +93,12 @@ export function AppShell({ children }: AppShellProps) {
           />
         </div>
       </header>
-      <main id="main-content" className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      {/* Below md the bottom bar covers the end of the page, so the page ends
+          above it. */}
+      <main
+        id="main-content"
+        className="mx-auto max-w-6xl px-4 py-8 max-md:pb-[calc(var(--spacing-tabbar)+2rem)] sm:px-6"
+      >
         {children}
       </main>
     </div>

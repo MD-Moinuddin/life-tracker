@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
+import { jobColor } from "../../lib/job-color";
 import type { JobWithShiftCount } from "../../lib/jobs-api";
 import { JobList } from "./JobList";
 
@@ -16,7 +17,7 @@ const jobs: JobWithShiftCount[] = [
   },
   {
     id: "job-2",
-    name: "Cafe",
+    name: "cafe",
     hourlyRate: "10.50",
     type: "mini_job",
     createdAt: "2026-10-02T09:00:00.000Z",
@@ -39,27 +40,32 @@ function renderList(
   );
 }
 
+function openMenu(jobName: string) {
+  fireEvent.click(
+    screen.getByRole("button", { name: `Actions for ${jobName}` }),
+  );
+}
+
 describe("JobList", () => {
   it("shows each job's name, type and hourly rate", () => {
     renderList();
 
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
-    expect(screen.getByText("Warehouse")).toBeDefined();
-    expect(screen.getByText("Part-time job")).toBeDefined();
-    expect(screen.getByText("€12.00 / hour")).toBeDefined();
-    expect(screen.getByText("Cafe")).toBeDefined();
-    expect(screen.getByText("Mini-job")).toBeDefined();
-    expect(screen.getByText("€10.50 / hour")).toBeDefined();
+    const warehouse = within(screen.getAllByRole("listitem")[0] as HTMLElement);
+    expect(warehouse.getByText("Warehouse")).toBeDefined();
+    expect(warehouse.getByText("Part-time job")).toBeDefined();
+    expect(warehouse.getByText("€12.00")).toBeDefined();
+    expect(warehouse.getByText("/ hour")).toBeDefined();
+    const cafe = within(screen.getAllByRole("listitem")[1] as HTMLElement);
+    expect(cafe.getByText("Mini-job")).toBeDefined();
+    expect(cafe.getByText("€10.50")).toBeDefined();
   });
 
-  it("hides the separator between the rate and the shift count from screen readers", () => {
+  it("shows how many shifts each job has", () => {
     renderList();
 
-    const paragraph = screen.getByText("3 shifts").closest("p");
-    const separator = Array.from(
-      paragraph?.querySelectorAll("span") ?? [],
-    ).find((span) => span.textContent?.includes("·"));
-    expect(separator?.getAttribute("aria-hidden")).toBe("true");
+    expect(screen.getByText("3 shifts")).toBeDefined();
+    expect(screen.getByText("0 shifts")).toBeDefined();
   });
 
   it("links each job's name to that job's page", () => {
@@ -69,33 +75,51 @@ describe("JobList", () => {
       screen.getByRole("link", { name: "Warehouse" }).getAttribute("href"),
     ).toBe("/jobs/job-1");
     expect(
-      screen.getByRole("link", { name: "Cafe" }).getAttribute("href"),
+      screen.getByRole("link", { name: "cafe" }).getAttribute("href"),
     ).toBe("/jobs/job-2");
   });
 
-  it("reports which job to edit, with a button named after the job", () => {
+  it("marks each job with its colour on the left edge and in a monogram of its initial", () => {
+    renderList();
+
+    const [first, second] = screen.getAllByRole("listitem");
+    expect(first?.className).toContain(jobColor("job-1").edge);
+    expect(second?.className).toContain(jobColor("job-2").edge);
+    const monogram = second?.querySelector("[aria-hidden=true]");
+    expect(monogram?.textContent).toBe("C");
+    expect(monogram?.className).toContain(jobColor("job-2").tile);
+  });
+
+  it("has one menu per job, named after it, with Edit and Delete", () => {
+    renderList();
+
+    openMenu("Warehouse");
+
+    expect(
+      screen.getAllByRole("menuitem").map((item) => item.textContent),
+    ).toEqual(["Edit job", "Delete job…"]);
+  });
+
+  it("reports which job to edit", () => {
     const onEdit = vi.fn();
     renderList({ onEdit });
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit Cafe" }));
+    openMenu("cafe");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit job" }));
 
     expect(onEdit).toHaveBeenCalledWith(jobs[1]);
   });
 
-  it("reports which job to delete, with a button named after the job", () => {
+  it("reports which job to delete, and draws Delete as the danger action", () => {
     const onDelete = vi.fn();
     renderList({ onDelete });
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
+    openMenu("Warehouse");
+    const remove = screen.getByRole("menuitem", { name: "Delete job…" });
+    expect(remove.className).toContain("text-danger");
+    fireEvent.click(remove);
 
     expect(onDelete).toHaveBeenCalledWith(jobs[0]);
-  });
-
-  it("shows how many shifts each job has", () => {
-    renderList();
-
-    expect(screen.getByText("3 shifts")).toBeDefined();
-    expect(screen.getByText("0 shifts")).toBeDefined();
   });
 
   it("shows the job type as a badge in its own colour", () => {
@@ -107,15 +131,12 @@ describe("JobList", () => {
     expect(screen.getByText("Mini-job").className).toContain("bg-accent-soft");
   });
 
-  it("makes Delete the quiet danger button and Edit the plain one", () => {
+  it("lays the cards out in a grid that grows with the screen", () => {
     renderList();
 
-    expect(
-      screen.getByRole("button", { name: "Delete Warehouse" }).className,
-    ).toContain("text-danger");
-    expect(
-      screen.getByRole("button", { name: "Edit Warehouse" }).className,
-    ).not.toContain("text-danger");
+    const grid = screen.getByRole("list");
+    expect(grid.className).toContain("sm:grid-cols-2");
+    expect(grid.className).toContain("lg:grid-cols-3");
   });
 
   it("draws each job as a card with the shared look", () => {
@@ -127,7 +148,7 @@ describe("JobList", () => {
 
     const card = container.querySelector("li");
     expect(card?.className).toContain("rounded-card");
-    expect(card?.className).toContain("p-5");
+    expect(card?.className).toContain("border-l-4");
     expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);
   });
 });

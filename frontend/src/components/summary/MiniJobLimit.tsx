@@ -20,7 +20,7 @@ export function MiniJobLimit({ summary }: MiniJobLimitProps) {
   const limit = formatEuro(miniJob.threshold);
 
   return (
-    <Card padded className="mb-4">
+    <Card padded className="mb-3 sm:mb-4">
       <SectionHeading>Mini-job limit</SectionHeading>
       <p className="mt-1 text-sm text-ink-muted">
         {`${planned} of ${limit} planned`}

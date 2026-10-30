@@ -1,3 +1,4 @@
+import { jobColor } from "../../lib/job-color";
 import { formatEuro } from "../../lib/money";
 import { formatDateRange, formatDuration } from "../../lib/shift-format";
 import type { Summary } from "../../lib/summary-api";
@@ -30,6 +31,10 @@ export function SummaryTable({ summary }: SummaryTableProps) {
           <tr key={job.jobId}>
             <RowHeader>
               <span className="flex flex-wrap items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className={`h-2.5 w-2.5 rounded-sm ${jobColor(job.jobId).dot}`}
+                />
                 {job.name}
                 <JobTypeBadge type={job.type} />
               </span>

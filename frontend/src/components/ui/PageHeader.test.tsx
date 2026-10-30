@@ -82,4 +82,13 @@ describe("PageHeader", () => {
       screen.getByRole("heading", { level: 1, name: "Warehouse" }),
     ).toBeDefined();
   });
+
+  it("puts an addon beside the title, outside the heading", () => {
+    render(<PageHeader title="Summary" titleAddon={<button>Info</button>} />);
+
+    const heading = screen.getByRole("heading", { level: 1, name: "Summary" });
+    const addon = screen.getByRole("button", { name: "Info" });
+    expect(heading.contains(addon)).toBe(false);
+    expect(addon.parentElement).toBe(heading.parentElement);
+  });
 });

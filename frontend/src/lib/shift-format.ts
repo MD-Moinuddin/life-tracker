@@ -64,3 +64,24 @@ export function formatTimeRange(
   const nextDay = shift.endDate === shift.date ? "" : " (next day)";
   return `${shift.startTime} to ${shift.endTime}${nextDay}`;
 }
+
+// The same times in the least room: "09:00–17:00". A shift that ends the next
+// day is marked "+1". Screen readers get formatTimeRange instead.
+export function formatTimeSpan(
+  shift: Pick<Shift, "date" | "startTime" | "endTime" | "endDate">,
+): string {
+  const nextDay = shift.endDate === shift.date ? "" : " +1";
+  return `${shift.startTime}–${shift.endTime}${nextDay}`;
+}
+
+const longDate = new Intl.DateTimeFormat("en-GB", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
+
+// "Friday 30 October".
+export function formatLongDate(date: string): string {
+  return longDate.format(new Date(`${date}T00:00:00Z`)).replace(",", "");
+}

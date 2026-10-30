@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { axe } from "jest-axe";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppShell } from "../components/layout/AppShell";
+import { PHONE_QUERY } from "../lib/breakpoints";
 import { listJobs } from "../lib/jobs-api";
 import type { JobWithShiftCount } from "../lib/jobs-api";
 import { listShifts } from "../lib/shifts-api";
@@ -91,6 +92,10 @@ const monthSummary: Summary = {
   miniJob: { plannedAmount: "560.00", threshold: "540.00", warning: true },
 };
 const futureLabel = "Warehouse, Fri 9 Oct, 09:00 to 17:00";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -224,19 +229,50 @@ describe("accessibility", () => {
     expect((await axe(container)).violations).toHaveLength(0);
   });
 
-  it("ShiftsPage has no violations, with the add dialog open", async () => {
+  it("ShiftsPage has no violations in the list, its menu, the week view and the add dialog", async () => {
     const { container } = render(
       <MemoryRouter>
         <ShiftsPage />
       </MemoryRouter>,
     );
 
+    const menu = await screen.findByRole("button", {
+      name: `Actions for ${futureLabel}`,
+    });
+    expect((await axe(container)).violations).toHaveLength(0);
+
+    fireEvent.click(menu);
+    await screen.findByRole("menu");
+    expect((await axe(container)).violations).toHaveLength(0);
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Week" }));
+    await screen.findByRole("region", { name: "Week view" });
     await screen.findByRole("button", { name: `Edit ${futureLabel}` });
     expect((await axe(container)).violations).toHaveLength(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Add shift" }));
     await screen.findByRole("dialog");
     expect((await axe(document.body)).violations).toHaveLength(0);
+  });
+
+  it("ShiftsPage has no violations in the phone week agenda", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === PHONE_QUERY,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    const { container } = render(
+      <MemoryRouter>
+        <ShiftsPage />
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole("button", { name: `Actions for ${futureLabel}` });
+    fireEvent.click(screen.getByRole("button", { name: "Week" }));
+    await screen.findByRole("region", { name: "Week view" });
+    await screen.findByRole("button", { name: `Actions for ${futureLabel}` });
+    expect((await axe(container)).violations).toHaveLength(0);
   });
 
   it("SummaryPage has no violations in week view and in month view with the mini-job warning", async () => {
@@ -249,12 +285,12 @@ describe("accessibility", () => {
       </MemoryRouter>,
     );
 
-    await screen.findByText("No shifts in this period.");
+    await screen.findByText("No shifts this week");
     expect((await axe(container)).violations).toHaveLength(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Month" }));
     await screen.findByText("Mini-job warning.");
-    await screen.findByRole("region", { name: /Hours and earnings per job/ });
+    await screen.findByRole("list", { name: /Earnings by job/ });
     await screen.findByRole("progressbar", { name: /mini-job earnings/i });
     expect((await axe(container)).violations).toHaveLength(0);
   });
@@ -272,7 +308,11 @@ describe("accessibility", () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole("region", { name: /Hours and earnings per job/ });
+    await screen.findByRole("list", { name: /Earnings by job/ });
+    expect((await axe(container)).violations).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Table" }));
+    await screen.findByRole("table");
     expect((await axe(container)).violations).toHaveLength(0);
   });
 

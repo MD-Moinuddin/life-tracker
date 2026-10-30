@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
+import { useDismissable } from "../../hooks/useDismissable";
 import { Button } from "../ui/Button";
 import { cardClassName } from "../ui/Card";
 
@@ -14,31 +15,13 @@ export function AccountMenu({ name, email, onLogout }: AccountMenuProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
 
-  useEffect(() => {
-    if (!open) {
-      return;
+  const dismiss = useCallback((reason: "outside" | "escape") => {
+    setOpen(false);
+    if (reason === "escape") {
+      triggerRef.current?.focus();
     }
-
-    function handlePointerDown(event: Event) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open]);
+  }, []);
+  useDismissable(open, rootRef, dismiss);
 
   function handleLogout() {
     setOpen(false);

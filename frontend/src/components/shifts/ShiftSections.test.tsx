@@ -6,6 +6,7 @@ import { ShiftSections } from "./ShiftSections";
 
 function makeLists(overrides: Partial<ShiftLists> = {}): ShiftLists {
   return {
+    today: "2026-10-03",
     upcoming: { status: "ready", data: [makeShift({ id: "up" })] },
     history: { status: "ready", data: [] },
     weekStart: "2026-10-05",
@@ -18,48 +19,110 @@ function makeLists(overrides: Partial<ShiftLists> = {}): ShiftLists {
   };
 }
 
-function section(name: string) {
-  return within(screen.getByRole("region", { name }));
-}
-
-function renderSections() {
-  return render(<ShiftSections lists={makeLists()} />);
+function showHistory() {
+  fireEvent.click(screen.getByRole("button", { name: "History" }));
 }
 
 describe("ShiftSections", () => {
-  it("shows the upcoming shifts, and a message for an empty history", () => {
+  it("shows the upcoming shifts first, and a message for an empty history", () => {
     render(<ShiftSections lists={makeLists()} />);
 
-    expect(section("Upcoming").getAllByRole("listitem")).toHaveLength(1);
     expect(
-      section("History").getByText("No finished shifts in this week."),
+      within(
+        screen.getByRole("region", { name: "Upcoming shifts" }),
+      ).getAllByRole("listitem"),
+    ).toHaveLength(1);
+
+    showHistory();
+
+    expect(
+      within(screen.getByRole("region", { name: "Shift history" })).getByText(
+        "No finished shifts in this week.",
+      ),
     ).toBeDefined();
   });
 
-  it("shows no Edit or Delete buttons when it is read-only", () => {
+  it("switches between the two tabs, marking the current one", () => {
     render(<ShiftSections lists={makeLists()} />);
+    const upcoming = screen.getByRole("button", { name: "Upcoming" });
+    const history = screen.getByRole("button", { name: "History" });
+    expect(upcoming.getAttribute("aria-pressed")).toBe("true");
 
-    expect(screen.queryByRole("button", { name: /^Edit / })).toBeNull();
-    expect(screen.queryByRole("button", { name: /^Delete / })).toBeNull();
+    showHistory();
+
+    expect(upcoming.getAttribute("aria-pressed")).toBe("false");
+    expect(history.getAttribute("aria-pressed")).toBe("true");
+    expect(
+      screen.queryByRole("region", { name: "Upcoming shifts" }),
+    ).toBeNull();
   });
 
-  it("shows and reports Edit and Delete when handlers are given", () => {
+  it("shows no action menu when it is read-only", () => {
+    render(<ShiftSections lists={makeLists()} />);
+
+    expect(screen.queryByRole("button", { name: /^Actions for / })).toBeNull();
+  });
+
+  it("offers Edit and Delete in the row menu when handlers are given", () => {
     const onEdit = vi.fn();
     const onDelete = vi.fn();
     render(
       <ShiftSections lists={makeLists()} onEdit={onEdit} onDelete={onDelete} />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /^Edit / }));
-    fireEvent.click(screen.getByRole("button", { name: /^Delete / }));
+    fireEvent.click(screen.getByRole("button", { name: /^Actions for / }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit shift" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Actions for / }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Delete shift…" }));
 
     expect(onEdit).toHaveBeenCalledTimes(1);
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 
-  it("wires the week buttons to the lists", () => {
+  it("groups the shifts by week under a title with the totals", () => {
+    render(
+      <ShiftSections
+        lists={makeLists({
+          upcoming: {
+            status: "ready",
+            data: [
+              makeShift({ id: "a", date: "2026-10-03" }),
+              makeShift({ id: "b", date: "2026-10-06" }),
+            ],
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "This week" })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "Next week" })).toBeDefined();
+    expect(screen.getAllByText("1 shift · 8h · €96.00")).toHaveLength(2);
+  });
+
+  it("highlights only the next upcoming shift", () => {
+    render(
+      <ShiftSections
+        lists={makeLists({
+          upcoming: {
+            status: "ready",
+            data: [
+              makeShift({ id: "a", date: "2026-10-03" }),
+              makeShift({ id: "b", date: "2026-10-04" }),
+            ],
+          },
+        })}
+      />,
+    );
+
+    const rows = screen.getAllByRole("listitem");
+    expect(rows[0]?.className).toContain("bg-accent-soft");
+    expect(rows[1]?.className).not.toContain("bg-accent-soft");
+  });
+
+  it("wires the week buttons to the lists in History", () => {
     const lists = makeLists();
     render(<ShiftSections lists={lists} />);
+    showHistory();
 
     fireEvent.click(screen.getByRole("button", { name: "Previous week" }));
     fireEvent.click(screen.getByRole("button", { name: "Next week" }));
@@ -68,7 +131,7 @@ describe("ShiftSections", () => {
     expect(lists.nextWeek).toHaveBeenCalledTimes(1);
   });
 
-  it("shows loading and error states in a section", () => {
+  it("shows loading and error states in a tab", () => {
     render(
       <ShiftSections
         lists={makeLists({
@@ -78,35 +141,34 @@ describe("ShiftSections", () => {
       />,
     );
 
-    expect(section("Upcoming").getByText("Loading your shifts…")).toBeDefined();
-    expect(section("History").getByRole("alert")).toBeDefined();
+    expect(screen.getByText("Loading your shifts…")).toBeDefined();
+
+    showHistory();
+
+    expect(screen.getByRole("alert")).toBeDefined();
   });
 
-  it("names the sections with the shared section heading", () => {
-    renderSections();
-
-    const upcoming = screen.getByRole("heading", {
-      level: 2,
-      name: "Upcoming",
-    });
-    expect(upcoming.className).toContain("text-section");
-    expect(upcoming.id).toBe("upcoming-heading");
-    expect(screen.getByRole("heading", { level: 2, name: "History" }).id).toBe(
-      "history-heading",
+  it("puts extra controls at the right of the tabs", () => {
+    render(
+      <ShiftSections
+        lists={makeLists()}
+        toolbarEnd={<button type="button">Extra</button>}
+      />,
     );
+
+    expect(screen.getByRole("button", { name: "Extra" })).toBeDefined();
   });
 
-  it("shows an empty section as the shared empty card", () => {
-    renderSections();
+  it("shows an empty tab as the shared empty card", () => {
+    render(<ShiftSections lists={makeLists()} />);
+    showHistory();
 
-    const message = section("History").getByText(
-      "No finished shifts in this week.",
-    );
+    const message = screen.getByText("No finished shifts in this week.");
     expect(message.parentElement?.className).toContain("border-dashed");
   });
 
   it("uses no raw palette colours", () => {
-    const { container } = renderSections();
+    const { container } = render(<ShiftSections lists={makeLists()} />);
 
     expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);
   });

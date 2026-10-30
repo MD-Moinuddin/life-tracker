@@ -95,6 +95,61 @@ describe("AppShell navigation", () => {
   });
 });
 
+describe("AppShell phone navigation", () => {
+  it("fixes the one navigation to the bottom of a phone and leaves it in the header from md", () => {
+    renderAt("/dashboard");
+
+    const nav = screen.getByRole("navigation", { name: "Main" });
+    for (const cls of [
+      "max-md:fixed",
+      "max-md:bottom-0",
+      "max-md:h-tabbar",
+      "md:flex-1",
+    ]) {
+      expect(nav.className).toContain(cls);
+    }
+    expect(screen.getAllByRole("navigation")).toHaveLength(1);
+  });
+
+  it("gives every link an icon above its label on a phone, hidden from md and from screen readers", () => {
+    renderAt("/dashboard");
+
+    for (const label of ["Dashboard", "Jobs", "Shifts", "Summary"]) {
+      const link = screen.getByRole("link", { name: label });
+      const icon = link.firstElementChild;
+      expect(icon?.getAttribute("aria-hidden")).toBe("true");
+      expect(icon?.className).toContain("md:hidden");
+      expect(icon?.querySelector("svg")).not.toBeNull();
+    }
+  });
+
+  it("draws a pill behind the icon of the current page only", () => {
+    renderAt("/shifts");
+
+    const pill = (label: string) =>
+      screen.getByRole("link", { name: label }).firstElementChild?.className;
+    expect(pill("Shifts")).toContain("bg-accent-soft");
+    expect(pill("Jobs")).not.toContain("bg-accent-soft");
+  });
+
+  it("makes each tab at least 56px tall and a quarter of the bar wide", () => {
+    renderAt("/dashboard");
+
+    const link = screen.getByRole("link", { name: "Jobs" });
+    expect(link.className).toContain("max-md:min-h-14");
+    expect(link.className).toContain("max-md:w-full");
+    expect(link.parentElement?.className).toContain("max-md:flex-1");
+  });
+
+  it("ends the page above the bar", () => {
+    renderAt("/dashboard");
+
+    expect(screen.getByRole("main").className).toContain(
+      "max-md:pb-[calc(var(--spacing-tabbar)+2rem)]",
+    );
+  });
+});
+
 describe("AppShell layout", () => {
   it("shows the brand and the page content", () => {
     renderAt("/dashboard");

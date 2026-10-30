@@ -42,6 +42,14 @@ function titleRow() {
   return within(heading.closest("header") as HTMLElement);
 }
 
+// Opens a job's "⋯" menu and picks one of its actions.
+function chooseAction(jobName: string, action: string) {
+  fireEvent.click(
+    screen.getByRole("button", { name: `Actions for ${jobName}` }),
+  );
+  fireEvent.click(screen.getByRole("menuitem", { name: action }));
+}
+
 function fillInAddForm(dialog: HTMLElement) {
   fireEvent.change(within(dialog).getByLabelText("Name"), {
     target: { value: "Cafe" },
@@ -67,7 +75,28 @@ describe("JobsPage", () => {
     expect(screen.getByText("Loading your jobs…")).toBeDefined();
     const list = await within(screen.getByRole("main")).findByRole("list");
     expect(within(list).getByText("Warehouse")).toBeDefined();
-    expect(within(list).getByText("€12.00 / hour")).toBeDefined();
+    expect(within(list).getByText("€12.00")).toBeDefined();
+    expect(within(list).getByText("/ hour")).toBeDefined();
+  });
+
+  it("says how many jobs there are under the title", async () => {
+    vi.mocked(listJobs).mockResolvedValue([warehouse]);
+
+    renderPage();
+
+    expect(await titleRow().findByText("1 job")).toBeDefined();
+  });
+
+  it("floats the Add job button on a phone and leaves room under the list", async () => {
+    vi.mocked(listJobs).mockResolvedValue([warehouse]);
+
+    renderPage();
+
+    const add = await titleRow().findByRole("button", { name: "Add job" });
+    expect(add.className).toContain("max-sm:fixed");
+    expect(
+      screen.getByRole("main").querySelector("div.max-sm\\:pb-20"),
+    ).not.toBeNull();
   });
 
   it("shows an empty state with one Add job button when there are no jobs", async () => {
@@ -116,7 +145,7 @@ describe("JobsPage", () => {
     );
     const list = await within(screen.getByRole("main")).findByRole("list");
     expect(within(list).getByText("Cafe")).toBeDefined();
-    expect(within(list).getByText("€10.50 / hour")).toBeDefined();
+    expect(within(list).getByText("€10.50")).toBeDefined();
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(titleRow().getByRole("button", { name: "Add job" })).toBeDefined();
   });
@@ -156,7 +185,7 @@ describe("JobsPage", () => {
     renderPage();
     await within(screen.getByRole("main")).findByRole("list");
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit Warehouse" }));
+    chooseAction("Warehouse", "Edit job");
     const dialog = screen.getByRole("dialog", { name: "Edit job" });
     expect(
       (within(dialog).getByLabelText("Name") as HTMLInputElement).value,
@@ -178,7 +207,7 @@ describe("JobsPage", () => {
     await waitFor(() =>
       expect(
         within(within(screen.getByRole("main")).getByRole("list")).getByText(
-          "€13.50 / hour",
+          "€13.50",
         ),
       ).toBeDefined(),
     );
@@ -190,7 +219,7 @@ describe("JobsPage", () => {
     renderPage();
     await within(screen.getByRole("main")).findByRole("list");
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit Warehouse" }));
+    chooseAction("Warehouse", "Edit job");
     fireEvent.click(
       within(screen.getByRole("dialog")).getByRole("button", {
         name: "Cancel",
@@ -211,7 +240,7 @@ describe("JobsPage", () => {
     renderPage();
     await within(screen.getByRole("main")).findByRole("list");
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit Warehouse" }));
+    chooseAction("Warehouse", "Edit job");
     const dialog = screen.getByRole("dialog");
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Save changes" }),
@@ -228,7 +257,7 @@ describe("JobsPage", () => {
     renderPage();
     await within(screen.getByRole("main")).findByRole("list");
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
+    chooseAction("Warehouse", "Delete job…");
 
     const dialog = screen.getByRole("dialog", { name: "Delete job?" });
     expect(within(dialog).getByText("Warehouse")).toBeDefined();
@@ -244,7 +273,7 @@ describe("JobsPage", () => {
     renderPage();
     await within(screen.getByRole("main")).findByRole("list");
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
+    chooseAction("Warehouse", "Delete job…");
     fireEvent.click(
       within(screen.getByRole("dialog")).getByRole("button", {
         name: "Delete job",
@@ -261,7 +290,7 @@ describe("JobsPage", () => {
     renderPage();
     await within(screen.getByRole("main")).findByRole("list");
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
+    chooseAction("Warehouse", "Delete job…");
     fireEvent.click(
       within(screen.getByRole("dialog")).getByRole("button", {
         name: "Cancel",
@@ -283,7 +312,7 @@ describe("JobsPage", () => {
     renderPage();
     await within(screen.getByRole("main")).findByRole("list");
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Warehouse" }));
+    chooseAction("Warehouse", "Delete job…");
     const dialog = screen.getByRole("dialog", { name: "Delete job?" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Delete job" }));
 
