@@ -8,6 +8,7 @@ import { AppShell } from "../components/layout/AppShell";
 import { LoadMessage } from "../components/LoadBoundary";
 import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/ui/PageHeader";
+import { pluralize } from "../lib/plural";
 import { createJob, deleteJob, listJobs, updateJob } from "../lib/jobs-api";
 import type { JobInput, JobWithShiftCount } from "../lib/jobs-api";
 
@@ -69,18 +70,28 @@ export function JobsPage() {
     <AppShell>
       <PageHeader
         title="Jobs"
+        subtitle={
+          status === "ready" && hasJobs
+            ? pluralize(jobs.length, "job")
+            : undefined
+        }
         action={
           status === "ready" &&
           hasJobs && (
-            <AddButton label="Add job" onClick={() => setIsAddOpen(true)} />
+            <AddButton
+              label="Add job"
+              floating
+              onClick={() => setIsAddOpen(true)}
+            />
           )
         }
       />
 
       {status !== "ready" && <LoadMessage status={status} noun="your jobs" />}
 
+      {/* Room at the bottom of a phone for the floating Add job button. */}
       {status === "ready" && (
-        <>
+        <div className="max-sm:pb-20">
           {hasJobs ? (
             <JobList
               jobs={jobs}
@@ -138,7 +149,7 @@ export function JobsPage() {
               />
             )}
           </Modal>
-        </>
+        </div>
       )}
     </AppShell>
   );
