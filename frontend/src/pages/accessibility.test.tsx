@@ -261,12 +261,12 @@ describe("accessibility", () => {
       </MemoryRouter>,
     );
 
-    await screen.findByText("No shifts in this period.");
+    await screen.findByText("No shifts this week");
     expect((await axe(container)).violations).toHaveLength(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Month" }));
     await screen.findByText("Mini-job warning.");
-    await screen.findByRole("region", { name: /Hours and earnings per job/ });
+    await screen.findByRole("list", { name: /Earnings by job/ });
     await screen.findByRole("progressbar", { name: /mini-job earnings/i });
     expect((await axe(container)).violations).toHaveLength(0);
   });
@@ -284,7 +284,11 @@ describe("accessibility", () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole("region", { name: /Hours and earnings per job/ });
+    await screen.findByRole("list", { name: /Earnings by job/ });
+    expect((await axe(container)).violations).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Table" }));
+    await screen.findByRole("table");
     expect((await axe(container)).violations).toHaveLength(0);
   });
 
