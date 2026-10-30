@@ -57,8 +57,8 @@ describe("SummaryPage", () => {
   it("starts on the current week and sends the local time", async () => {
     renderPage();
 
-    const table = await screen.findByRole("table");
-    expect(within(table).getByText("Warehouse")).toBeDefined();
+    const jobs = await screen.findByRole("list", { name: /earnings by job/i });
+    expect(within(jobs).getByText("Warehouse")).toBeDefined();
     expect(screen.getByText("5 Oct to 11 Oct 2026")).toBeDefined();
     expect(getSummary).toHaveBeenCalledWith({
       range: "week",
@@ -69,7 +69,7 @@ describe("SummaryPage", () => {
 
   it("lets the period navigator fill the row on a phone", async () => {
     renderPage();
-    await screen.findByRole("table");
+    await screen.findByRole("region", { name: "Totals" });
 
     const row = screen.getByRole("button", {
       name: "Previous week",
@@ -79,7 +79,7 @@ describe("SummaryPage", () => {
 
   it("goes to the previous and next week", async () => {
     renderPage();
-    await screen.findByRole("table");
+    await screen.findByRole("region", { name: "Totals" });
 
     fireEvent.click(screen.getByRole("button", { name: "Previous week" }));
     await waitFor(() =>
@@ -99,7 +99,7 @@ describe("SummaryPage", () => {
 
   it("switches to the month and steps by month", async () => {
     renderPage();
-    await screen.findByRole("table");
+    await screen.findByRole("region", { name: "Totals" });
 
     const month = screen.getByRole("button", { name: "Month" });
     fireEvent.click(month);
@@ -121,14 +121,17 @@ describe("SummaryPage", () => {
     expect(screen.getByText("Nov 2026")).toBeDefined();
   });
 
-  it("says so when the period has no shifts", async () => {
+  it("says so when the week has no shifts, and links to the shifts page", async () => {
     vi.mocked(getSummary).mockResolvedValue({
       ...summary,
       jobs: [],
     });
     renderPage();
 
-    expect(await screen.findByText("No shifts in this period.")).toBeDefined();
+    expect(await screen.findByText("No shifts this week")).toBeDefined();
+    expect(
+      screen.getByRole("link", { name: "Go to shifts" }).getAttribute("href"),
+    ).toBe("/shifts");
   });
 
   it("has the page title in the shared header", async () => {
@@ -145,7 +148,7 @@ describe("SummaryPage", () => {
     vi.mocked(getSummary).mockResolvedValue({ ...summary, jobs: [] });
     renderPage();
 
-    const message = await screen.findByText("No shifts in this period.");
+    const message = await screen.findByText("No shifts this week");
     expect(message.parentElement?.className).toContain("border-dashed");
   });
 
@@ -172,15 +175,15 @@ describe("SummaryPage", () => {
 
   it("shows no warning in week view, where the API sends no mini-job data", async () => {
     renderPage();
-    await screen.findByRole("table");
+    await screen.findByRole("region", { name: "Totals" });
 
     expect(screen.getByRole("status").textContent).toBe("");
   });
 
-  it("keeps the previous table on screen, marked busy, while the next period loads", async () => {
+  it("keeps the previous summary on screen, marked busy, while the next period loads", async () => {
     let resolveNext: (value: Summary) => void = () => {};
     renderPage();
-    await screen.findByRole("table");
+    await screen.findByRole("region", { name: "Totals" });
     vi.mocked(getSummary).mockReturnValue(
       new Promise<Summary>((resolve) => {
         resolveNext = resolve;
@@ -189,7 +192,7 @@ describe("SummaryPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Next week" }));
 
-    const table = await screen.findByRole("table");
+    const table = await screen.findByRole("region", { name: "Totals" });
     expect(table.closest("[aria-busy]")?.getAttribute("aria-busy")).toBe(
       "true",
     );
@@ -199,37 +202,106 @@ describe("SummaryPage", () => {
     await waitFor(() =>
       expect(
         screen
-          .getByRole("table")
+          .getByRole("region", { name: "Totals" })
           .closest("[aria-busy]")
           ?.getAttribute("aria-busy"),
       ).toBe("false"),
     );
   });
 
-  it("renders the same jobs in the table and in the phone cards", async () => {
+  it("shows the totals as three headline figures", async () => {
     renderPage();
 
-    const table = await screen.findByRole("table");
-    const cards = screen.getByRole("list", {
-      name: /hours and earnings per job/i,
-    });
-    expect(within(table).getByText("Warehouse")).toBeDefined();
-    expect(within(cards).getByText("Warehouse")).toBeDefined();
+    const totals = await screen.findByRole("region", { name: "Totals" });
+    expect(within(totals).getByText("€96.00")).toBeDefined();
+    expect(within(totals).getByText("8h finished")).toBeDefined();
+    expect(within(totals).getByText("€192.00")).toBeDefined();
+    expect(within(totals).getByText("16h scheduled")).toBeDefined();
+    expect(within(totals).getByText("50%")).toBeDefined();
   });
 
-  it("shows the table from the sm breakpoint and the cards below it", async () => {
+  it("shows a card per job by default and the table on request", async () => {
     renderPage();
 
+    await screen.findByRole("list", { name: /earnings by job/i });
+    expect(screen.queryByRole("table")).toBeNull();
+    const cards = screen.getByRole("button", { name: "Cards" });
+    expect(cards.getAttribute("aria-pressed")).toBe("true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Table" }));
+
     const table = await screen.findByRole("table");
-    const cards = screen.getByRole("list", {
+    expect(within(table).getByText("Warehouse")).toBeDefined();
+    expect(screen.queryByRole("list", { name: /earnings by job/i })).toBeNull();
+  });
+
+  it("renders the same jobs in the desktop cards and in the phone cards", async () => {
+    renderPage();
+
+    const desktop = await screen.findByRole("list", {
+      name: /earnings by job/i,
+    });
+    const phone = screen.getByRole("list", {
       name: /hours and earnings per job/i,
     });
-    const tableWrapper = table.closest("div.hidden");
-    expect(tableWrapper?.className).toContain("sm:block");
-    expect(cards.closest("div.sm\\:hidden")).not.toBeNull();
-    expect(cards.closest("div.sm\\:hidden")?.classList.contains("hidden")).toBe(
+    expect(within(desktop).getByText("Warehouse")).toBeDefined();
+    expect(within(phone).getByText("Warehouse")).toBeDefined();
+  });
+
+  it("shows the desktop design from the sm breakpoint and the phone cards below it", async () => {
+    renderPage();
+
+    const totals = await screen.findByRole("region", { name: "Totals" });
+    const phone = screen.getByRole("list", {
+      name: /hours and earnings per job/i,
+    });
+    expect(totals.closest("div.max-sm\\:hidden")).not.toBeNull();
+    expect(phone.closest("div.sm\\:hidden")).not.toBeNull();
+    expect(phone.closest("div.sm\\:hidden")?.classList.contains("hidden")).toBe(
       false,
     );
+  });
+
+  it("explains earned and planned in an info popover next to the title", async () => {
+    renderPage();
+    await screen.findByRole("region", { name: "Totals" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "How these numbers work" }),
+    );
+
+    expect(screen.getByRole("note").textContent).toContain(
+      "Earned counts finished shifts",
+    );
+  });
+
+  it("offers a jump back to this week only when on another week", async () => {
+    renderPage();
+    await screen.findByRole("region", { name: "Totals" });
+    expect(screen.queryByRole("button", { name: "This week" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Previous week" }));
+    const jump = await screen.findByRole("button", { name: "This week" });
+
+    fireEvent.click(jump);
+    await waitFor(() =>
+      expect(getSummary).toHaveBeenLastCalledWith(
+        expect.objectContaining({ range: "week", date: "2026-10-07" }),
+      ),
+    );
+    expect(screen.queryByRole("button", { name: "This week" })).toBeNull();
+  });
+
+  it("names the jump after the range", async () => {
+    renderPage();
+    await screen.findByRole("region", { name: "Totals" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Month" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Next month" }));
+
+    expect(
+      await screen.findByRole("button", { name: "This month" }),
+    ).toBeDefined();
   });
 
   it("shows the mini-job limit bar for a month with a mini-job, not for a week", async () => {
@@ -251,7 +323,7 @@ describe("SummaryPage", () => {
         : summary,
     );
     renderPage();
-    await screen.findByRole("table");
+    await screen.findByRole("region", { name: "Totals" });
     expect(
       screen.queryByRole("progressbar", { name: /mini-job earnings/i }),
     ).toBeNull();
@@ -265,7 +337,7 @@ describe("SummaryPage", () => {
 
   it("keeps the period controls stuck to the top on a phone, opaque and full-bleed", async () => {
     renderPage();
-    await screen.findByRole("table");
+    await screen.findByRole("region", { name: "Totals" });
 
     const root = screen.getByRole("group", {
       name: "Summary period",
