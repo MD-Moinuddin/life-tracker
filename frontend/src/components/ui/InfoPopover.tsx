@@ -11,7 +11,9 @@ interface InfoPopoverProps {
 }
 
 // A small "i" button that opens a short explanation. Closes on an outside
-// press or Escape, and Escape returns focus to the button.
+// press or Escape, and Escape returns focus to the button. The panel is placed
+// against the nearest positioned ancestor, so the caller picks where it lines
+// up, and it never grows wider than the screen.
 export function InfoPopover({ label, className, children }: InfoPopoverProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -26,7 +28,7 @@ export function InfoPopover({ label, className, children }: InfoPopoverProps) {
   });
 
   return (
-    <div ref={rootRef} className={`relative ${className ?? ""}`}>
+    <div ref={rootRef} className={className}>
       <button
         ref={buttonRef}
         type="button"
@@ -42,7 +44,7 @@ export function InfoPopover({ label, className, children }: InfoPopoverProps) {
         <div
           id={panelId}
           role="note"
-          className="absolute top-full left-0 z-20 mt-2 w-80 rounded-card border border-border bg-surface p-3 text-sm text-ink-muted shadow-card"
+          className="absolute top-full left-0 z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-card border border-border bg-surface p-3 text-sm text-ink-muted shadow-card"
         >
           {children}
         </div>

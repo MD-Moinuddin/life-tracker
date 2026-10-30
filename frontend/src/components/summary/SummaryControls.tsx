@@ -44,7 +44,7 @@ export function SummaryControls({
   return (
     <div
       className={classNames(
-        "mb-4 flex flex-wrap items-center justify-between gap-3 max-sm:mb-1",
+        "mb-4 flex flex-wrap items-center gap-3 max-sm:mb-1",
         STICKY_ON_PHONE,
       )}
     >
@@ -54,15 +54,15 @@ export function SummaryControls({
         value={range}
         onChange={onRangeChange}
       />
-      <div className="flex items-center gap-3 max-sm:w-full">
-        {/* The jump and the layout choice are for wide screens only; the phone
-            layout has one design. */}
+      {/* On a phone the jump sits beside the period switch and the navigator
+          takes the row below; from sm up they form one group on the right. */}
+      <div className="max-sm:contents sm:ml-auto sm:flex sm:items-center sm:gap-3">
         {!isCurrentPeriod && (
           <Button
             variant="secondary"
             size="compact"
             onClick={onCurrent}
-            className="max-sm:hidden"
+            className="max-sm:ml-auto"
           >{`This ${range}`}</Button>
         )}
         <PeriodNavigator
@@ -72,6 +72,7 @@ export function SummaryControls({
           onPrevious={onPrevious}
           onNext={onNext}
         />
+        {/* One layout on a phone, so the choice is for wider screens. */}
         <div className="max-sm:hidden">
           <SegmentedControl
             label="Layout"

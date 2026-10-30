@@ -5,7 +5,6 @@ import { LoadBoundary } from "../components/LoadBoundary";
 import { EarningsShare } from "../components/summary/EarningsShare";
 import { MiniJobLimit } from "../components/summary/MiniJobLimit";
 import { MiniJobWarning } from "../components/summary/MiniJobWarning";
-import { SummaryCards } from "../components/summary/SummaryCards";
 import { SummaryControls } from "../components/summary/SummaryControls";
 import { SummaryHero } from "../components/summary/SummaryHero";
 import { SummaryJobCards } from "../components/summary/SummaryJobCards";
@@ -30,7 +29,7 @@ export function SummaryPage() {
       <PageHeader
         title="Summary"
         titleAddon={
-          <InfoPopover label="How these numbers work" className="max-sm:hidden">
+          <InfoPopover label="How these numbers work">
             {SUMMARY_EXPLANATION}
           </InfoPopover>
         }
@@ -71,22 +70,15 @@ export function SummaryPage() {
               aria-busy={summary.isStale}
               className={summary.isStale ? "opacity-60" : undefined}
             >
-              <div className="max-sm:hidden">
-                <SummaryHero totals={data.totals} />
-              </div>
+              <SummaryHero totals={data.totals} />
               <MiniJobLimit summary={data} />
-              <div className="max-sm:hidden">
-                <EarningsShare jobs={data.jobs} />
-                <h2 className={`mt-6 mb-3 ${EYEBROW_CLASSES}`}>By job</h2>
-                {layout === "cards" ? (
-                  <SummaryJobCards summary={data} />
-                ) : (
-                  <SummaryTable summary={data} />
-                )}
-              </div>
-              <div className="sm:hidden">
-                <SummaryCards summary={data} />
-              </div>
+              <EarningsShare jobs={data.jobs} />
+              <h2 className={`mt-6 mb-3 ml-1 ${EYEBROW_CLASSES}`}>By job</h2>
+              {layout === "cards" ? (
+                <SummaryJobCards summary={data} />
+              ) : (
+                <SummaryTable summary={data} />
+              )}
             </div>
           )
         }

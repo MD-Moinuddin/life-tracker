@@ -21,7 +21,7 @@ export function EarningsShare({ jobs }: EarningsShareProps) {
     .join(", ");
 
   return (
-    <Card padded className="mb-4 px-6">
+    <Card padded className="mb-3 px-4 sm:mb-4 sm:px-6">
       <h2 className={EYEBROW_CLASSES}>Where your earnings come from</h2>
       <div
         role="img"

@@ -235,31 +235,29 @@ describe("SummaryPage", () => {
     expect(screen.queryByRole("list", { name: /earnings by job/i })).toBeNull();
   });
 
-  it("renders the same jobs in the desktop cards and in the phone cards", async () => {
+  it("uses one set of components on every screen size", async () => {
     renderPage();
 
-    const desktop = await screen.findByRole("list", {
-      name: /earnings by job/i,
-    });
-    const phone = screen.getByRole("list", {
-      name: /hours and earnings per job/i,
-    });
-    expect(within(desktop).getByText("Warehouse")).toBeDefined();
-    expect(within(phone).getByText("Warehouse")).toBeDefined();
+    await screen.findByRole("list", { name: /earnings by job/i });
+    expect(screen.getAllByRole("region", { name: "Totals" })).toHaveLength(1);
+    expect(screen.getAllByText("Warehouse")).toHaveLength(2);
   });
 
-  it("shows the desktop design from the sm breakpoint and the phone cards below it", async () => {
+  it("stacks the totals into one card on a phone and splits them into three from sm", async () => {
     renderPage();
 
     const totals = await screen.findByRole("region", { name: "Totals" });
-    const phone = screen.getByRole("list", {
-      name: /hours and earnings per job/i,
-    });
-    expect(totals.closest("div.max-sm\\:hidden")).not.toBeNull();
-    expect(phone.closest("div.sm\\:hidden")).not.toBeNull();
-    expect(phone.closest("div.sm\\:hidden")?.classList.contains("hidden")).toBe(
-      false,
-    );
+    for (const cls of ["rounded-card", "border", "p-5", "sm:grid-cols-3"]) {
+      expect(totals.className).toContain(cls);
+    }
+  });
+
+  it("leaves the layout choice to wider screens", async () => {
+    renderPage();
+    await screen.findByRole("region", { name: "Totals" });
+
+    const layout = screen.getByRole("group", { name: "Layout" });
+    expect(layout.parentElement?.className).toContain("max-sm:hidden");
   });
 
   it("explains earned and planned in an info popover next to the title", async () => {

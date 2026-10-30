@@ -45,7 +45,7 @@ export function SummaryJobCards({ summary }: SummaryJobCardsProps) {
   return (
     <ul
       aria-label={`Earnings by job, ${formatDateRange(summary.from, summary.to)}`}
-      className="grid grid-cols-2 gap-4"
+      className="grid gap-3 sm:grid-cols-2 sm:gap-4"
     >
       {jobs.map((job, index) => {
         const percent = progressPercent(job.earnedMinutes, job.plannedMinutes);
@@ -53,7 +53,7 @@ export function SummaryJobCards({ summary }: SummaryJobCardsProps) {
           <li key={job.jobId}>
             <Card
               padded
-              className={`h-full border-l-4 px-6 ${jobColor(job.jobId).edge}`}
+              className={`h-full border-l-4 px-4 sm:px-6 ${jobColor(job.jobId).edge}`}
             >
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-lg font-semibold text-ink">{job.name}</h3>
@@ -78,7 +78,7 @@ export function SummaryJobCards({ summary }: SummaryJobCardsProps) {
                 valueText={`${formatDuration(job.earnedMinutes)} of ${formatDuration(job.plannedMinutes)}`}
                 className="mt-4"
               />
-              <p className="mt-2 flex justify-between gap-3 text-sm text-ink-muted">
+              <p className="mt-2 flex flex-wrap justify-between gap-x-3 text-sm text-ink-muted">
                 <span>{`${percent}% of planned hours done`}</span>
                 <span>{`${shares[index]}% of your earnings`}</span>
               </p>
