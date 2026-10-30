@@ -55,12 +55,6 @@ describe("WeekGlanceCard", () => {
     }
   });
 
-  it("says it is loading", () => {
-    renderCard({ status: "loading" });
-
-    expect(screen.getByText("Loading your week…")).toBeDefined();
-  });
-
   it("shows a short message when the week cannot be loaded", () => {
     renderCard({ status: "error" });
 
@@ -69,20 +63,29 @@ describe("WeekGlanceCard", () => {
     );
   });
 
-  it("shows the week, the planned amount and hours, and what is already worked", () => {
+  it("leads with what was earned, then the plan", () => {
     renderCard({ status: "ready", data: summary });
 
     expect(screen.getByText("5 Oct to 11 Oct 2026")).toBeDefined();
-    expect(screen.getByText("€252.75")).toBeDefined();
-    expect(screen.getByText("planned this week · 20h 30m")).toBeDefined();
-    expect(screen.getByText("€96.00 earned so far · 8h")).toBeDefined();
+    expect(screen.getByText("€96.00")).toBeDefined();
+    expect(screen.getByText("earned · 8h finished")).toBeDefined();
+    expect(screen.getByText("39%")).toBeDefined();
+    expect(screen.getByText("€252.75 · 20h 30m")).toBeDefined();
+  });
+
+  it("shows a skeleton that says it is loading", () => {
+    renderCard({ status: "loading" });
+
+    const status = screen.getByRole("status");
+    expect(status.getAttribute("aria-busy")).toBe("true");
+    expect(status.textContent).toBe("Loading your week…");
   });
 
   it("shows worked time as an accessible progress bar", () => {
     renderCard({ status: "ready", data: summary });
 
     const bar = screen.getByRole("progressbar", {
-      name: "Hours worked so far",
+      name: "Planned hours finished",
     });
     expect(bar.getAttribute("aria-valuemin")).toBe("0");
     expect(bar.getAttribute("aria-valuemax")).toBe("1230");
@@ -122,11 +125,11 @@ describe("WeekGlanceCard", () => {
     expect(screen.queryByRole("link", { name: "View summary" })).toBeNull();
   });
 
-  it("gives the View summary link a 44px tap target", () => {
+  it("draws View summary as a 44px button", () => {
     renderCard({ status: "ready", data: summary });
 
-    expect(
-      screen.getByRole("link", { name: "View summary" }).className,
-    ).toContain("min-h-11");
+    const link = screen.getByRole("link", { name: "View summary" });
+    expect(link.className).toContain("min-h-11");
+    expect(link.className).toContain("border-border-strong");
   });
 });
