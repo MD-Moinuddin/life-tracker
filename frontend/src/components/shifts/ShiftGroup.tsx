@@ -4,6 +4,7 @@ import type { ShiftWeek } from "../../lib/shift-groups";
 import { pluralize } from "../../lib/plural";
 import type { Shift } from "../../lib/shifts-api";
 import { cardClassName } from "../ui/Card";
+import { EYEBROW_CLASSES } from "../ui/eyebrow";
 import { ShiftRow } from "./ShiftRow";
 
 interface ShiftGroupProps {
@@ -30,9 +31,7 @@ export function ShiftGroup({
   return (
     <section className="mb-6">
       <div className="sticky top-0 z-10 flex flex-wrap items-baseline gap-x-3 bg-page py-2">
-        <h2 className="text-xs font-bold tracking-wider text-ink-muted uppercase">
-          {title}
-        </h2>
+        <h2 className={EYEBROW_CLASSES}>{title}</h2>
         <p className="text-sm text-ink-muted">
           {[
             pluralize(week.count, "shift"),

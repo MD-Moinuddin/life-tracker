@@ -2,14 +2,21 @@ import { classNames } from "../../lib/class-names";
 import { rangeLabel, SUMMARY_RANGES } from "../../lib/summary-period";
 import type { SummaryRange } from "../../lib/summary-period";
 import { PeriodNavigator } from "../PeriodNavigator";
+import { Button } from "../ui/Button";
 import { SegmentedControl } from "../ui/SegmentedControl";
+import { SUMMARY_LAYOUTS } from "./summary-layout";
+import type { SummaryLayout } from "./summary-layout";
 
 interface SummaryControlsProps {
   range: SummaryRange;
   periodLabel: string;
+  layout: SummaryLayout;
+  isCurrentPeriod: boolean;
   onRangeChange: (range: SummaryRange) => void;
+  onLayoutChange: (layout: SummaryLayout) => void;
   onPrevious: () => void;
   onNext: () => void;
+  onCurrent: () => void;
 }
 
 // Phone only: pin the controls under the top edge while the cards scroll.
@@ -26,9 +33,13 @@ const RANGE_OPTIONS = SUMMARY_RANGES.map((value) => ({
 export function SummaryControls({
   range,
   periodLabel,
+  layout,
+  isCurrentPeriod,
   onRangeChange,
+  onLayoutChange,
   onPrevious,
   onNext,
+  onCurrent,
 }: SummaryControlsProps) {
   return (
     <div
@@ -43,13 +54,33 @@ export function SummaryControls({
         value={range}
         onChange={onRangeChange}
       />
-      <PeriodNavigator
-        label={periodLabel}
-        unit={range}
-        className="max-sm:w-full"
-        onPrevious={onPrevious}
-        onNext={onNext}
-      />
+      <div className="flex items-center gap-3 max-sm:w-full">
+        {/* The jump and the layout choice are for wide screens only; the phone
+            layout has one design. */}
+        {!isCurrentPeriod && (
+          <Button
+            variant="secondary"
+            size="compact"
+            onClick={onCurrent}
+            className="max-sm:hidden"
+          >{`This ${range}`}</Button>
+        )}
+        <PeriodNavigator
+          label={periodLabel}
+          unit={range}
+          className="max-sm:w-full sm:gap-3"
+          onPrevious={onPrevious}
+          onNext={onNext}
+        />
+        <div className="max-sm:hidden">
+          <SegmentedControl
+            label="Layout"
+            options={SUMMARY_LAYOUTS}
+            value={layout}
+            onChange={onLayoutChange}
+          />
+        </div>
+      </div>
     </div>
   );
 }
