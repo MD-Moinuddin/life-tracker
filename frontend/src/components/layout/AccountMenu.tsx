@@ -6,10 +6,18 @@ import { cardClassName } from "../ui/Card";
 interface AccountMenuProps {
   name: string;
   email?: string;
+  // The demo visitor has no email and nothing to log out of: the menu offers
+  // to leave the demo instead.
+  isDemo?: boolean;
   onLogout: () => void;
 }
 
-export function AccountMenu({ name, email, onLogout }: AccountMenuProps) {
+export function AccountMenu({
+  name,
+  email,
+  isDemo = false,
+  onLogout,
+}: AccountMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -61,14 +69,20 @@ export function AccountMenu({ name, email, onLogout }: AccountMenuProps) {
           )}
         >
           <p className="truncate text-sm font-semibold text-ink">{name}</p>
-          {email && <p className="truncate text-sm text-ink-muted">{email}</p>}
+          {isDemo ? (
+            <p className="text-sm text-ink-muted">
+              You are trying the demo. Nothing is saved.
+            </p>
+          ) : (
+            email && <p className="truncate text-sm text-ink-muted">{email}</p>
+          )}
           <Button
             variant="secondary"
             size="compact"
             className="mt-3 w-full"
             onClick={handleLogout}
           >
-            Log out
+            {isDemo ? "Exit demo" : "Log out"}
           </Button>
         </div>
       )}

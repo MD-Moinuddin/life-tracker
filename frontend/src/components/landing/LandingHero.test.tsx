@@ -61,4 +61,15 @@ describe("LandingHero", () => {
       within(points[0] as HTMLElement).getByText("Free to use"),
     ).toBeDefined();
   });
+
+  it("offers the demo as a button, not a link, next to the sign-up links", () => {
+    render(
+      <MemoryRouter>
+        <LandingHero />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: "Try the demo" })).toBeDefined();
+    expect(screen.queryByRole("link", { name: "Try the demo" })).toBeNull();
+  });
 });

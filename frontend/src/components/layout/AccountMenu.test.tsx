@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AccountMenu } from "./AccountMenu";
 
-function renderMenu(props: { email?: string } = {}) {
+function renderMenu(props: { email?: string; isDemo?: boolean } = {}) {
   const onLogout = vi.fn();
   render(
     <div>
@@ -101,5 +101,20 @@ describe("AccountMenu", () => {
 
     expect(onLogout).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("button", { name: "Log out" })).toBeNull();
+  });
+
+  it("offers to exit the demo instead of logging out, and says nothing is saved", () => {
+    const { onLogout } = renderMenu({
+      isDemo: true,
+      email: "ignored@example.com",
+    });
+
+    fireEvent.click(trigger());
+
+    expect(screen.queryByRole("button", { name: "Log out" })).toBeNull();
+    expect(screen.queryByText("ignored@example.com")).toBeNull();
+    expect(screen.getByText(/Nothing is saved/)).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Exit demo" }));
+    expect(onLogout).toHaveBeenCalledTimes(1);
   });
 });

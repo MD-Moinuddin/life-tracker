@@ -2,12 +2,14 @@ import type { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { classNames } from "../../lib/class-names";
 import { logout } from "../../lib/auth-api";
+import { endDemoSession } from "../../lib/demo/demo-session";
 import { ROUTES } from "../../lib/routes";
 import { useAuthStore } from "../../store/auth-store";
 import { Icon } from "../ui/Icon";
 import type { IconName } from "../ui/Icon";
 import { AccountMenu } from "./AccountMenu";
 import { BrandLink } from "./BrandLink";
+import { DemoBanner } from "./DemoBanner";
 
 interface AppShellProps {
   children: ReactNode;
@@ -48,6 +50,13 @@ export function AppShell({ children }: AppShellProps) {
     }
   }
 
+  function handleExitDemo(to: string) {
+    endDemoSession();
+    navigate(to);
+  }
+
+  const isDemo = user?.isDemo === true;
+
   return (
     <div className="min-h-screen bg-page">
       <a
@@ -56,6 +65,12 @@ export function AppShell({ children }: AppShellProps) {
       >
         Skip to content
       </a>
+      {isDemo && (
+        <DemoBanner
+          onExit={() => handleExitDemo(ROUTES.home)}
+          onSignUp={() => handleExitDemo(ROUTES.signup)}
+        />
+      )}
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 px-4 max-md:py-1 sm:px-6">
           <BrandLink to={ROUTES.dashboard} className="min-h-11 text-base" />
@@ -89,7 +104,8 @@ export function AppShell({ children }: AppShellProps) {
           <AccountMenu
             name={user?.name ?? "Account"}
             email={user?.email}
-            onLogout={handleLogout}
+            isDemo={isDemo}
+            onLogout={isDemo ? () => handleExitDemo(ROUTES.home) : handleLogout}
           />
         </div>
       </header>

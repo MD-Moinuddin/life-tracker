@@ -23,4 +23,15 @@ describe("FinalCta", () => {
       screen.getByRole("link", { name: "Log in" }).getAttribute("href"),
     ).toBe("/login");
   });
+
+  it("offers the demo as a button, not a link, next to the sign-up links", () => {
+    render(
+      <MemoryRouter>
+        <FinalCta />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: "Try the demo" })).toBeDefined();
+    expect(screen.queryByRole("link", { name: "Try the demo" })).toBeNull();
+  });
 });

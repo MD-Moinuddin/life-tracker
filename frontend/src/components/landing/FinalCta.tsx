@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ROUTES } from "../../lib/routes";
 import { buttonClassName } from "../ui/Button";
+import { DemoButton } from "./DemoButton";
 import { FINAL_CTA, LANDING_CTA } from "./landing-content";
 
 export function FinalCta() {
@@ -29,6 +30,7 @@ export function FinalCta() {
         >
           {LANDING_CTA.login}
         </Link>
+        <DemoButton />
       </div>
     </section>
   );

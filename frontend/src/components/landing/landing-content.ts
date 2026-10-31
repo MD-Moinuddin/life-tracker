@@ -14,6 +14,7 @@ export const LANDING_CTA = {
   signup: "Sign up",
   signupFree: "Sign up free",
   login: "Log in",
+  demo: "Try the demo",
 } as const;
 
 export const LANDING_NAV_LABEL = "Sign in or create an account";
