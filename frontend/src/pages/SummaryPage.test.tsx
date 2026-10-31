@@ -1,3 +1,4 @@
+import { leave40h, noLeave } from "../test/fixtures";
 import {
   fireEvent,
   render,
@@ -30,6 +31,7 @@ const summary: Summary = {
       plannedMinutes: 960,
       earnedAmount: "96.00",
       plannedAmount: "192.00",
+      leave: noLeave,
     },
   ],
   totals: {
@@ -37,6 +39,7 @@ const summary: Summary = {
     plannedMinutes: 960,
     earnedAmount: "96.00",
     plannedAmount: "192.00",
+    leave: noLeave,
   },
 };
 
@@ -271,6 +274,9 @@ describe("SummaryPage", () => {
     expect(screen.getByRole("note").textContent).toContain(
       "Earned counts finished shifts",
     );
+    expect(screen.getByRole("note").textContent).toContain(
+      "both include paid leave when you have booked some",
+    );
   });
 
   it("offers a jump back to this week only when on another week", async () => {
@@ -351,5 +357,38 @@ describe("SummaryPage", () => {
     ]) {
       expect(root?.className).toContain(cls);
     }
+  });
+
+  it("shows paid leave in the totals and on the job card", async () => {
+    vi.mocked(getSummary).mockResolvedValue({
+      ...summary,
+      jobs: [
+        {
+          ...(summary.jobs[0] as Summary["jobs"][number]),
+          earnedMinutes: 2160,
+          earnedAmount: "504.00",
+          leave: leave40h,
+        },
+      ],
+      totals: {
+        ...summary.totals,
+        earnedMinutes: 2160,
+        earnedAmount: "504.00",
+        leave: leave40h,
+      },
+    });
+    renderPage();
+
+    const totals = await screen.findByRole("region", { name: "Totals" });
+    expect(within(totals).getByText("€1,064.00")).toBeDefined();
+    expect(within(totals).getByText("40h taken")).toBeDefined();
+    expect(screen.getByRole("group", { name: "Paid leave" })).toBeDefined();
+  });
+
+  it("shows no paid leave anywhere without leave", async () => {
+    renderPage();
+    await screen.findByRole("region", { name: "Totals" });
+
+    expect(screen.queryByText("Paid leave")).toBeNull();
   });
 });

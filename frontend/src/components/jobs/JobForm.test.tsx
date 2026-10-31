@@ -4,6 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../lib/api-client";
 import { JobForm } from "./JobForm";
 
+vi.mock("../../lib/dates", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../lib/dates")>()),
+  localNow: () => "2026-10-07T12:00",
+}));
+
 function renderForm(props: Partial<ComponentProps<typeof JobForm>> = {}) {
   const onSubmit = vi.fn().mockResolvedValue(undefined);
   render(<JobForm submitLabel="Add job" onSubmit={onSubmit} {...props} />);
@@ -127,6 +132,9 @@ describe("JobForm", () => {
         name: "Cafe",
         hourlyRate: "13.5",
         type: "mini_job",
+        vacationHoursPerYear: null,
+        vacationCarryOverHours: "0",
+        vacationCarryOverYear: null,
       }),
     );
   });
@@ -245,5 +253,295 @@ describe("JobForm", () => {
       .closest("form") as HTMLElement;
     expect(form.className.split(" ")).toContain("flex-auto");
     expect(form.className.split(" ")).not.toContain("flex-1");
+  });
+
+  describe("paid vacation", () => {
+    const HOURS_MESSAGE = "Enter the hours per year, for example 80";
+    const CARRY_MESSAGE = "Enter the carried-over hours, for example 8";
+
+    function turnOn() {
+      fireEvent.click(
+        screen.getByRole("switch", { name: "Track paid vacation" }),
+      );
+    }
+
+    it("is off for a new job and hides the fields", () => {
+      renderForm();
+
+      expect((screen.getByRole("switch") as HTMLInputElement).checked).toBe(
+        false,
+      );
+      expect(screen.queryByLabelText("Hours per year")).toBeNull();
+    });
+
+    it("sends the three fields when it is on", async () => {
+      const { onSubmit } = renderForm();
+      fillValid();
+      turnOn();
+      fillIn("Hours per year", "80,5");
+      fillIn("Carried over from last year (optional)", "8");
+      submit();
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith({
+          name: "Cafe",
+          hourlyRate: "10",
+          type: "part_time",
+          vacationHoursPerYear: "80.5",
+          vacationCarryOverHours: "8",
+          vacationCarryOverYear: 2026,
+        }),
+      );
+    });
+
+    it("sends no carry-over year when nothing is carried over", async () => {
+      const { onSubmit } = renderForm();
+      fillValid();
+      turnOn();
+      fillIn("Hours per year", "80");
+      fillIn("Carried over from last year (optional)", "0");
+      submit();
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith({
+          name: "Cafe",
+          hourlyRate: "10",
+          type: "part_time",
+          vacationHoursPerYear: "80",
+          vacationCarryOverHours: "0",
+          vacationCarryOverYear: null,
+        }),
+      );
+    });
+
+    it("sends the use-this result as the hours", async () => {
+      const { onSubmit } = renderForm();
+      fillValid();
+      turnOn();
+      fillIn("Hours per week", "22");
+      fireEvent.click(screen.getByRole("button", { name: "Use this" }));
+      submit();
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ vacationHoursPerYear: "88" }),
+        ),
+      );
+    });
+
+    it("sends the off values after the switch is turned off again", async () => {
+      const { onSubmit } = renderForm();
+      fillValid();
+      turnOn();
+      fillIn("Hours per year", "abc");
+      turnOn();
+      submit();
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith({
+          name: "Cafe",
+          hourlyRate: "10",
+          type: "part_time",
+          vacationHoursPerYear: null,
+          vacationCarryOverHours: "0",
+          vacationCarryOverYear: null,
+        }),
+      );
+    });
+
+    it.each(["abc", "0", "1001", "80.123"])(
+      "shows an error for %s hours after leaving the field",
+      (value) => {
+        renderForm();
+        turnOn();
+        fillIn("Hours per year", value);
+
+        fireEvent.blur(screen.getByLabelText("Hours per year"));
+
+        expect(screen.getByText(HOURS_MESSAGE)).toBeDefined();
+      },
+    );
+
+    it("does not submit and focuses the hours when they are invalid", () => {
+      const { onSubmit } = renderForm();
+      fillValid();
+      turnOn();
+      submit();
+
+      expect(screen.getByText(HOURS_MESSAGE)).toBeDefined();
+      expect(document.activeElement).toBe(
+        screen.getByLabelText("Hours per year"),
+      );
+      expect(onSubmit).not.toHaveBeenCalled();
+    });
+
+    it("rejects carried-over hours above 1000 or with too many decimals", () => {
+      const { onSubmit } = renderForm();
+      fillValid();
+      turnOn();
+      fillIn("Hours per year", "80");
+      fillIn("Carried over from last year (optional)", "1001");
+      submit();
+
+      expect(screen.getByText(CARRY_MESSAGE)).toBeDefined();
+      expect(document.activeElement).toBe(
+        screen.getByLabelText("Carried over from last year (optional)"),
+      );
+      fillIn("Carried over from last year (optional)", "1.234");
+      expect(screen.getByText(CARRY_MESSAGE)).toBeDefined();
+      expect(onSubmit).not.toHaveBeenCalled();
+    });
+
+    it("starts on with its values for a job that tracks vacation", async () => {
+      const { onSubmit } = renderForm({
+        submitLabel: "Save changes",
+        initialValues: {
+          name: "Cafe",
+          hourlyRate: "10.00",
+          type: "part_time",
+          vacationHoursPerYear: "80.00",
+          vacationCarryOverHours: "8.00",
+          vacationCarryOverYear: 2026,
+        },
+      });
+
+      expect((screen.getByRole("switch") as HTMLInputElement).checked).toBe(
+        true,
+      );
+      expect(
+        (screen.getByLabelText("Hours per year") as HTMLInputElement).value,
+      ).toBe("80.00");
+      submit("Save changes");
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith({
+          name: "Cafe",
+          hourlyRate: "10.00",
+          type: "part_time",
+          vacationHoursPerYear: "80.00",
+          vacationCarryOverHours: "8.00",
+          vacationCarryOverYear: 2026,
+        }),
+      );
+    });
+
+    describe("the stored carry-over year", () => {
+      const stored = {
+        name: "Cafe",
+        hourlyRate: "10.00",
+        type: "part_time" as const,
+        vacationHoursPerYear: "80.00",
+        vacationCarryOverHours: "8.00",
+        vacationCarryOverYear: 2025,
+      };
+      const CARRY = "Carried over from last year (optional)";
+
+      it("keeps the stored year when the hours are unchanged", async () => {
+        const { onSubmit } = renderForm({
+          submitLabel: "Save changes",
+          initialValues: stored,
+        });
+        submit("Save changes");
+
+        await waitFor(() =>
+          expect(onSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+              vacationCarryOverHours: "8.00",
+              vacationCarryOverYear: 2025,
+            }),
+          ),
+        );
+      });
+
+      it("keeps the stored year when the same hours are typed another way", async () => {
+        const { onSubmit } = renderForm({
+          submitLabel: "Save changes",
+          initialValues: stored,
+        });
+        fillIn(CARRY, "8");
+        submit("Save changes");
+
+        await waitFor(() =>
+          expect(onSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({ vacationCarryOverYear: 2025 }),
+          ),
+        );
+      });
+
+      it("uses the current year when the hours change", async () => {
+        const { onSubmit } = renderForm({
+          submitLabel: "Save changes",
+          initialValues: stored,
+        });
+        fillIn(CARRY, "10");
+        submit("Save changes");
+
+        await waitFor(() =>
+          expect(onSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+              vacationCarryOverHours: "10",
+              vacationCarryOverYear: 2026,
+            }),
+          ),
+        );
+      });
+
+      it("uses the current year for a job that did not track vacation", async () => {
+        const { onSubmit } = renderForm({
+          submitLabel: "Save changes",
+          initialValues: {
+            ...stored,
+            vacationHoursPerYear: null,
+            vacationCarryOverHours: "8.00",
+            vacationCarryOverYear: 2025,
+          },
+        });
+        turnOn();
+        fillIn("Hours per year", "80");
+        fillIn(CARRY, "8");
+        submit("Save changes");
+
+        await waitFor(() =>
+          expect(onSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({ vacationCarryOverYear: 2026 }),
+          ),
+        );
+      });
+
+      it("sends 0 and no year when the carry-over is emptied", async () => {
+        const { onSubmit } = renderForm({
+          submitLabel: "Save changes",
+          initialValues: stored,
+        });
+        fillIn(CARRY, "");
+        submit("Save changes");
+
+        await waitFor(() =>
+          expect(onSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+              vacationCarryOverHours: "0",
+              vacationCarryOverYear: null,
+            }),
+          ),
+        );
+      });
+    });
+
+    it("shows the server's errors next to the vacation fields", async () => {
+      const onSubmit = vi.fn().mockRejectedValue(
+        new ApiError(400, "Validation failed", {
+          vacationHoursPerYear: ["Too many hours"],
+          vacationCarryOverHours: ["Carry-over needs a year"],
+        }),
+      );
+      renderForm({ onSubmit });
+      fillValid();
+      turnOn();
+      fillIn("Hours per year", "80");
+      submit();
+
+      expect(await screen.findByText("Too many hours")).toBeDefined();
+      expect(screen.getByText("Carry-over needs a year")).toBeDefined();
+    });
   });
 });

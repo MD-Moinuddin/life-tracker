@@ -5,7 +5,9 @@ import type { JobWithShiftCount } from "../../lib/jobs-api";
 import { formatEuro } from "../../lib/money";
 import { pluralize } from "../../lib/plural";
 import { jobPath } from "../../lib/routes";
+import { tracksVacation } from "../../lib/vacation";
 import { ActionMenu } from "../ui/ActionMenu";
+import type { ActionMenuItem } from "../ui/ActionMenu";
 import { cardClassName } from "../ui/Card";
 import { JobTypeBadge } from "./JobTypeBadge";
 
@@ -13,6 +15,8 @@ interface JobListProps {
   jobs: JobWithShiftCount[];
   onEdit: (job: JobWithShiftCount) => void;
   onDelete: (job: JobWithShiftCount) => void;
+  // Offered in the menu of a job that tracks paid vacation.
+  onAddLeave?: (job: JobWithShiftCount) => void;
 }
 
 const CARD_CLASSES = classNames(
@@ -22,7 +26,21 @@ const CARD_CLASSES = classNames(
 
 // One card per job, in a grid that grows with the screen. The job's colour is
 // the left edge and the monogram, the same colour its shifts and summary use.
-export function JobList({ jobs, onEdit, onDelete }: JobListProps) {
+export function JobList({ jobs, onEdit, onDelete, onAddLeave }: JobListProps) {
+  function actionsFor(job: JobWithShiftCount): ActionMenuItem[] {
+    return [
+      { label: "Edit job", onSelect: () => onEdit(job) },
+      ...(onAddLeave && tracksVacation(job)
+        ? [{ label: "Add paid leave", onSelect: () => onAddLeave(job) }]
+        : []),
+      {
+        label: "Delete job…",
+        tone: "danger",
+        onSelect: () => onDelete(job),
+      },
+    ];
+  }
+
   return (
     <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {jobs.map((job) => {
@@ -57,14 +75,7 @@ export function JobList({ jobs, onEdit, onDelete }: JobListProps) {
               <div className="relative z-10 -mt-1">
                 <ActionMenu
                   label={`Actions for ${job.name}`}
-                  items={[
-                    { label: "Edit job", onSelect: () => onEdit(job) },
-                    {
-                      label: "Delete job…",
-                      tone: "danger",
-                      onSelect: () => onDelete(job),
-                    },
-                  ]}
+                  items={actionsFor(job)}
                 />
               </div>
             </div>

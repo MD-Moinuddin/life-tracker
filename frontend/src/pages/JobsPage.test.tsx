@@ -1,3 +1,4 @@
+import { noVacation } from "../test/fixtures";
 import {
   fireEvent,
   render,
@@ -11,7 +12,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../lib/api-client";
 import { createJob, deleteJob, listJobs, updateJob } from "../lib/jobs-api";
 import type { JobWithShiftCount } from "../lib/jobs-api";
+import { createLeave, listLeave } from "../lib/leave-api";
+import { listShifts } from "../lib/shifts-api";
+import { makeShift } from "../test/fixtures";
 import { JobsPage } from "./JobsPage";
+
+vi.mock("../lib/dates", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/dates")>()),
+  localNow: () => "2026-10-07T12:00",
+}));
 
 vi.mock("../lib/jobs-api", () => ({
   listJobs: vi.fn(),
@@ -19,6 +28,14 @@ vi.mock("../lib/jobs-api", () => ({
   updateJob: vi.fn(),
   deleteJob: vi.fn(),
 }));
+
+vi.mock("../lib/leave-api", () => ({
+  listLeave: vi.fn(),
+  createLeave: vi.fn(),
+  updateLeave: vi.fn(),
+}));
+
+vi.mock("../lib/shifts-api", () => ({ listShifts: vi.fn() }));
 
 const warehouse: JobWithShiftCount = {
   id: "job-1",
@@ -28,6 +45,7 @@ const warehouse: JobWithShiftCount = {
   createdAt: "2026-10-01T09:00:00.000Z",
   updatedAt: "2026-10-01T09:00:00.000Z",
   shiftCount: 3,
+  ...noVacation,
 };
 
 function renderPage() {
@@ -129,6 +147,7 @@ describe("JobsPage", () => {
       type: "mini_job",
       createdAt: "2026-10-02T09:00:00.000Z",
       updatedAt: "2026-10-02T09:00:00.000Z",
+      ...noVacation,
     });
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Add job" }));
@@ -142,6 +161,9 @@ describe("JobsPage", () => {
         name: "Cafe",
         hourlyRate: "10.5",
         type: "mini_job",
+        vacationHoursPerYear: null,
+        vacationCarryOverHours: "0",
+        vacationCarryOverYear: null,
       }),
     );
     const list = await within(screen.getByRole("main")).findByRole("list");
@@ -182,6 +204,7 @@ describe("JobsPage", () => {
       type: "part_time",
       createdAt: warehouse.createdAt,
       updatedAt: "2026-10-03T09:00:00.000Z",
+      ...noVacation,
     });
     renderPage();
     await within(screen.getByRole("main")).findByRole("list");
@@ -203,6 +226,9 @@ describe("JobsPage", () => {
         name: "Warehouse",
         hourlyRate: "13.5",
         type: "part_time",
+        vacationHoursPerYear: null,
+        vacationCarryOverHours: "0",
+        vacationCarryOverYear: null,
       }),
     );
     await waitFor(() =>
@@ -213,6 +239,79 @@ describe("JobsPage", () => {
       ).toBeDefined(),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("edits a job with vacation: starts on and sends the updated hours", async () => {
+    const cafe: JobWithShiftCount = {
+      ...warehouse,
+      id: "job-2",
+      name: "Cafe",
+      vacationHoursPerYear: "80.00",
+      vacationCarryOverHours: "8.00",
+      vacationCarryOverYear: 2026,
+    };
+    vi.mocked(listJobs).mockResolvedValue([cafe]);
+    vi.mocked(updateJob).mockResolvedValue(cafe);
+    renderPage();
+    await within(screen.getByRole("main")).findByRole("list");
+
+    chooseAction("Cafe", "Edit job");
+    const dialog = screen.getByRole("dialog", { name: "Edit job" });
+    expect(
+      (within(dialog).getByRole("switch") as HTMLInputElement).checked,
+    ).toBe(true);
+    expect(
+      (within(dialog).getByLabelText("Hours per year") as HTMLInputElement)
+        .value,
+    ).toBe("80.00");
+    fireEvent.change(within(dialog).getByLabelText("Hours per year"), {
+      target: { value: "96" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save changes" }),
+    );
+
+    await waitFor(() =>
+      expect(updateJob).toHaveBeenCalledWith("job-2", {
+        name: "Cafe",
+        hourlyRate: "12.00",
+        type: "part_time",
+        vacationHoursPerYear: "96",
+        vacationCarryOverHours: "8.00",
+        vacationCarryOverYear: 2026,
+      }),
+    );
+  });
+
+  it("keeps the vacation values when a job with vacation is saved unchanged", async () => {
+    const cafe: JobWithShiftCount = {
+      ...warehouse,
+      vacationHoursPerYear: "80.00",
+      vacationCarryOverHours: "0.00",
+      vacationCarryOverYear: null,
+    };
+    vi.mocked(listJobs).mockResolvedValue([cafe]);
+    vi.mocked(updateJob).mockResolvedValue(cafe);
+    renderPage();
+    await within(screen.getByRole("main")).findByRole("list");
+
+    chooseAction("Warehouse", "Edit job");
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Save changes",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(updateJob).toHaveBeenCalledWith(
+        "job-1",
+        expect.objectContaining({
+          vacationHoursPerYear: "80.00",
+          vacationCarryOverHours: "0",
+          vacationCarryOverYear: null,
+        }),
+      ),
+    );
   });
 
   it("closes the edit dialog without saving when Cancel is pressed", async () => {
@@ -352,5 +451,87 @@ describe("JobsPage", () => {
         "Warehouse and its 3 shifts deleted",
       ),
     );
+  });
+  it("books paid leave from the menu of a job that tracks it, and counts the removed shifts", async () => {
+    const cafe: JobWithShiftCount = {
+      ...warehouse,
+      id: "job-2",
+      name: "Cafe",
+      hourlyRate: "14.00",
+      vacationHoursPerYear: "80.00",
+    };
+    vi.mocked(listJobs).mockResolvedValue([warehouse, cafe]);
+    vi.mocked(listLeave).mockResolvedValue([]);
+    vi.mocked(listShifts).mockResolvedValue({
+      items: [
+        makeShift({ id: "s1", jobId: "job-2", date: "2026-12-22" }),
+        makeShift({ id: "s2", jobId: "job-2", date: "2026-12-23" }),
+      ],
+      total: 2,
+      limit: 500,
+      offset: 0,
+    });
+    vi.mocked(createLeave).mockResolvedValue({
+      id: "leave-1",
+      jobId: "job-2",
+      job: {
+        id: "job-2",
+        name: "Cafe",
+        hourlyRate: "14.00",
+        type: "part_time",
+      },
+      type: "paid_vacation",
+      startDate: "2026-12-21",
+      endDate: "2026-12-23",
+      weekdays: [1, 2, 3, 4, 5],
+      minutesPerDay: 240,
+      notes: null,
+      createdAt: "2026-10-07T09:00:00.000Z",
+      updatedAt: "2026-10-07T09:00:00.000Z",
+      removedShifts: 2,
+    });
+    renderPage();
+    await within(screen.getByRole("main")).findByRole("list");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Actions for Warehouse" }),
+    );
+    expect(
+      screen.queryByRole("menuitem", { name: "Add paid leave" }),
+    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Actions for Warehouse" }),
+    );
+
+    chooseAction("Cafe", "Add paid leave");
+    const dialog = screen.getByRole("dialog", { name: "Add paid leave" });
+    expect(
+      (within(dialog).getByLabelText("Job") as HTMLSelectElement).value,
+    ).toBe("job-2");
+    fireEvent.change(within(dialog).getByLabelText("From"), {
+      target: { value: "2026-12-21" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("To"), {
+      target: { value: "2026-12-23" },
+    });
+    fireEvent.click(
+      await within(dialog).findByRole("checkbox", {
+        name: "Remove them when I add this leave",
+      }),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Add paid leave" }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toBe(
+        "Paid leave added · 2 shifts removed",
+      ),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    const cafeCard = within(
+      screen.getByRole("link", { name: "Cafe" }).closest("li") as HTMLElement,
+    );
+    expect(cafeCard.getByText("1 shift")).toBeDefined();
   });
 });

@@ -7,6 +7,9 @@ export interface Job {
   name: string;
   hourlyRate: string;
   type: JobType;
+  vacationHoursPerYear: string | null;
+  vacationCarryOverHours: string;
+  vacationCarryOverYear: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -19,6 +22,9 @@ export interface JobInput {
   name: string;
   hourlyRate: string;
   type: JobType;
+  vacationHoursPerYear?: string | null;
+  vacationCarryOverHours?: string;
+  vacationCarryOverYear?: number | null;
 }
 
 export function listJobs() {

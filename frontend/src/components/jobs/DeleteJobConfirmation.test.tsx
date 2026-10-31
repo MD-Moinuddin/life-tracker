@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { JobWithShiftCount } from "../../lib/jobs-api";
 import { listShifts } from "../../lib/shifts-api";
-import { makeShift } from "../../test/fixtures";
+import { makeShift, noVacation } from "../../test/fixtures";
 import { DeleteJobConfirmation } from "./DeleteJobConfirmation";
 
 vi.mock("../../lib/shifts-api", () => ({ listShifts: vi.fn() }));
@@ -15,6 +15,7 @@ const warehouse: JobWithShiftCount = {
   createdAt: "2026-10-01T09:00:00.000Z",
   updatedAt: "2026-10-01T09:00:00.000Z",
   shiftCount: 3,
+  ...noVacation,
 };
 
 beforeEach(() => {

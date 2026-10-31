@@ -1,6 +1,7 @@
 import { weekBounds } from "../dates";
 import type { Shift } from "../shifts-api";
 import type { Summary } from "../summary-api";
+import { NO_SUMMARY_LEAVE } from "../summary-totals";
 import type { SummaryRange } from "../summary-period";
 
 // Keep in step with the backend's summary service.
@@ -89,12 +90,14 @@ export function buildDemoSummary(params: {
       plannedMinutes: row.plannedMinutes,
       earnedAmount: toAmount(row.earnedCents),
       plannedAmount: toAmount(row.plannedCents),
+      leave: { ...NO_SUMMARY_LEAVE },
     })),
     totals: {
       earnedMinutes: sum((row) => row.earnedMinutes),
       plannedMinutes: sum((row) => row.plannedMinutes),
       earnedAmount: toAmount(sum((row) => row.earnedCents)),
       plannedAmount: toAmount(sum((row) => row.plannedCents)),
+      leave: { ...NO_SUMMARY_LEAVE },
     },
     miniJob:
       range === "month"

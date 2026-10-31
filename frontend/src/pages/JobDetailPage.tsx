@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { JobTypeBadge } from "../components/jobs/JobTypeBadge";
 import { AppShell } from "../components/layout/AppShell";
 import { LoadBoundary } from "../components/LoadBoundary";
+import { VacationSection } from "../components/leave/VacationSection";
 import { ShiftSections } from "../components/shifts/ShiftSections";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LINK_CLASSES } from "../components/ui/links";
@@ -15,10 +16,35 @@ import { listJobs } from "../lib/jobs-api";
 import type { JobWithShiftCount } from "../lib/jobs-api";
 import { formatEuro } from "../lib/money";
 import { ROUTES } from "../lib/routes";
+import { tracksVacation } from "../lib/vacation";
 
-function JobShifts({ jobId }: { jobId: string }) {
-  const lists = useShiftLists(jobId);
-  return <ShiftSections lists={lists} />;
+// The job's vacation (when it tracks it) and its shift lists, which also show
+// this job's paid leave and reload after the leave changes.
+function JobBody({
+  job,
+  jobs,
+}: {
+  job: JobWithShiftCount;
+  jobs: JobWithShiftCount[];
+}) {
+  const lists = useShiftLists(job.id, jobs);
+  // Booking leave can remove shifts, so a leave change reloads both.
+  const reloadLeaveAndShifts = () => {
+    lists.reloadShifts();
+    lists.reloadLeave();
+  };
+  return (
+    <>
+      {tracksVacation(job) && (
+        <VacationSection
+          job={job}
+          jobs={jobs}
+          onChanged={reloadLeaveAndShifts}
+        />
+      )}
+      <ShiftSections lists={lists} />
+    </>
+  );
 }
 
 interface JobContentProps {
@@ -47,7 +73,7 @@ function JobContent({ state, id }: JobContentProps) {
                 </span>
               }
             />
-            <JobShifts jobId={job.id} />
+            <JobBody job={job} jobs={jobs} />
           </>
         );
       }}

@@ -41,6 +41,14 @@
 
   --color-neutral-soft: #eef0f7;
 
+  /* Paid leave. Always shown with the sun icon and the words "Paid leave",
+     never by colour alone. leave-ink on leave-soft is text; leave and
+     leave-edge need 3:1 on surface. */
+  --color-leave: #b45309;
+  --color-leave-soft: #fff4e0;
+  --color-leave-ink: #7c2d12;
+  --color-leave-edge: #d97706;
+
   /* Identity colours for jobs, drawn as the left edge of a shift. They only
      tell jobs apart; the job name is always written out. Each needs 3:1 on
      surface. */

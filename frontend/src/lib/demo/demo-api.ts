@@ -22,8 +22,14 @@ function notFound(what: string): never {
   throw new ApiError(404, `${what} not found`);
 }
 
+// The demo does not track paid vacation yet, so every job reports that.
 function toJob(job: DemoJob): Job {
-  return { ...job };
+  return {
+    ...job,
+    vacationHoursPerYear: null,
+    vacationCarryOverHours: "0.00",
+    vacationCarryOverYear: null,
+  };
 }
 
 function toShift(shift: DemoShift): Shift {

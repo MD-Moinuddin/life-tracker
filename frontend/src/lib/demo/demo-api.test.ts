@@ -47,6 +47,22 @@ describe("demo jobs", () => {
     expect(jobs.at(-1)).toMatchObject({ id: created.id, shiftCount: 0 });
   });
 
+  it("reports every job as not tracking paid vacation", async () => {
+    const jobs = await demoFetch<JobWithShiftCount[]>("/api/jobs");
+    const created = await demoFetch<JobWithShiftCount>("/api/jobs", {
+      method: "POST",
+      body: { name: "Kiosk", hourlyRate: "11.5", type: "part_time" },
+    });
+
+    for (const job of [...jobs, created]) {
+      expect(job).toMatchObject({
+        vacationHoursPerYear: null,
+        vacationCarryOverHours: "0.00",
+        vacationCarryOverYear: null,
+      });
+    }
+  });
+
   it("edits a job", async () => {
     const updated = await demoFetch<JobWithShiftCount>(
       "/api/jobs/demo-job-cafe",
