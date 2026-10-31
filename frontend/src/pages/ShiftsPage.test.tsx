@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "../components/ui/ToastProvider";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../lib/api-client";
 import { listJobs } from "../lib/jobs-api";
 import type { JobWithShiftCount } from "../lib/jobs-api";
@@ -18,8 +18,16 @@ import {
   updateShift,
 } from "../lib/shifts-api";
 import type { Shift } from "../lib/shifts-api";
-import { makeShift } from "../test/fixtures";
+import {
+  createLeave,
+  deleteLeave,
+  listLeave,
+  updateLeave,
+} from "../lib/leave-api";
+import { PHONE_QUERY } from "../lib/breakpoints";
+import { makeLeave, makeShift, noVacation } from "../test/fixtures";
 import { ShiftsPage } from "./ShiftsPage";
+import source from "./ShiftsPage.tsx?raw";
 
 vi.mock("../lib/shifts-api", () => ({
   listShifts: vi.fn(),
@@ -28,6 +36,12 @@ vi.mock("../lib/shifts-api", () => ({
   deleteShift: vi.fn(),
 }));
 vi.mock("../lib/jobs-api", () => ({ listJobs: vi.fn() }));
+vi.mock("../lib/leave-api", () => ({
+  listLeave: vi.fn(),
+  createLeave: vi.fn(),
+  updateLeave: vi.fn(),
+  deleteLeave: vi.fn(),
+}));
 vi.mock("../lib/dates", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/dates")>()),
   localNow: () => "2026-10-07T12:00",
@@ -60,6 +74,7 @@ const warehouse: JobWithShiftCount = {
   createdAt: "2026-10-01T09:00:00.000Z",
   updatedAt: "2026-10-01T09:00:00.000Z",
   shiftCount: 0,
+  ...noVacation,
 };
 
 function mockShifts(items: Shift[]) {
@@ -533,5 +548,319 @@ describe("ShiftsPage", () => {
     await waitFor(() =>
       expect(screen.getByRole("status").textContent).toBe("Shift deleted"),
     );
+  });
+
+  describe("with paid leave", () => {
+    const cafe: JobWithShiftCount = {
+      ...warehouse,
+      id: "job-2",
+      name: "Cafe",
+      hourlyRate: "14.00",
+      vacationHoursPerYear: "80.00",
+    };
+    // Mon 12 to Fri 16 Oct at the Cafe, 4h a day.
+    const nextWeek = makeLeave({
+      id: "next-week",
+      jobId: "job-2",
+      job: {
+        id: "job-2",
+        name: "Cafe",
+        hourlyRate: "14.00",
+        type: "part_time",
+      },
+      startDate: "2026-10-12",
+      endDate: "2026-10-16",
+    });
+    const leaveLabel = "Actions for paid leave, Cafe, 12 Oct to 16 Oct";
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    beforeEach(() => {
+      vi.mocked(listJobs).mockResolvedValue([warehouse, cafe]);
+      vi.mocked(listLeave).mockResolvedValue([nextWeek]);
+      mockShifts([future]);
+    });
+
+    it("asks for no leave and offers no Add paid leave when no job tracks vacation", async () => {
+      vi.mocked(listJobs).mockResolvedValue([warehouse]);
+      renderPage();
+
+      await screen.findByRole("button", { name: `Actions for ${futureLabel}` });
+      fireEvent.click(screen.getByRole("button", { name: "Week" }));
+      await screen.findByRole("button", { name: `Edit ${futureLabel}` });
+
+      expect(listLeave).not.toHaveBeenCalled();
+      expect(
+        screen.queryByRole("button", { name: "Add paid leave" }),
+      ).toBeNull();
+    });
+
+    it("shows a leave period in Upcoming, in the week of its start", async () => {
+      renderPage();
+
+      const trigger = await section("Upcoming shifts").findByRole("button", {
+        name: leaveLabel,
+      });
+      const row = within(trigger.closest("li") as HTMLElement);
+      expect(row.getByText("Paid leave · Cafe")).toBeDefined();
+      expect(row.getByText("12 Oct to 16 Oct")).toBeDefined();
+      expect(row.getByText("5 days · 20h · €280.00")).toBeDefined();
+      expect(
+        screen.getByRole("heading", { level: 2, name: "Next week" }),
+      ).toBeDefined();
+      expect(listLeave).toHaveBeenCalledWith({ from: "2026-10-07" });
+    });
+
+    it("never shows the leave of a job that stopped tracking vacation", async () => {
+      vi.mocked(listLeave).mockResolvedValue([
+        nextWeek,
+        makeLeave({
+          id: "stopped",
+          startDate: "2026-10-19",
+          endDate: "2026-10-23",
+        }),
+      ]);
+      renderPage();
+
+      await screen.findByRole("button", { name: leaveLabel });
+      expect(screen.queryByText("Paid leave · Warehouse")).toBeNull();
+      expect(screen.getAllByText(/^Paid leave · /)).toHaveLength(1);
+    });
+
+    it("keeps the shifts when the leave cannot be loaded", async () => {
+      vi.mocked(listLeave).mockRejectedValue(new Error("down"));
+      renderPage();
+
+      expect(
+        await screen.findByRole("button", {
+          name: `Actions for ${futureLabel}`,
+        }),
+      ).toBeDefined();
+      await waitFor(() => expect(listLeave).toHaveBeenCalled());
+      expect(screen.queryByRole("alert")).toBeNull();
+      expect(screen.queryByText(/^Paid leave · /)).toBeNull();
+    });
+
+    it("has a compact Add paid leave button next to Add shift, hidden on a phone", async () => {
+      renderPage();
+
+      const button = await screen.findByRole("button", {
+        name: "Add paid leave",
+      });
+      const header = screen
+        .getByRole("heading", { level: 1, name: "Shifts" })
+        .closest("header") as HTMLElement;
+      expect(header.contains(button)).toBe(true);
+      expect(button.className).toContain("max-sm:hidden");
+      expect(
+        within(header).getByRole("button", { name: "Add shift" }),
+      ).toBeDefined();
+
+      fireEvent.click(button);
+      expect(
+        await screen.findByRole("dialog", { name: "Add paid leave" }),
+      ).toBeDefined();
+    });
+
+    it("reloads the shifts but not the leave after a shift is deleted", async () => {
+      vi.mocked(deleteShift).mockResolvedValue(undefined);
+      renderPage();
+      await screen.findByRole("button", { name: leaveLabel });
+      await chooseAction(futureLabel, "Delete shift…");
+      const shiftsBefore = vi.mocked(listShifts).mock.calls.length;
+      const leaveBefore = vi.mocked(listLeave).mock.calls.length;
+
+      fireEvent.click(
+        within(screen.getByRole("dialog")).getByRole("button", {
+          name: "Delete shift",
+        }),
+      );
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+      await waitFor(() =>
+        expect(vi.mocked(listShifts).mock.calls.length).toBe(shiftsBefore + 2),
+      );
+      expect(vi.mocked(listLeave).mock.calls.length).toBe(leaveBefore);
+    });
+
+    it("reloads the week's shifts but not its leave after a shift is edited in the week view", async () => {
+      vi.mocked(updateShift).mockResolvedValue(future);
+      renderPage();
+      await screen.findByRole("button", { name: `Actions for ${futureLabel}` });
+      fireEvent.click(screen.getByRole("button", { name: "Week" }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: `Edit ${futureLabel}` }),
+      );
+      const dialog = within(
+        await screen.findByRole("dialog", { name: "Edit shift" }),
+      );
+      await dialog.findByLabelText("Job");
+      await waitFor(() =>
+        expect(listLeave).toHaveBeenCalledWith({
+          from: "2026-10-05",
+          to: "2026-10-11",
+        }),
+      );
+      const shiftsBefore = vi.mocked(listShifts).mock.calls.length;
+      const leaveBefore = vi.mocked(listLeave).mock.calls.length;
+
+      fireEvent.click(dialog.getByRole("button", { name: "Save changes" }));
+
+      await waitFor(() => expect(updateShift).toHaveBeenCalled());
+      // The two lists and the week.
+      await waitFor(() =>
+        expect(vi.mocked(listShifts).mock.calls.length).toBe(shiftsBefore + 3),
+      );
+      expect(vi.mocked(listLeave).mock.calls.length).toBe(leaveBefore);
+    });
+
+    it("reloads the shifts and the leave after adding leave that removed shifts", async () => {
+      vi.mocked(createLeave).mockResolvedValue({
+        ...nextWeek,
+        removedShifts: 1,
+      });
+      renderPage();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Add paid leave" }),
+      );
+      const dialog = within(
+        await screen.findByRole("dialog", { name: "Add paid leave" }),
+      );
+      fireEvent.change(dialog.getByLabelText("From"), {
+        target: { value: "2026-10-12" },
+      });
+      fireEvent.change(dialog.getByLabelText("To"), {
+        target: { value: "2026-10-16" },
+      });
+      const shiftsBefore = vi.mocked(listShifts).mock.calls.length;
+      const leaveBefore = vi.mocked(listLeave).mock.calls.length;
+
+      fireEvent.click(dialog.getByRole("button", { name: "Add paid leave" }));
+
+      await waitFor(() => expect(createLeave).toHaveBeenCalled());
+      await waitFor(() => {
+        expect(vi.mocked(listShifts).mock.calls.length).toBeGreaterThan(
+          shiftsBefore,
+        );
+        expect(vi.mocked(listLeave).mock.calls.length).toBeGreaterThan(
+          leaveBefore,
+        );
+      });
+    });
+
+    it("edits leave from its row menu with the same dialog, then reloads", async () => {
+      vi.mocked(updateLeave).mockResolvedValue(nextWeek);
+      renderPage();
+      await chooseAction("paid leave, Cafe, 12 Oct to 16 Oct", "Edit");
+      const dialog = within(
+        await screen.findByRole("dialog", { name: "Edit paid leave" }),
+      );
+      const leaveBefore = vi.mocked(listLeave).mock.calls.length;
+      const shiftsBefore = vi.mocked(listShifts).mock.calls.length;
+
+      fireEvent.click(dialog.getByRole("button", { name: "Save changes" }));
+
+      await waitFor(() =>
+        expect(updateLeave).toHaveBeenCalledWith(
+          "next-week",
+          expect.anything(),
+        ),
+      );
+      await waitFor(() => {
+        expect(vi.mocked(listLeave).mock.calls.length).toBeGreaterThan(
+          leaveBefore,
+        );
+        expect(vi.mocked(listShifts).mock.calls.length).toBeGreaterThan(
+          shiftsBefore,
+        );
+      });
+    });
+
+    it("deletes leave after confirming, then reloads", async () => {
+      vi.mocked(deleteLeave).mockResolvedValue(undefined);
+      renderPage();
+      await chooseAction("paid leave, Cafe, 12 Oct to 16 Oct", "Delete…");
+      const dialog = within(
+        await screen.findByRole("dialog", { name: "Delete paid leave?" }),
+      );
+      expect(dialog.getByText("12 Oct to 16 Oct")).toBeDefined();
+      const leaveBefore = vi.mocked(listLeave).mock.calls.length;
+      const shiftsBefore = vi.mocked(listShifts).mock.calls.length;
+
+      vi.mocked(listLeave).mockResolvedValue([]);
+      fireEvent.click(
+        dialog.getByRole("button", { name: "Delete paid leave" }),
+      );
+
+      await waitFor(() =>
+        expect(deleteLeave).toHaveBeenCalledWith("next-week"),
+      );
+      expect(await screen.findByText("Paid leave deleted")).toBeDefined();
+      // Upcoming and History, their leave each.
+      await waitFor(() => {
+        expect(vi.mocked(listLeave).mock.calls.length).toBe(leaveBefore + 2);
+        expect(vi.mocked(listShifts).mock.calls.length).toBe(shiftsBefore + 2);
+      });
+      await waitFor(() =>
+        expect(screen.queryByRole("button", { name: leaveLabel })).toBeNull(),
+      );
+    });
+
+    it("shows the leave in the week view and edits it from a block", async () => {
+      vi.mocked(listLeave).mockResolvedValue([
+        makeLeave({
+          ...nextWeek,
+          startDate: "2026-10-08",
+          endDate: "2026-10-09",
+        }),
+      ]);
+      renderPage();
+      await screen.findByRole("button", { name: `Actions for ${futureLabel}` });
+
+      fireEvent.click(screen.getByRole("button", { name: "Week" }));
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: "Edit paid leave, Cafe, Thu 8 Oct",
+        }),
+      );
+
+      expect(
+        await screen.findByRole("dialog", { name: "Edit paid leave" }),
+      ).toBeDefined();
+      expect(listLeave).toHaveBeenCalledWith({
+        from: "2026-10-05",
+        to: "2026-10-11",
+      });
+    });
+
+    it("deletes leave from the phone agenda", async () => {
+      vi.stubGlobal("matchMedia", (query: string) => ({
+        matches: query === PHONE_QUERY,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }));
+      vi.mocked(listLeave).mockResolvedValue([
+        makeLeave({
+          ...nextWeek,
+          startDate: "2026-10-08",
+          endDate: "2026-10-08",
+        }),
+      ]);
+      renderPage();
+      await screen.findByRole("button", { name: `Actions for ${futureLabel}` });
+
+      fireEvent.click(screen.getByRole("button", { name: "Week" }));
+      await chooseAction("paid leave, Cafe, Thu 8 Oct", "Delete…");
+
+      expect(
+        await screen.findByRole("dialog", { name: "Delete paid leave?" }),
+      ).toBeDefined();
+    });
+  });
+
+  it("uses design tokens only, no raw palette classes", () => {
+    expect(source).not.toMatch(/\b(slate|indigo|red|gray|amber|teal)-\d/);
   });
 });

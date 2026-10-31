@@ -25,4 +25,13 @@ describe("DateTile", () => {
     expect(className).toContain("bg-accent-soft");
     expect(className).toContain("text-accent-ink");
   });
+
+  it("uses the leave colours for a day of paid leave", () => {
+    const { container } = render(<DateTile date="2026-10-03" tone="leave" />);
+
+    const { className } = container.firstElementChild as HTMLElement;
+    expect(className).toContain("bg-surface");
+    expect(className).toContain("text-leave-ink");
+    expect(className).not.toContain("bg-accent-soft");
+  });
 });

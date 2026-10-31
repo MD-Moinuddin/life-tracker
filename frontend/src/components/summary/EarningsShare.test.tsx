@@ -1,3 +1,4 @@
+import { leave40h, noLeave } from "../../test/fixtures";
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { SummaryJob } from "../../lib/summary-api";
@@ -13,6 +14,7 @@ function job(jobId: string, name: string, earnedAmount: string): SummaryJob {
     plannedMinutes: 600,
     earnedAmount,
     plannedAmount: "200.00",
+    leave: noLeave,
   };
 }
 
@@ -57,5 +59,34 @@ describe("EarningsShare", () => {
     );
 
     expect(container.innerHTML).toBe("");
+  });
+
+  it("counts paid leave in each job's share, so the shares add up to 100", () => {
+    render(
+      <EarningsShare
+        jobs={[
+          { ...job("a", "Cafe", "504.00"), leave: leave40h },
+          job("b", "Restaurant", "1064.00"),
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("img", {
+        name: "Share of earnings: Cafe 50%, Restaurant 50%",
+      }),
+    ).toBeDefined();
+  });
+
+  it("shows a job that earned only leave", () => {
+    render(
+      <EarningsShare
+        jobs={[{ ...job("a", "Cafe", "0.00"), leave: leave40h }]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("img", { name: "Share of earnings: Cafe 100%" }),
+    ).toBeDefined();
   });
 });

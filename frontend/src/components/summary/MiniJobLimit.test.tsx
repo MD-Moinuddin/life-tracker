@@ -1,3 +1,4 @@
+import { noLeave } from "../../test/fixtures";
 import { render, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Summary } from "../../lib/summary-api";
@@ -16,6 +17,7 @@ const summary: Summary = {
       plannedMinutes: 2133,
       earnedAmount: "0.00",
       plannedAmount: "480.00",
+      leave: noLeave,
     },
   ],
   totals: {
@@ -23,6 +25,7 @@ const summary: Summary = {
     plannedMinutes: 2133,
     earnedAmount: "0.00",
     plannedAmount: "480.00",
+    leave: noLeave,
   },
   miniJob: { plannedAmount: "480.00", threshold: "540.00", warning: false },
 };
