@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { makeShift, noLeave } from "../../test/fixtures";
+import { makeLeave, makeShift, noLeave } from "../../test/fixtures";
+import type { Leave } from "../leave-api";
 import type { Shift } from "../shifts-api";
 import { buildDemoSummary } from "./demo-summary";
 
@@ -218,7 +219,7 @@ describe("buildDemoSummary", () => {
     expect(summary.miniJob?.warning).toBe(false);
   });
 
-  it("reports zero paid leave on every job and in the totals", () => {
+  it("reports zero paid leave on every job and in the totals without leave", () => {
     const summary = buildDemoSummary({
       shifts: [shift({ date: "2026-10-06" })],
       range: "month",
@@ -226,14 +227,255 @@ describe("buildDemoSummary", () => {
       now: NOW,
     });
 
-    const none = {
+    expect(summary.jobs).toHaveLength(1);
+    expect(summary.jobs[0]?.leave).toEqual(noLeave);
+    expect(summary.totals.leave).toEqual(noLeave);
+  });
+});
+
+// A job as the Summary sees it, and a leave entry of it.
+function job(name: string, hourlyRate: string, type: Shift["job"]["type"]) {
+  return { id: `job-${name}`, name, hourlyRate, type };
+}
+
+function leaveOf(
+  of: ReturnType<typeof job>,
+  overrides: Partial<Leave> = {},
+): Leave {
+  return makeLeave({
+    id: `leave-${of.name}-${overrides.startDate ?? ""}`,
+    jobId: of.id,
+    job: of,
+    ...overrides,
+  });
+}
+
+function shiftOf(
+  of: ReturnType<typeof job>,
+  date: string,
+  startTime: string,
+  endTime: string,
+  workedMinutes: number,
+): Shift {
+  return makeShift({
+    id: `shift-${of.name}-${date}`,
+    jobId: of.id,
+    job: of,
+    date,
+    startTime,
+    endTime,
+    endDate: date,
+    workedMinutes,
+  });
+}
+
+// Monday 26 to Friday 30 October 2026, 4 hours a day.
+const lastWeekOfOctober = {
+  startDate: "2026-10-26",
+  endDate: "2026-10-30",
+  weekdays: [1, 2, 3, 4, 5],
+  minutesPerDay: 240,
+};
+
+const week = {
+  range: "week" as const,
+  date: "2026-10-28",
+  now: "2026-10-28T12:00",
+};
+
+// The backend's example cases for paid leave in the Summary, with the same
+// numbers. Keep these in step with describe("paid leave") in
+// backend/tests/integration/summary.integration.test.ts: a change there is a
+// change here.
+describe("buildDemoSummary, paid leave", () => {
+  it("counts leave days before today as earned and the rest as planned, apart from the worked figures", () => {
+    const cafe = job("Cafe", "14.00", "part_time");
+    const shifts = [
+      shiftOf(cafe, "2026-10-27", "09:00", "13:00", 240),
+      shiftOf(cafe, "2026-10-31", "10:00", "14:00", 240),
+    ];
+    const before = buildDemoSummary({ shifts, ...week });
+
+    const summary = buildDemoSummary({
+      shifts,
+      leave: [leaveOf(cafe, lastWeekOfOctober)],
+      ...week,
+    });
+
+    const expectedLeave = {
+      earnedMinutes: 480,
+      plannedMinutes: 1200,
+      earnedAmount: "112.00",
+      plannedAmount: "280.00",
+    };
+    expect(summary.jobs).toEqual([
+      {
+        jobId: cafe.id,
+        name: "Cafe",
+        type: "part_time",
+        hourlyRate: "14.00",
+        earnedMinutes: 240,
+        plannedMinutes: 480,
+        earnedAmount: "56.00",
+        plannedAmount: "112.00",
+        leave: expectedLeave,
+      },
+    ]);
+    expect(summary.totals).toEqual({
+      earnedMinutes: 240,
+      plannedMinutes: 480,
+      earnedAmount: "56.00",
+      plannedAmount: "112.00",
+      leave: expectedLeave,
+    });
+    expect({ ...summary.totals, leave: noLeave }).toEqual(before.totals);
+  });
+
+  it("gives a job with leave but no shifts a row, in name order", () => {
+    const archive = job("Archive", "10.00", "part_time");
+    const bakery = job("Bakery", "12.50", "mini_job");
+    const cafe = job("Cafe", "10.00", "part_time");
+
+    const summary = buildDemoSummary({
+      shifts: [
+        shiftOf(archive, "2026-10-26", "09:00", "10:00", 60),
+        shiftOf(cafe, "2026-10-26", "09:00", "11:00", 120),
+      ],
+      leave: [leaveOf(bakery, { ...lastWeekOfOctober, weekdays: [5] })],
+      ...week,
+    });
+
+    expect(summary.jobs.map((row) => row.name)).toEqual([
+      "Archive",
+      "Bakery",
+      "Cafe",
+    ]);
+    const bakeryLeave = {
+      earnedMinutes: 0,
+      plannedMinutes: 240,
+      earnedAmount: "0.00",
+      plannedAmount: "50.00",
+    };
+    expect(summary.jobs[1]).toEqual({
+      jobId: bakery.id,
+      name: "Bakery",
+      type: "mini_job",
+      hourlyRate: "12.50",
       earnedMinutes: 0,
       plannedMinutes: 0,
       earnedAmount: "0.00",
       plannedAmount: "0.00",
-    };
-    expect(summary.jobs).toHaveLength(1);
-    expect(summary.jobs[0]?.leave).toEqual(none);
-    expect(summary.totals.leave).toEqual(none);
+      leave: bakeryLeave,
+    });
+    expect(summary.totals.leave).toEqual(bakeryLeave);
+  });
+
+  it("counts only the days inside the month for leave that crosses a month end", () => {
+    const cafe = job("Cafe", "14.00", "part_time");
+    // Thursday 29 October to Tuesday 3 November.
+    const leave = [
+      leaveOf(cafe, {
+        ...lastWeekOfOctober,
+        startDate: "2026-10-29",
+        endDate: "2026-11-03",
+      }),
+    ];
+    const month = (date: string) =>
+      buildDemoSummary({
+        shifts: [],
+        leave,
+        range: "month",
+        date,
+        now: "2026-11-03T08:00",
+      });
+
+    expect(month("2026-11-10").jobs[0]?.leave).toEqual({
+      earnedMinutes: 240,
+      plannedMinutes: 480,
+      earnedAmount: "56.00",
+      plannedAmount: "112.00",
+    });
+    expect(month("2026-10-10").jobs[0]?.leave).toEqual({
+      earnedMinutes: 480,
+      plannedMinutes: 480,
+      earnedAmount: "112.00",
+      plannedAmount: "112.00",
+    });
+  });
+
+  it("adds a mini-job's planned leave to the mini-job limit, but not a part-time job's", () => {
+    const cafe = job("Cafe", "10.00", "mini_job");
+    const warehouse = job("Warehouse", "12.00", "part_time");
+    const shifts = ["2026-12-01", "2026-12-02", "2026-12-03"].map((date) =>
+      shiftOf(cafe, date, "00:00", "18:00", 1080),
+    );
+    // Monday 14 to Friday 18 December, 8 hours a day: 480.00 of leave.
+    const warehouseLeave = leaveOf(warehouse, {
+      startDate: "2026-12-14",
+      endDate: "2026-12-18",
+      weekdays: [1, 2, 3, 4, 5],
+      minutesPerDay: 480,
+    });
+    // Monday 7 December, one hour: 10.00 of leave.
+    const cafeLeave = leaveOf(cafe, {
+      startDate: "2026-12-07",
+      endDate: "2026-12-07",
+      weekdays: [1],
+      minutesPerDay: 60,
+    });
+    const december = (leave: Leave[]) =>
+      buildDemoSummary({
+        shifts,
+        leave,
+        range: "month",
+        date: "2026-12-15",
+        now: "2026-12-01T00:00",
+      });
+
+    const partTimeLeaveOnly = december([warehouseLeave]);
+    const withMiniJobLeave = december([warehouseLeave, cafeLeave]);
+
+    expect(partTimeLeaveOnly.miniJob).toEqual({
+      plannedAmount: "540.00",
+      threshold: "540.00",
+      warning: false,
+    });
+    expect(withMiniJobLeave.miniJob).toEqual({
+      plannedAmount: "550.00",
+      threshold: "540.00",
+      warning: true,
+    });
+    expect(withMiniJobLeave.totals).toMatchObject({
+      plannedAmount: "540.00",
+      leave: { plannedMinutes: 2460, plannedAmount: "490.00" },
+    });
+  });
+
+  it("leaves out the mini-job block for a week with leave", () => {
+    const cafe = job("Cafe", "10.00", "mini_job");
+
+    const summary = buildDemoSummary({
+      shifts: [],
+      leave: [leaveOf(cafe, lastWeekOfOctober)],
+      ...week,
+    });
+
+    expect(summary.totals.leave.plannedAmount).toBe("200.00");
+    expect(summary.miniJob).toBeUndefined();
+  });
+
+  it("returns zero leave for a period without leave", () => {
+    const cafe = job("Cafe", "14.00", "part_time");
+
+    const summary = buildDemoSummary({
+      shifts: [shiftOf(cafe, "2026-11-09", "09:00", "13:00", 240)],
+      leave: [leaveOf(cafe, lastWeekOfOctober)],
+      range: "week",
+      date: "2026-11-10",
+      now: "2026-11-10T12:00",
+    });
+
+    expect(summary.jobs[0]?.leave).toEqual(noLeave);
+    expect(summary.totals.leave).toEqual(noLeave);
   });
 });

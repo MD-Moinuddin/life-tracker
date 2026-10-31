@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { axe } from "jest-axe";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -91,6 +97,82 @@ describe("the demo, through the real pages", () => {
     expect(
       await screen.findByRole("progressbar", { name: /mini-job earnings/i }),
     ).toBeDefined();
+  });
+
+  it("shows the Cafe's paid vacation on its page, and booking a week changes the balance", async () => {
+    renderDemoAt("/jobs/demo-job-cafe");
+
+    const balance = await screen.findByRole("region", {
+      name: "Paid vacation balance",
+    });
+    expect(
+      within(balance).getByRole("img", { name: "12h left of 80h" }),
+    ).toBeDefined();
+    const vacation = within(
+      screen.getByRole("region", { name: "Paid vacation 2026" }),
+    );
+    expect(
+      vacation.getByRole("heading", { name: "Booked leave" }),
+    ).toBeDefined();
+    const entries = (group: string) =>
+      within(vacation.getByRole("region", { name: group })).getAllByRole(
+        "button",
+        { name: /^Actions for paid leave / },
+      );
+    expect(entries("Taken")).toHaveLength(2);
+    expect(entries("Planned")).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add paid leave" }));
+    const dialog = within(
+      await screen.findByRole("dialog", { name: "Add paid leave" }),
+    );
+    // Monday 16 to Friday 20 November, 4h a day: 20h more than the 12h left.
+    fireEvent.change(dialog.getByLabelText("From"), {
+      target: { value: "2026-11-16" },
+    });
+    fireEvent.change(dialog.getByLabelText("To"), {
+      target: { value: "2026-11-20" },
+    });
+    fireEvent.click(dialog.getByRole("button", { name: "Add paid leave" }));
+
+    expect(
+      await screen.findByRole("img", { name: "Over by 8h of 80h" }),
+    ).toBeDefined();
+    await waitFor(() => expect(entries("Planned")).toHaveLength(2));
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("shows the same paid vacation on the Dashboard", async () => {
+    renderDemoAt("/dashboard");
+
+    const card = await screen.findByRole("region", { name: "Paid vacation" });
+    expect(
+      await within(card).findByRole("img", {
+        name: "60h taken, 8h planned, 12h left of 80h",
+      }),
+    ).toBeDefined();
+    expect(within(card).getByText("left of 80h")).toBeDefined();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("shows the paid leave line in the Summary of a month with leave", async () => {
+    renderDemoAt("/summary");
+
+    await screen.findByRole("region", { name: "Totals" });
+    fireEvent.click(screen.getByRole("button", { name: "Month" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Previous month" }),
+    );
+
+    // Monday 14 to Friday 18 September, 4h a day.
+    await waitFor(() =>
+      expect(
+        within(screen.getByRole("region", { name: "Totals" })).getByText(
+          "20h taken",
+        ),
+      ).toBeDefined(),
+    );
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("never touches the network", async () => {
