@@ -15,6 +15,9 @@ function toJobResponse(job: Job) {
     name: job.name,
     hourlyRate: job.hourlyRate.toFixed(2),
     type: job.type,
+    vacationHoursPerYear: job.vacationHoursPerYear?.toFixed(2) ?? null,
+    vacationCarryOverHours: job.vacationCarryOverHours.toFixed(2),
+    vacationCarryOverYear: job.vacationCarryOverYear,
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
   };
