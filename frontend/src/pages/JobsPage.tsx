@@ -5,6 +5,8 @@ import { DeleteJobConfirmation } from "../components/jobs/DeleteJobConfirmation"
 import { JobForm } from "../components/jobs/JobForm";
 import { JobList } from "../components/jobs/JobList";
 import { JobsEmptyState } from "../components/jobs/JobsEmptyState";
+import { AddLeaveDialog } from "../components/leave/AddLeaveDialog";
+import type { SavedLeave } from "../components/leave/AddLeaveDialog";
 import { AppShell } from "../components/layout/AppShell";
 import { LoadMessage } from "../components/LoadBoundary";
 import { Modal } from "../components/Modal";
@@ -25,6 +27,7 @@ export function JobsPage() {
   const [deletingJob, setDeletingJob] = useState<JobWithShiftCount | null>(
     null,
   );
+  const [leaveJob, setLeaveJob] = useState<JobWithShiftCount | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -75,6 +78,21 @@ export function JobsPage() {
     );
   }
 
+  // Booking leave can remove the job's shifts on those days; keep the card's
+  // shift count right.
+  function handleLeaveSaved(leave: SavedLeave) {
+    const removed = leave.removedShifts ?? 0;
+    if (removed > 0) {
+      setJobs((current) =>
+        current.map((job) =>
+          job.id === leave.jobId
+            ? { ...job, shiftCount: Math.max(0, job.shiftCount - removed) }
+            : job,
+        ),
+      );
+    }
+  }
+
   const hasJobs = jobs.length > 0;
 
   return (
@@ -108,6 +126,7 @@ export function JobsPage() {
               jobs={jobs}
               onEdit={setEditingJob}
               onDelete={setDeletingJob}
+              onAddLeave={setLeaveJob}
             />
           ) : (
             <JobsEmptyState onAdd={() => setIsAddOpen(true)} />
@@ -139,6 +158,9 @@ export function JobsPage() {
                   name: editingJob.name,
                   hourlyRate: editingJob.hourlyRate,
                   type: editingJob.type,
+                  vacationHoursPerYear: editingJob.vacationHoursPerYear,
+                  vacationCarryOverHours: editingJob.vacationCarryOverHours,
+                  vacationCarryOverYear: editingJob.vacationCarryOverYear,
                 }}
                 submitLabel="Save changes"
                 onSubmit={(values) => handleUpdate(editingJob.id, values)}
@@ -146,6 +168,14 @@ export function JobsPage() {
               />
             )}
           </Modal>
+
+          <AddLeaveDialog
+            open={leaveJob !== null}
+            jobs={jobs}
+            defaultJobId={leaveJob?.id}
+            onClose={() => setLeaveJob(null)}
+            onSaved={handleLeaveSaved}
+          />
 
           <Modal
             open={deletingJob !== null}

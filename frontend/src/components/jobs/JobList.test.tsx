@@ -1,3 +1,4 @@
+import { noVacation } from "../../test/fixtures";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
@@ -14,6 +15,7 @@ const jobs: JobWithShiftCount[] = [
     createdAt: "2026-10-01T09:00:00.000Z",
     updatedAt: "2026-10-01T09:00:00.000Z",
     shiftCount: 3,
+    ...noVacation,
   },
   {
     id: "job-2",
@@ -23,6 +25,7 @@ const jobs: JobWithShiftCount[] = [
     createdAt: "2026-10-02T09:00:00.000Z",
     updatedAt: "2026-10-02T09:00:00.000Z",
     shiftCount: 0,
+    ...noVacation,
   },
 ];
 
@@ -95,6 +98,38 @@ describe("JobList", () => {
 
     openMenu("Warehouse");
 
+    expect(
+      screen.getAllByRole("menuitem").map((item) => item.textContent),
+    ).toEqual(["Edit job", "Delete job…"]);
+  });
+
+  it("offers Add paid leave only for a job that tracks paid vacation", () => {
+    const onAddLeave = vi.fn();
+    const tracked = {
+      ...jobs[0],
+      id: "job-3",
+      name: "Bakery",
+      vacationHoursPerYear: "80.00",
+    } as JobWithShiftCount;
+    render(
+      <MemoryRouter>
+        <JobList
+          jobs={[...jobs, tracked]}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+          onAddLeave={onAddLeave}
+        />
+      </MemoryRouter>,
+    );
+
+    openMenu("Bakery");
+    expect(
+      screen.getAllByRole("menuitem").map((item) => item.textContent),
+    ).toEqual(["Edit job", "Add paid leave", "Delete job…"]);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Add paid leave" }));
+    expect(onAddLeave).toHaveBeenCalledWith(tracked);
+
+    openMenu("Warehouse");
     expect(
       screen.getAllByRole("menuitem").map((item) => item.textContent),
     ).toEqual(["Edit job", "Delete job…"]);

@@ -4,12 +4,16 @@ import type { FieldErrors } from "../../lib/api-client";
 import { classNames } from "../../lib/class-names";
 import { toFormErrors } from "../../lib/form-errors";
 import type { JobInput, JobType } from "../../lib/jobs-api";
+import { localNow } from "../../lib/dates";
 import { parseEuroInput } from "../../lib/money";
+import { tracksVacation } from "../../lib/vacation";
+import { parseHoursInput } from "../../lib/vacation-input";
 import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
 import { DialogBody, DialogFooter } from "../ui/DialogParts";
 import { Field } from "../ui/Field";
 import { Input } from "../ui/Input";
+import { VacationFields, type VacationValue } from "./VacationFields";
 import { JOB_TYPE_DESCRIPTIONS, JOB_TYPE_LABELS } from "./job-types";
 
 interface JobFormProps {
@@ -19,16 +23,85 @@ interface JobFormProps {
   onCancel?: () => void;
 }
 
-type FieldName = "name" | "hourlyRate";
-const FIELD_ORDER: readonly FieldName[] = ["name", "hourlyRate"];
+type FieldName =
+  "name" | "hourlyRate" | "vacationHoursPerYear" | "vacationCarryOverHours";
+const FIELD_ORDER: readonly FieldName[] = [
+  "name",
+  "hourlyRate",
+  "vacationHoursPerYear",
+  "vacationCarryOverHours",
+];
 
 const RATE_MESSAGE = "Enter the hourly rate as an amount, for example 12.50";
+const HOURS_MESSAGE = "Enter the hours per year, for example 80";
+const CARRY_OVER_MESSAGE = "Enter the carried-over hours, for example 8";
 const JOB_TYPES = Object.keys(JOB_TYPE_LABELS) as JobType[];
 
-function validate(name: string, hourlyRate: string) {
+// Empty carried-over hours mean 0.
+function parseCarryOver(input: string): string | null {
+  return input.trim() === ""
+    ? "0"
+    : parseHoursInput(input, { allowZero: true });
+}
+
+function initialVacation(initialValues?: JobInput): VacationValue {
+  const carriedOver = Number(initialValues?.vacationCarryOverHours ?? 0);
+  return {
+    enabled: initialValues !== undefined && tracksVacation(initialValues),
+    hoursPerYear: initialValues?.vacationHoursPerYear ?? "",
+    carriedOverHours:
+      carriedOver > 0 ? (initialValues?.vacationCarryOverHours ?? "") : "",
+  };
+}
+
+function validate(name: string, hourlyRate: string, vacation: VacationValue) {
   return {
     name: name.trim().length === 0 ? ["Name is required"] : [],
     hourlyRate: parseEuroInput(hourlyRate) === null ? [RATE_MESSAGE] : [],
+    vacationHoursPerYear:
+      vacation.enabled && parseHoursInput(vacation.hoursPerYear) === null
+        ? [HOURS_MESSAGE]
+        : [],
+    vacationCarryOverHours:
+      vacation.enabled && parseCarryOver(vacation.carriedOverHours) === null
+        ? [CARRY_OVER_MESSAGE]
+        : [],
+  };
+}
+
+// The vacation part of the request. A job without vacation sends the "off"
+// values so turning the switch off clears what was stored.
+function vacationInput(vacation: VacationValue, initialValues?: JobInput) {
+  const hours = vacation.enabled
+    ? parseHoursInput(vacation.hoursPerYear)
+    : null;
+  const carriedOver = vacation.enabled
+    ? parseCarryOver(vacation.carriedOverHours)
+    : null;
+  if (hours === null || carriedOver === null) {
+    return {
+      vacationHoursPerYear: null,
+      vacationCarryOverHours: "0",
+      vacationCarryOverYear: null,
+    };
+  }
+  // Carry-over that was already stored keeps its year; only new or changed
+  // hours belong to the current year.
+  const storedYear = initialValues?.vacationCarryOverYear ?? null;
+  const unchanged =
+    initialValues !== undefined &&
+    tracksVacation(initialValues) &&
+    storedYear !== null &&
+    Number(carriedOver) === Number(initialValues.vacationCarryOverHours ?? 0);
+  return {
+    vacationHoursPerYear: hours,
+    vacationCarryOverHours: carriedOver,
+    vacationCarryOverYear:
+      Number(carriedOver) <= 0
+        ? null
+        : unchanged
+          ? storedYear
+          : Number(localNow().slice(0, 4)),
   };
 }
 
@@ -44,7 +117,10 @@ export function JobForm({
   // What the server said about the last attempt; cleared on the next one.
   const [serverErrors, setServerErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const form = useFormErrors(validate(name, hourlyRate), FIELD_ORDER);
+  const [vacation, setVacation] = useState(() =>
+    initialVacation(initialValues),
+  );
+  const form = useFormErrors(validate(name, hourlyRate, vacation), FIELD_ORDER);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,6 +135,7 @@ export function JobForm({
         name: name.trim(),
         hourlyRate: parseEuroInput(hourlyRate) ?? hourlyRate,
         type,
+        ...vacationInput(vacation, initialValues),
       });
     } catch (error) {
       setServerErrors(toFormErrors(error));
@@ -172,6 +249,30 @@ export function JobForm({
               </p>
             )}
           </fieldset>
+
+          <VacationFields
+            value={vacation}
+            onChange={setVacation}
+            disabled={isSubmitting}
+            errors={{
+              hoursPerYear: [
+                ...form.errorsFor("vacationHoursPerYear"),
+                ...(serverErrors.vacationHoursPerYear ?? []),
+              ],
+              carriedOverHours: [
+                ...form.errorsFor("vacationCarryOverHours"),
+                ...(serverErrors.vacationCarryOverHours ?? []),
+              ],
+            }}
+            onBlur={(field, value) =>
+              form.onBlur(
+                field === "hoursPerYear"
+                  ? "vacationHoursPerYear"
+                  : "vacationCarryOverHours",
+                value,
+              )
+            }
+          />
         </div>
       </DialogBody>
 
