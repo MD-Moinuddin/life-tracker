@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeShift } from "../../test/fixtures";
+import { makeShift, noLeave } from "../../test/fixtures";
 import type { Shift } from "../shifts-api";
 import { buildDemoSummary } from "./demo-summary";
 
@@ -61,6 +61,7 @@ describe("buildDemoSummary", () => {
       plannedMinutes: 720,
       earnedAmount: "96.00",
       plannedAmount: "144.00",
+      leave: noLeave,
     });
   });
 
@@ -215,5 +216,24 @@ describe("buildDemoSummary", () => {
 
     expect(summary.miniJob?.plannedAmount).toBe("0.00");
     expect(summary.miniJob?.warning).toBe(false);
+  });
+
+  it("reports zero paid leave on every job and in the totals", () => {
+    const summary = buildDemoSummary({
+      shifts: [shift({ date: "2026-10-06" })],
+      range: "month",
+      date: "2026-10-07",
+      now: NOW,
+    });
+
+    const none = {
+      earnedMinutes: 0,
+      plannedMinutes: 0,
+      earnedAmount: "0.00",
+      plannedAmount: "0.00",
+    };
+    expect(summary.jobs).toHaveLength(1);
+    expect(summary.jobs[0]?.leave).toEqual(none);
+    expect(summary.totals.leave).toEqual(none);
   });
 });

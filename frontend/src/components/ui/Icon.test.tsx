@@ -44,6 +44,7 @@ describe("Icon", () => {
       "activity",
       "leaf",
       "wallet",
+      "sun",
     ] as const;
 
     for (const name of names) {
@@ -53,5 +54,14 @@ describe("Icon", () => {
       );
       unmount();
     }
+  });
+
+  it("draws the sun as a disc with eight rays", () => {
+    const { container } = render(<Icon name="sun" />);
+
+    expect(container.querySelectorAll("circle")).toHaveLength(1);
+    expect(container.querySelector("circle")?.getAttribute("r")).toBe("4");
+    const rays = container.querySelector("path")?.getAttribute("d") ?? "";
+    expect(rays.match(/M/g)).toHaveLength(8);
   });
 });
