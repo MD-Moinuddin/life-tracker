@@ -6,6 +6,9 @@ interface JobData {
   name: string;
   hourlyRate: string;
   type: JobType;
+  vacationHoursPerYear?: string | null;
+  vacationCarryOverHours?: string;
+  vacationCarryOverYear?: number | null;
 }
 
 export function listJobsByUser(userId: string) {

@@ -25,15 +25,19 @@ enum JobType {
 }
 
 model Job {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name       String
-  hourlyRate Decimal  @db.Decimal(8, 2)
-  type       JobType
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  shifts     Shift[]
+  id                     String   @id @default(cuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                   String
+  hourlyRate             Decimal  @db.Decimal(8, 2)
+  type                   JobType
+  vacationHoursPerYear   Decimal? @db.Decimal(6, 2)
+  vacationCarryOverHours Decimal  @default(0) @db.Decimal(6, 2)
+  vacationCarryOverYear  Int?
+  leave                  Leave[]
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  shifts                 Shift[]
 
   @@index([userId])
 }
@@ -63,4 +67,24 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+enum LeaveType {
+  paid_vacation
+}
+
+model Leave {
+  id            String    @id @default(cuid())
+  jobId         String
+  job           Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  type          LeaveType @default(paid_vacation)
+  startDate     DateTime  @db.Date
+  endDate       DateTime  @db.Date
+  weekdays      Int[]
+  minutesPerDay Int
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([jobId, startDate])
 }
