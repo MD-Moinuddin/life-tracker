@@ -1,21 +1,21 @@
-import { Link, Navigate } from "react-router-dom";
-import { FeatureList } from "../components/landing/FeatureList";
-import {
-  LANDING_CTA,
-  LANDING_NAV_LABEL,
-} from "../components/landing/landing-content";
+import { Navigate } from "react-router-dom";
+import { AppPreview } from "../components/landing/AppPreview";
+import { FeatureGrid } from "../components/landing/FeatureGrid";
+import { FinalCta } from "../components/landing/FinalCta";
+import { HowItWorks } from "../components/landing/HowItWorks";
+import { LandingFooter } from "../components/landing/LandingFooter";
+import { LandingHeader } from "../components/landing/LandingHeader";
 import { LandingHero } from "../components/landing/LandingHero";
-import { SummaryPreview } from "../components/landing/SummaryPreview";
-import { BrandLink } from "../components/layout/BrandLink";
-import { buttonClassName } from "../components/ui/Button";
+import { MiniJobSpotlight } from "../components/landing/MiniJobSpotlight";
+import { PhoneShowcase } from "../components/landing/PhoneShowcase";
 import { SlowStartNotice } from "../components/SlowStartNotice";
 import { Spinner } from "../components/Spinner";
 import { ROUTES } from "../lib/routes";
 import { useAuthStore } from "../store/auth-store";
 
-// The home page for visitors who are not signed in. On desktop it is one
-// screen tall (min-h-dvh), so it fits without scrolling at normal sizes but
-// scrolls rather than clips on a very short window. Below lg it stacks.
+// The home page for visitors who are not signed in: what the app does, how it
+// works, and a way to sign up. Everything is drawn in code, so it does not wait
+// for the server. Below lg the hero stacks.
 export function LandingPage() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const isInitialized = useAuthStore((state) => state.isInitialized);
@@ -42,30 +42,23 @@ export function LandingPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-page">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <BrandLink className="text-lg" />
-        <nav aria-label={LANDING_NAV_LABEL} className="flex items-center gap-2">
-          <Link
-            to={ROUTES.login}
-            className={buttonClassName("secondary", "compact")}
-          >
-            {LANDING_CTA.login}
-          </Link>
-          <Link
-            to={ROUTES.signup}
-            className={buttonClassName("primary", "compact")}
-          >
-            {LANDING_CTA.signup}
-          </Link>
-        </nav>
-      </header>
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center gap-10 px-4 py-8 sm:px-6 lg:gap-12 lg:py-4">
-        <section className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+      <LandingHeader />
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6">
+        <section className="relative grid items-center gap-10 py-10 lg:grid-cols-2 lg:gap-16 lg:py-16">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-6 -right-20 -z-10 h-96 w-lg rounded-full bg-accent-soft/80 blur-3xl max-lg:hidden"
+          />
           <LandingHero />
-          <SummaryPreview />
+          <AppPreview />
         </section>
-        <FeatureList />
+        <HowItWorks />
+        <FeatureGrid />
+        <MiniJobSpotlight />
+        <PhoneShowcase />
+        <FinalCta />
       </main>
+      <LandingFooter />
     </div>
   );
 }
