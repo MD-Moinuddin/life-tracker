@@ -129,4 +129,13 @@ describe("Modal", () => {
     expect(className).toContain("rounded-card");
     expect(className).not.toMatch(/slate-|indigo-|red-/);
   });
+
+  it("sizes the content box from its content, not from a basis of 0, which Safari on iPhone collapses", () => {
+    renderModal(true);
+
+    const box = screen.getByRole("button", { name: "Inside" })
+      .parentElement as HTMLElement;
+    expect(box.className.split(" ")).toContain("flex-auto");
+    expect(box.className.split(" ")).not.toContain("flex-1");
+  });
 });

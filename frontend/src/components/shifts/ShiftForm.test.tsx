@@ -376,4 +376,14 @@ describe("ShiftForm", () => {
       "bg-danger-soft",
     );
   });
+
+  it("sizes its box from its content, not from a basis of 0, so Safari on iPhone does not collapse it", () => {
+    renderForm();
+
+    const form = screen
+      .getByRole("button", { name: /^(Add|Save)/ })
+      .closest("form") as HTMLElement;
+    expect(form.className.split(" ")).toContain("flex-auto");
+    expect(form.className.split(" ")).not.toContain("flex-1");
+  });
 });

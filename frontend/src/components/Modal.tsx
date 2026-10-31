@@ -70,7 +70,10 @@ export function Modal({
           <Icon name="close" className="h-5 w-5" />
         </button>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      {/* flex-auto, not flex-1: with a basis of 0, Safari on iPhone collapses
+          these boxes to nothing inside a dialog whose height comes from its
+          content. */}
+      <div className="flex min-h-0 flex-auto flex-col">{children}</div>
     </dialog>
   );
 }
