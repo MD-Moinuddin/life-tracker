@@ -3,6 +3,8 @@ import { ApiError } from "./api-client";
 import { refresh } from "./auth-api";
 import { authedFetch } from "./authed-api";
 import { useAuthStore } from "../store/auth-store";
+import { buildDemoData } from "./demo/demo-data";
+import { loadDemoDb } from "./demo/demo-db";
 
 vi.mock("./auth-api", () => ({ refresh: vi.fn() }));
 
@@ -119,5 +121,34 @@ describe("authedFetch", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  describe("in the demo", () => {
+    beforeEach(() => {
+      loadDemoDb(buildDemoData("2026-10-30"));
+      useAuthStore.setState({
+        user: { ...user, isDemo: true },
+        accessToken: "demo",
+      });
+    });
+
+    it("answers from the demo data and never uses the network", async () => {
+      const jobs = await authedFetch<{ name: string }[]>("/api/jobs");
+
+      expect(jobs.map((job) => job.name)).toContain("Cafe");
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(refresh).not.toHaveBeenCalled();
+    });
+
+    it("passes the method and the body on to the demo", async () => {
+      await authedFetch("/api/jobs", {
+        method: "POST",
+        body: { name: "Kiosk", hourlyRate: "11.00", type: "part_time" },
+      });
+      const jobs = await authedFetch<{ name: string }[]>("/api/jobs");
+
+      expect(jobs.map((job) => job.name)).toContain("Kiosk");
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
   });
 });

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ROUTES } from "../../lib/routes";
 import { buttonClassName } from "../ui/Button";
+import { DemoButton } from "./DemoButton";
 import { EYEBROW_ACCENT_CLASSES } from "../ui/eyebrow";
 import { Icon } from "../ui/Icon";
 import {
@@ -34,6 +35,7 @@ export function LandingHero() {
         >
           {LANDING_CTA.login}
         </Link>
+        <DemoButton />
       </div>
       <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-muted">
         {LANDING_TRUST_POINTS.map((point) => (

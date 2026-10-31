@@ -1,8 +1,15 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { axe } from "jest-axe";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { logout } from "../../lib/auth-api";
+import { endDemoSession } from "../../lib/demo/demo-session";
 import { useAuthStore } from "../../store/auth-store";
 import { AppShell } from "./AppShell";
 
@@ -221,6 +228,83 @@ describe("AppShell accessibility", () => {
     expect((await axe(container)).violations).toHaveLength(0);
 
     fireEvent.click(screen.getByRole("button", { name: /Account menu/ }));
+    expect((await axe(container)).violations).toHaveLength(0);
+  });
+});
+
+describe("AppShell demo", () => {
+  const demoUser = {
+    id: "demo-user",
+    name: "Demo visitor",
+    email: "",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    isDemo: true,
+  };
+
+  function renderDemo() {
+    useAuthStore.setState({ user: demoUser, accessToken: "demo" });
+    return renderAt("/dashboard");
+  }
+
+  it("shows the demo banner, and none for a real user", () => {
+    renderDemo();
+    expect(screen.getByRole("region", { name: "Demo mode" })).toBeDefined();
+
+    cleanup();
+    useAuthStore.setState({ user, accessToken: "token" });
+    renderAt("/dashboard");
+    expect(screen.queryByRole("region", { name: "Demo mode" })).toBeNull();
+  });
+
+  it("leaves the demo to the landing page without calling the server", async () => {
+    renderDemo();
+
+    fireEvent.click(screen.getByRole("button", { name: "Exit demo" }));
+
+    expect(await screen.findByText("Landing page")).toBeDefined();
+    expect(useAuthStore.getState().user).toBeNull();
+    expect(logout).not.toHaveBeenCalled();
+  });
+
+  it("leaves the demo for the sign-up page from the banner", async () => {
+    useAuthStore.setState({ user: demoUser, accessToken: "demo" });
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Routes>
+          <Route path="/signup" element={<p>Sign up page</p>} />
+          <Route
+            path="*"
+            element={
+              <AppShell>
+                <p>content</p>
+              </AppShell>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
+
+    expect(await screen.findByText("Sign up page")).toBeDefined();
+    expect(useAuthStore.getState().user).toBeNull();
+  });
+
+  it("exits the demo from the account menu, with no logout request", async () => {
+    renderDemo();
+
+    fireEvent.click(screen.getByRole("button", { name: /Account menu/ }));
+    const exits = screen.getAllByRole("button", { name: "Exit demo" });
+    fireEvent.click(exits[exits.length - 1] as HTMLElement);
+
+    expect(await screen.findByText("Landing page")).toBeDefined();
+    expect(logout).not.toHaveBeenCalled();
+    endDemoSession();
+  });
+
+  it("has no accessibility violations with the demo banner", async () => {
+    const { container } = renderDemo();
+
     expect((await axe(container)).violations).toHaveLength(0);
   });
 });

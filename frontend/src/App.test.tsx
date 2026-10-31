@@ -52,12 +52,22 @@ describe("App routing for a logged-out visitor", () => {
     ).toBeDefined();
   });
 
-  it("still sends a protected page to the login form", async () => {
-    renderAt("/summary");
+  it("sends every protected page to the homepage, not the login form", async () => {
+    for (const path of ["/dashboard", "/jobs", "/shifts", "/summary"]) {
+      const { unmount } = renderAt(path);
 
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Welcome back" }),
-    ).toBeDefined();
+      expect(
+        await screen.findByRole("heading", {
+          level: 1,
+          name: LANDING_HEADLINE,
+        }),
+      ).toBeDefined();
+      expect(
+        screen.queryByRole("heading", { name: "Welcome back" }),
+      ).toBeNull();
+      unmount();
+      useAuthStore.setState({ isInitialized: false });
+    }
   });
 
   it("takes the logo on the login page back to the landing page", async () => {

@@ -2,6 +2,7 @@ import { ApiError, apiFetch } from "./api-client";
 import type { ApiFetchOptions } from "./api-client";
 import { refresh } from "./auth-api";
 import { useAuthStore } from "../store/auth-store";
+import { demoFetch } from "./demo/demo-api";
 
 let pendingRefresh: Promise<string> | null = null;
 
@@ -22,6 +23,11 @@ export async function authedFetch<T>(
   path: string,
   options: Omit<ApiFetchOptions, "accessToken"> = {},
 ): Promise<T> {
+  // In the demo there is no server: the in-memory demo answers instead.
+  if (useAuthStore.getState().user?.isDemo) {
+    return demoFetch<T>(path, options);
+  }
+
   const send = (accessToken: string | null) =>
     apiFetch<T>(path, { ...options, accessToken });
 
