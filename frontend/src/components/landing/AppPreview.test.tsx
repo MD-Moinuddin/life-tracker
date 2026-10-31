@@ -30,12 +30,27 @@ describe("AppPreview", () => {
     const { container } = render(<AppPreview />);
 
     const parts = container.querySelectorAll<HTMLElement>(
-      "div.rounded-full > span",
+      "div.rounded-full:not([data-testid]) > span",
     );
     expect(Array.from(parts).map((part) => part.style.width)).toEqual([
       "48%",
       "52%",
     ]);
     expect(parts[0]?.className).not.toBe(parts[1]?.className);
+  });
+
+  it("shows the paid vacation balance with a sun icon and a decorative bar", () => {
+    const { container } = render(<AppPreview />);
+    const line = Array.from(container.querySelectorAll("p")).find((p) =>
+      p.textContent?.includes("Paid vacation"),
+    );
+
+    expect(line?.textContent).toBe("Paid vacation: 12h left of 80h");
+    expect(line?.className).toContain("text-leave-ink");
+    expect(line?.querySelector("svg")).not.toBeNull();
+    const bar = container.querySelector("[data-testid=vacation-bar]");
+    expect(bar?.getAttribute("aria-hidden")).toBe("true");
+    expect(bar?.querySelector(".bg-leave")).not.toBeNull();
+    expect(bar?.querySelector("[data-planned]")).not.toBeNull();
   });
 });
