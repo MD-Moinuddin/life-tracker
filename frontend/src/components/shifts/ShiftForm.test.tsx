@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../lib/api-client";
@@ -10,8 +16,8 @@ vi.mock("../../lib/dates", async (importOriginal) => ({
 }));
 
 const jobs = [
-  { id: "job-1", name: "Warehouse" },
-  { id: "job-2", name: "Cafe" },
+  { id: "job-1", name: "Warehouse", hourlyRate: "12.00" },
+  { id: "job-2", name: "Cafe", hourlyRate: "10.00" },
 ];
 
 function renderForm(props: Partial<ComponentProps<typeof ShiftForm>> = {}) {
@@ -37,6 +43,10 @@ function fillValid() {
   fillIn("End time", "17:00");
 }
 
+function breakChoice(label: string) {
+  return screen.getByRole("button", { name: label });
+}
+
 function submit() {
   fireEvent.click(screen.getByRole("button", { name: "Add shift" }));
 }
@@ -48,9 +58,7 @@ describe("ShiftForm", () => {
     expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe(
       "2026-10-07",
     );
-    expect(
-      (screen.getByLabelText("Break (minutes)") as HTMLInputElement).value,
-    ).toBe("0");
+    expect(breakChoice("None").getAttribute("aria-pressed")).toBe("true");
     expect((screen.getByLabelText("Job") as HTMLSelectElement).value).toBe("");
   });
 
@@ -81,9 +89,7 @@ describe("ShiftForm", () => {
     expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe(
       "2026-10-03",
     );
-    expect(
-      (screen.getByLabelText("Break (minutes)") as HTMLInputElement).value,
-    ).toBe("30");
+    expect(breakChoice("30 min").getAttribute("aria-pressed")).toBe("true");
     expect(
       (screen.getByLabelText("Notes (optional)") as HTMLTextAreaElement).value,
     ).toBe("Late");
@@ -103,19 +109,137 @@ describe("ShiftForm", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("rejects a break that is not a whole number", async () => {
-    const { onSubmit } = renderForm();
+  it("offers the usual breaks as quick choices, one chosen at a time", () => {
+    renderForm();
 
-    fillValid();
-    fillIn("Break (minutes)", "1.5");
+    for (const label of ["None", "15 min", "30 min", "45 min", "60 min"]) {
+      expect(breakChoice(label)).toBeDefined();
+    }
+    fireEvent.click(breakChoice("45 min"));
+
+    expect(breakChoice("45 min").getAttribute("aria-pressed")).toBe("true");
+    expect(breakChoice("None").getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("keeps an unusual break of a shift being edited as a choice of its own", () => {
+    renderForm({
+      initialValues: {
+        jobId: "job-1",
+        date: "2026-10-03",
+        startTime: "09:00",
+        endTime: "17:00",
+        breakMinutes: 20,
+        notes: "",
+      },
+      submitLabel: "Save changes",
+    });
+
+    expect(breakChoice("20 min").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("rejects a break longer than the shift, with the backend's message", async () => {
+    const { onSubmit } = renderForm();
+    fillIn("Job", "job-1");
+    fillIn("Start time", "09:00");
+    fillIn("End time", "09:30");
+    fireEvent.click(breakChoice("45 min"));
+
     submit();
 
     expect(
-      await screen.findByText(
-        "Enter the break in whole minutes, or 0 for none",
-      ),
+      await screen.findByText("Break cannot be longer than the shift"),
     ).toBeDefined();
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("rejects equal start and end times, with the backend's message", async () => {
+    const { onSubmit } = renderForm();
+    fillIn("Job", "job-1");
+    fillIn("Start time", "09:00");
+    fillIn("End time", "09:00");
+
+    submit();
+
+    expect(
+      await screen.findByText("End time must be different from start time"),
+    ).toBeDefined();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("moves focus to the first field with an error", () => {
+    renderForm();
+
+    submit();
+
+    expect(document.activeElement).toBe(screen.getByLabelText("Job"));
+  });
+
+  it("shows the hours and earnings the shift will count for", () => {
+    renderForm();
+    expect(
+      screen.getByText(
+        "Choose a job and enter the times to see the hours and earnings.",
+      ),
+    ).toBeDefined();
+
+    fillValid();
+    fireEvent.click(breakChoice("30 min"));
+
+    expect(screen.getByText("7h 30m worked")).toBeDefined();
+    expect(screen.getByText("€90.00")).toBeDefined();
+  });
+
+  it("counts a shift that runs past midnight in the summary", () => {
+    renderForm();
+    fillIn("Job", "job-2");
+    fillIn("Start time", "22:00");
+    fillIn("End time", "02:00");
+
+    expect(screen.getByText("4h worked")).toBeDefined();
+    expect(screen.getByText("€40.00")).toBeDefined();
+  });
+
+  it("starts with the job last used, when it is still there", () => {
+    localStorage.setItem("lt-last-job", "job-2");
+
+    renderForm();
+
+    expect((screen.getByLabelText("Job") as HTMLSelectElement).value).toBe(
+      "job-2",
+    );
+  });
+
+  it("ignores a last-used job that no longer exists", () => {
+    localStorage.setItem("lt-last-job", "gone");
+
+    renderForm();
+
+    expect((screen.getByLabelText("Job") as HTMLSelectElement).value).toBe("");
+  });
+
+  it("remembers the job after a new shift is saved, but not after an edit", async () => {
+    const { onSubmit } = renderForm();
+    fillValid();
+    submit();
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(localStorage.getItem("lt-last-job")).toBe("job-1");
+
+    localStorage.clear();
+    cleanup();
+    renderForm({
+      initialValues: {
+        jobId: "job-2",
+        date: "2026-10-03",
+        startTime: "09:00",
+        endTime: "17:00",
+        breakMinutes: 0,
+        notes: "",
+      },
+      submitLabel: "Save changes",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(screen.queryByText("Saving…")).toBeNull());
+    expect(localStorage.getItem("lt-last-job")).toBeNull();
   });
 
   it("submits the values the API expects", async () => {
@@ -123,7 +247,7 @@ describe("ShiftForm", () => {
 
     fillValid();
     fillIn("Date", "2026-10-09");
-    fillIn("Break (minutes)", "30");
+    fireEvent.click(breakChoice("30 min"));
     fillIn("Notes (optional)", "  Early start  ");
     submit();
 

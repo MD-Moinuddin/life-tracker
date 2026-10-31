@@ -1,17 +1,18 @@
 import { useCallback, useState } from "react";
 import { AddButton } from "../components/AddButton";
-import { ConfirmDelete } from "../components/ConfirmDelete";
+import { CONFIRM_DESCRIPTION_ID } from "../components/ConfirmDelete";
 import { AppShell } from "../components/layout/AppShell";
 import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/ui/PageHeader";
+import { DeleteShiftConfirmation } from "../components/shifts/DeleteShiftConfirmation";
 import { ShiftDialogContent } from "../components/shifts/ShiftDialogContent";
 import { ShiftSections } from "../components/shifts/ShiftSections";
 import { WeekView } from "../components/shifts/WeekView";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { useLoad } from "../hooks/useLoad";
+import { useToast } from "../hooks/useToast";
 import { useShiftLists } from "../hooks/useShiftLists";
 import { listJobs } from "../lib/jobs-api";
-import { formatDay, formatTimeRange } from "../lib/shift-format";
 import { createShift, deleteShift, updateShift } from "../lib/shifts-api";
 import type { Shift, ShiftInput } from "../lib/shifts-api";
 
@@ -34,6 +35,7 @@ const VIEW_OPTIONS = [
 ] as const;
 
 export function ShiftsPage() {
+  const toast = useToast();
   const [view, setView] = useState<View>("list");
   // Counts changes, so the week view knows to fetch again.
   const [version, setVersion] = useState(0);
@@ -54,18 +56,21 @@ export function ShiftsPage() {
     await createShift(values);
     setIsAddOpen(false);
     reloadShifts();
+    toast.show("Shift added");
   }
 
   async function handleUpdate(id: string, values: ShiftInput) {
     await updateShift(id, values);
     setEditingShift(null);
     reloadShifts();
+    toast.show("Shift updated");
   }
 
   async function handleDelete(id: string) {
     await deleteShift(id);
     setDeletingShift(null);
     reloadShifts();
+    toast.show("Shift deleted");
   }
 
   const viewSwitch = (
@@ -143,19 +148,15 @@ export function ShiftsPage() {
       <Modal
         open={deletingShift !== null}
         title="Delete shift?"
+        describedBy={CONFIRM_DESCRIPTION_ID}
         onClose={() => setDeletingShift(null)}
       >
         {deletingShift && (
-          <ConfirmDelete
-            confirmLabel="Delete shift"
+          <DeleteShiftConfirmation
+            shift={deletingShift}
             onConfirm={() => handleDelete(deletingShift.id)}
             onCancel={() => setDeletingShift(null)}
-          >
-            <p>
-              {`You are about to delete the ${deletingShift.job.name} shift on ${formatDay(deletingShift.date)}, ${formatTimeRange(deletingShift)}.`}
-            </p>
-            <p>This cannot be undone.</p>
-          </ConfirmDelete>
+          />
         )}
       </Modal>
     </AppShell>

@@ -61,7 +61,7 @@ describe("the demo, through the real pages", () => {
     fireEvent.change(within(dialog).getByLabelText("Name"), {
       target: { value: "Kiosk" },
     });
-    fireEvent.change(within(dialog).getByLabelText("Hourly rate (€)"), {
+    fireEvent.change(within(dialog).getByLabelText("Hourly rate"), {
       target: { value: "11,5" },
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }));

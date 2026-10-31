@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "../lib/api-client";
-import { ConfirmDelete } from "./ConfirmDelete";
+import { CONFIRM_DESCRIPTION_ID, ConfirmDelete } from "./ConfirmDelete";
 
 function renderConfirm(
   props: Partial<ComponentProps<typeof ConfirmDelete>> = {},
@@ -117,5 +117,35 @@ describe("ConfirmDelete", () => {
     expect(
       screen.getByRole("button", { name: "Cancel" }).className,
     ).not.toMatch(solidDanger);
+  });
+
+  it("marks what is deleted as the dialog's description", () => {
+    renderConfirm();
+
+    expect(document.getElementById(CONFIRM_DESCRIPTION_ID)?.textContent).toBe(
+      "This cannot be undone.",
+    );
+  });
+
+  it("makes Cancel the button to focus first, the safe choice", () => {
+    renderConfirm();
+
+    expect(
+      screen
+        .getByRole("button", { name: "Cancel" })
+        .hasAttribute("data-autofocus"),
+    ).toBe(true);
+    expect(
+      screen
+        .getByRole("button", { name: "Delete job" })
+        .hasAttribute("data-autofocus"),
+    ).toBe(false);
+  });
+
+  it("keeps the actions in a footer apart from the text", () => {
+    renderConfirm();
+
+    const footer = screen.getByRole("button", { name: "Cancel" }).parentElement;
+    expect(footer?.className).toContain("border-t");
   });
 });

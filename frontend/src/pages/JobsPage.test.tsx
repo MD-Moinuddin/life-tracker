@@ -6,6 +6,7 @@ import {
   within,
 } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { ToastProvider } from "../components/ui/ToastProvider";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../lib/api-client";
 import { createJob, deleteJob, listJobs, updateJob } from "../lib/jobs-api";
@@ -31,9 +32,11 @@ const warehouse: JobWithShiftCount = {
 
 function renderPage() {
   render(
-    <MemoryRouter>
-      <JobsPage />
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter>
+        <JobsPage />
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 
@@ -54,12 +57,10 @@ function fillInAddForm(dialog: HTMLElement) {
   fireEvent.change(within(dialog).getByLabelText("Name"), {
     target: { value: "Cafe" },
   });
-  fireEvent.change(within(dialog).getByLabelText("Hourly rate (€)"), {
+  fireEvent.change(within(dialog).getByLabelText("Hourly rate"), {
     target: { value: "10,5" },
   });
-  fireEvent.change(within(dialog).getByLabelText("Type"), {
-    target: { value: "mini_job" },
-  });
+  fireEvent.click(within(dialog).getByRole("radio", { name: /Mini-job/ }));
 }
 
 beforeEach(() => {
@@ -190,7 +191,7 @@ describe("JobsPage", () => {
     expect(
       (within(dialog).getByLabelText("Name") as HTMLInputElement).value,
     ).toBe("Warehouse");
-    fireEvent.change(within(dialog).getByLabelText("Hourly rate (€)"), {
+    fireEvent.change(within(dialog).getByLabelText("Hourly rate"), {
       target: { value: "13,5" },
     });
     fireEvent.click(
@@ -318,5 +319,38 @@ describe("JobsPage", () => {
 
     expect(await within(dialog).findByText("Job not found")).toBeDefined();
     expect(screen.getByRole("dialog", { name: "Delete job?" })).toBeDefined();
+  });
+
+  it("confirms in a message after a job is added, and when a job and its shifts are deleted", async () => {
+    vi.mocked(listJobs).mockResolvedValue([warehouse]);
+    vi.mocked(createJob).mockResolvedValue({
+      ...warehouse,
+      id: "job-2",
+      name: "Cafe",
+    });
+    vi.mocked(deleteJob).mockResolvedValue(undefined);
+    renderPage();
+    await titleRow().findByRole("button", { name: "Add job" });
+
+    fireEvent.click(titleRow().getByRole("button", { name: "Add job" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add a job" });
+    fillInAddForm(dialog);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }));
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toBe("Job added"),
+    );
+
+    chooseAction("Warehouse", "Delete job…");
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "Delete job?" })).getByRole(
+        "button",
+        { name: "Delete job" },
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toBe(
+        "Warehouse and its 3 shifts deleted",
+      ),
+    );
   });
 });

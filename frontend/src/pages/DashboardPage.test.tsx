@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { axe } from "jest-axe";
 import { MemoryRouter } from "react-router-dom";
+import { ToastProvider } from "../components/ui/ToastProvider";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { listJobs } from "../lib/jobs-api";
 import type { JobWithShiftCount } from "../lib/jobs-api";
@@ -83,9 +84,11 @@ function mockShifts(items = [eveningShift]) {
 
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <DashboardPage />
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 
@@ -196,6 +199,9 @@ describe("DashboardPage", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Add shift" }));
 
     await vi.waitFor(() => expect(createShift).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() =>
+      expect(screen.getByRole("status").textContent).toBe("Shift added"),
+    );
     await vi.waitFor(() => expect(getSummary).toHaveBeenCalledTimes(2));
     expect(listShifts).toHaveBeenCalledTimes(2);
     expect(listJobs).toHaveBeenCalledTimes(2);
