@@ -10,6 +10,7 @@ import { Modal } from "../components/Modal";
 import { ShiftDialogContent } from "../components/shifts/ShiftDialogContent";
 import { PageHeader } from "../components/ui/PageHeader";
 import { useLoad } from "../hooks/useLoad";
+import { useToast } from "../hooks/useToast";
 import { useUpcomingShifts } from "../hooks/useShiftLists";
 import { useSummary } from "../hooks/useSummary";
 import { greeting } from "../lib/greeting";
@@ -27,6 +28,7 @@ const COMING_SOON: ComingSoonItem[] = [
 
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
+  const toast = useToast();
   const summary = useSummary();
   const { now } = summary;
   const today = now.slice(0, 10);
@@ -44,6 +46,7 @@ export function DashboardPage() {
   async function handleCreate(values: ShiftInput) {
     await createShift(values);
     setIsAddOpen(false);
+    toast.show("Shift added");
     summary.reload();
     upcoming.reload();
     jobs.reload();

@@ -1,7 +1,8 @@
 import type { LoadState } from "../../hooks/useLoad";
 import type { JobWithShiftCount } from "../../lib/jobs-api";
 import type { ShiftInput } from "../../lib/shifts-api";
-import { LoadBoundary } from "../LoadBoundary";
+import { LoadMessage } from "../LoadBoundary";
+import { DialogBody } from "../ui/DialogParts";
 import { NoJobsNotice } from "./NoJobsNotice";
 import { ShiftForm } from "./ShiftForm";
 
@@ -22,25 +23,33 @@ export function ShiftDialogContent({
   onSubmit,
   onClose,
 }: ShiftDialogContentProps) {
+  if (jobs.status !== "ready") {
+    return (
+      <DialogBody>
+        <LoadMessage
+          status={jobs.status}
+          noun="your jobs"
+          retryHint="Close this dialog and try again."
+        />
+      </DialogBody>
+    );
+  }
+
+  if (jobs.data.length === 0) {
+    return (
+      <DialogBody>
+        <NoJobsNotice onClose={onClose} />
+      </DialogBody>
+    );
+  }
+
   return (
-    <LoadBoundary
-      state={jobs}
-      noun="your jobs"
-      retryHint="Close this dialog and try again."
-    >
-      {(loadedJobs) =>
-        loadedJobs.length === 0 ? (
-          <NoJobsNotice onClose={onClose} />
-        ) : (
-          <ShiftForm
-            jobs={loadedJobs}
-            initialValues={initialValues}
-            submitLabel={submitLabel}
-            onSubmit={onSubmit}
-            onCancel={onClose}
-          />
-        )
-      }
-    </LoadBoundary>
+    <ShiftForm
+      jobs={jobs.data}
+      initialValues={initialValues}
+      submitLabel={submitLabel}
+      onSubmit={onSubmit}
+      onCancel={onClose}
+    />
   );
 }

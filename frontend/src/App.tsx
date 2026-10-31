@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { ToastProvider } from "./components/ui/ToastProvider";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { ApiError } from "./lib/api-client";
 import { refresh } from "./lib/auth-api";
@@ -42,27 +43,29 @@ function App() {
   }, [setAuth, clearAuth, setInitialized]);
 
   return (
-    <Routes>
-      <Route path={ROUTES.home} element={<LandingPage />} />
-      <Route path={ROUTES.login} element={<LoginPage />} />
-      <Route path={ROUTES.signup} element={<SignupPage />} />
-      <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
-      <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
-      <Route
-        element={
-          <ProtectedRoute>
-            <Outlet />
-          </ProtectedRoute>
-        }
-      >
-        <Route path={ROUTES.dashboard} element={<DashboardPage />} />
-        <Route path={ROUTES.jobs} element={<JobsPage />} />
-        <Route path={ROUTES.jobDetail} element={<JobDetailPage />} />
-        <Route path={ROUTES.shifts} element={<ShiftsPage />} />
-        <Route path={ROUTES.summary} element={<SummaryPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
-    </Routes>
+    <ToastProvider>
+      <Routes>
+        <Route path={ROUTES.home} element={<LandingPage />} />
+        <Route path={ROUTES.login} element={<LoginPage />} />
+        <Route path={ROUTES.signup} element={<SignupPage />} />
+        <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
+        <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
+        <Route
+          element={
+            <ProtectedRoute>
+              <Outlet />
+            </ProtectedRoute>
+          }
+        >
+          <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+          <Route path={ROUTES.jobs} element={<JobsPage />} />
+          <Route path={ROUTES.jobDetail} element={<JobDetailPage />} />
+          <Route path={ROUTES.shifts} element={<ShiftsPage />} />
+          <Route path={ROUTES.summary} element={<SummaryPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
+      </Routes>
+    </ToastProvider>
   );
 }
 

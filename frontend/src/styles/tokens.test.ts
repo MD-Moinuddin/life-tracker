@@ -83,3 +83,19 @@ describe("design tokens", () => {
     expect(() => color("does-not-exist")).toThrow(/not found/);
   });
 });
+
+describe("light colour scheme", () => {
+  const indexCss = readFileSync(join(__dirname, "..", "index.css"), "utf8");
+  const indexHtml = readFileSync(
+    join(__dirname, "..", "..", "index.html"),
+    "utf8",
+  );
+
+  it("tells the browser the app is light, so its own controls are drawn light", () => {
+    expect(indexCss).toMatch(/:root\s*{\s*color-scheme:\s*light;/);
+  });
+
+  it("says so before the stylesheet loads, so nothing flashes dark", () => {
+    expect(indexHtml).toContain('<meta name="color-scheme" content="light" />');
+  });
+});
