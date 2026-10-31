@@ -1,8 +1,7 @@
 import type { SummaryLeave } from "./summary-api";
 
 // The leave figures of a row or the totals without paid leave. The one zero
-// object: the API client (for an older backend), the demo and the test
-// fixtures all use it.
+// object: the API client (for an older backend) and the test fixtures use it.
 export const NO_SUMMARY_LEAVE: Readonly<SummaryLeave> = Object.freeze({
   earnedMinutes: 0,
   plannedMinutes: 0,

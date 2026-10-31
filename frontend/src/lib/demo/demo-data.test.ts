@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { addDays, weekBounds } from "../dates";
 import { jobColor } from "../job-color";
+import { countedDays } from "../leave-days";
 import {
   shiftEndDate,
   shiftLengthMinutes,
   timeToMinutes,
   workedMinutes,
 } from "../shift-time";
+import { vacationBalance, vacationSettingOf } from "../vacation";
 import { buildDemoData } from "./demo-data";
+import type { DemoJob, DemoLeave } from "./demo-db";
 
 const TODAY = "2026-10-30";
 
@@ -163,5 +166,129 @@ describe("buildDemoData", () => {
     for (const job of jobs) {
       expect(shifts.some((shift) => shift.jobId === job.id)).toBe(true);
     }
+  });
+});
+
+// The demo's leave as the API hands it out, with its job, for vacationBalance.
+function withJob(leave: DemoLeave[], jobs: DemoJob[]) {
+  return leave.map((entry) => {
+    const job = jobs.find((candidate) => candidate.id === entry.jobId);
+    if (!job) {
+      throw new Error(`No job ${entry.jobId}`);
+    }
+    const { id, name, hourlyRate, type } = job;
+    return { ...entry, job: { id, name, hourlyRate, type } };
+  });
+}
+
+function balanceOn(today: string) {
+  const { jobs, leave } = buildDemoData(today);
+  const cafe = jobs.find((job) => job.name === "Cafe") as DemoJob;
+  return vacationBalance({
+    setting: vacationSettingOf(cafe),
+    year: Number(today.slice(0, 4)),
+    leave: withJob(leave, jobs),
+    today,
+  });
+}
+
+describe("buildDemoData, paid vacation", () => {
+  it("has the Cafe track 80 hours a year with no carry-over, and the Restaurant not at all", () => {
+    const { jobs } = buildDemoData(TODAY);
+    const byName = (name: string) => jobs.find((job) => job.name === name);
+
+    expect(byName("Cafe")).toMatchObject({
+      vacationHoursPerYear: "80.00",
+      vacationCarryOverHours: "0.00",
+      vacationCarryOverYear: null,
+    });
+    expect(byName("Restaurant")).toMatchObject({
+      vacationHoursPerYear: null,
+      vacationCarryOverHours: "0.00",
+      vacationCarryOverYear: null,
+    });
+  });
+
+  it("books a week and two weeks before this week and two days after it, Monday to Friday, 4h a day", () => {
+    const { leave } = buildDemoData(TODAY);
+
+    expect(leave.map(({ startDate, endDate }) => [startDate, endDate])).toEqual(
+      [
+        ["2026-08-03", "2026-08-14"],
+        ["2026-09-14", "2026-09-18"],
+        ["2026-12-07", "2026-12-08"],
+      ],
+    );
+    for (const entry of leave) {
+      expect(entry).toMatchObject({
+        jobId: "demo-job-cafe",
+        type: "paid_vacation",
+        weekdays: [1, 2, 3, 4, 5],
+        minutesPerDay: 240,
+      });
+    }
+  });
+
+  it("takes 60h and plans 8h of the 80h, leaving 12h", () => {
+    expect(balanceOn(TODAY)).toEqual({
+      entitlementMinutes: 80 * 60,
+      carriedOverMinutes: 0,
+      takenMinutes: 60 * 60,
+      plannedMinutes: 8 * 60,
+      leftMinutes: 12 * 60,
+    });
+  });
+
+  it.each([
+    ["March", "2026-03-11", 2],
+    // The week six weeks back runs from 29 December to 2 January.
+    ["February", "2026-02-10", 1],
+    ["October", TODAY, 3],
+    ["January", "2027-01-15", 1],
+    ["late December", "2026-12-30", 2],
+  ])(
+    "keeps every booking inside the current year in %s (%s), leaving out what does not fit",
+    (_month, today, count) => {
+      const { leave } = buildDemoData(today);
+      const year = today.slice(0, 4);
+
+      expect(leave).toHaveLength(count);
+      for (const entry of leave) {
+        expect(entry.startDate.slice(0, 4)).toBe(year);
+        expect(entry.endDate.slice(0, 4)).toBe(year);
+      }
+    },
+  );
+
+  it("starts January with a full balance and only the planned days", () => {
+    const balance = balanceOn("2027-01-15");
+
+    expect(balance.takenMinutes).toBe(0);
+    expect(balance.plannedMinutes).toBe(8 * 60);
+  });
+
+  it.each(["2026-03-11", TODAY, "2027-01-15", "2026-12-30"])(
+    "never puts paid leave on a day with a shift of the same job (%s)",
+    (today) => {
+      const { shifts, leave } = buildDemoData(today);
+
+      for (const entry of leave) {
+        const days = new Set(
+          countedDays(entry.startDate, entry.endDate, entry.weekdays),
+        );
+        expect(
+          shifts.filter(
+            (shift) => shift.jobId === entry.jobId && days.has(shift.date),
+          ),
+        ).toEqual([]);
+      }
+    },
+  );
+
+  it("gives every leave entry its own id", () => {
+    const { jobs, shifts, leave } = buildDemoData(TODAY);
+    const ids = [...jobs, ...shifts, ...leave].map((item) => item.id);
+
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

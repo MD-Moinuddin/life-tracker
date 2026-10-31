@@ -1,13 +1,21 @@
 import { ApiError } from "../api-client";
 import type { ApiFetchOptions } from "../api-client";
 import type { Job, JobWithShiftCount } from "../jobs-api";
+import type { Leave } from "../leave-api";
+import { countedDays } from "../leave-days";
 import { shiftEndDate, workedMinutes } from "../shift-time";
 import type { Shift, ShiftPage } from "../shifts-api";
 import type { SummaryRange } from "../summary-period";
-import { demoDb, nextDemoId } from "./demo-db";
-import type { DemoJob, DemoShift } from "./demo-db";
+import { tracksVacation } from "../vacation";
+import { demoDb, NO_VACATION, nextDemoId } from "./demo-db";
+import type { DemoJob, DemoLeave, DemoShift } from "./demo-db";
 import { buildDemoSummary } from "./demo-summary";
-import { parseJobBody, parseShiftBody } from "./demo-validation";
+import {
+  parseJobBody,
+  parseLeaveBody,
+  parseLeaveQuery,
+  parseShiftBody,
+} from "./demo-validation";
 import type { JobFields } from "./demo-validation";
 
 // The demo's answer to every API call the app makes. The pages cannot tell it
@@ -22,30 +30,29 @@ function notFound(what: string): never {
   throw new ApiError(404, `${what} not found`);
 }
 
-// The demo does not track paid vacation yet, so every job reports that.
-function toJob(job: DemoJob): Job {
-  return {
-    ...job,
-    vacationHoursPerYear: null,
-    vacationCarryOverHours: "0.00",
-    vacationCarryOverYear: null,
-  };
+function validationError(field: string, message: string): never {
+  throw new ApiError(400, "Validation failed", { [field]: [message] });
 }
 
-function toShift(shift: DemoShift): Shift {
-  const job = demoDb.jobs.find((candidate) => candidate.id === shift.jobId);
+// The job as a shift or a leave entry carries it.
+function jobSummary(jobId: string): Shift["job"] {
+  const job = demoDb.jobs.find((candidate) => candidate.id === jobId);
   if (!job) {
     return notFound("Job");
   }
   return {
+    id: job.id,
+    name: job.name,
+    hourlyRate: job.hourlyRate,
+    type: job.type,
+  };
+}
+
+function toShift(shift: DemoShift): Shift {
+  return {
     id: shift.id,
     jobId: shift.jobId,
-    job: {
-      id: job.id,
-      name: job.name,
-      hourlyRate: job.hourlyRate,
-      type: job.type,
-    },
+    job: jobSummary(shift.jobId),
     date: shift.date,
     startTime: shift.startTime,
     endTime: shift.endTime,
@@ -85,7 +92,7 @@ const now = () => new Date().toISOString();
 
 function listJobs(): JobWithShiftCount[] {
   return demoDb.jobs.map((job) => ({
-    ...toJob(job),
+    ...job,
     shiftCount: demoDb.shifts.filter((shift) => shift.jobId === job.id).length,
   }));
 }
@@ -95,25 +102,27 @@ function createJob(body: unknown): Job {
   const stamp = now();
   const job: DemoJob = {
     id: nextDemoId("demo-job"),
+    ...NO_VACATION,
     ...fields,
     createdAt: stamp,
     updatedAt: stamp,
   };
   demoDb.jobs.push(job);
-  return toJob(job);
+  return job;
 }
 
 function updateJob(id: string, body: unknown): Job {
   const job = requireJob(id);
   Object.assign(job, parseJobBody(body, true), { updatedAt: now() });
-  return toJob(job);
+  return job;
 }
 
 function deleteJob(id: string): void {
   requireJob(id);
   demoDb.jobs = demoDb.jobs.filter((job) => job.id !== id);
-  // Like the database, deleting a job deletes its shifts.
+  // Like the database, deleting a job deletes its shifts and its leave.
   demoDb.shifts = demoDb.shifts.filter((shift) => shift.jobId !== id);
+  demoDb.leave = demoDb.leave.filter((entry) => entry.jobId !== id);
 }
 
 function listShifts(query: URLSearchParams): ShiftPage {
@@ -172,6 +181,118 @@ function deleteShift(id: string): void {
   demoDb.shifts = demoDb.shifts.filter((shift) => shift.id !== id);
 }
 
+function toLeave(leave: DemoLeave): Leave {
+  return { ...leave, job: jobSummary(leave.jobId) };
+}
+
+// In start order, like the backend.
+function sortedLeave(): Leave[] {
+  return demoDb.leave
+    .map(toLeave)
+    .sort(
+      (a, b) =>
+        a.startDate.localeCompare(b.startDate) || a.id.localeCompare(b.id),
+    );
+}
+
+function requireLeave(id: string): DemoLeave {
+  return demoDb.leave.find((entry) => entry.id === id) ?? notFound("Leave");
+}
+
+// The job must exist (404 otherwise) and must track paid vacation.
+function requireVacationJob(jobId: string): DemoJob {
+  const job = requireJob(jobId);
+  if (!tracksVacation(job)) {
+    return validationError("jobId", "Turn on paid vacation for this job first");
+  }
+  return job;
+}
+
+// Only counted days conflict: two entries of the same job may share a date
+// range as long as no date counts in both. `exceptId` skips the entry being
+// edited. The backend's assertNoOverlap.
+function assertNoOverlap(
+  jobId: string,
+  leave: Pick<DemoLeave, "startDate" | "endDate" | "weekdays">,
+  exceptId?: string,
+) {
+  const mine = new Set(
+    countedDays(leave.startDate, leave.endDate, leave.weekdays),
+  );
+  const clash = demoDb.leave.some(
+    (other) =>
+      other.jobId === jobId &&
+      other.id !== exceptId &&
+      countedDays(other.startDate, other.endDate, other.weekdays).some((day) =>
+        mine.has(day),
+      ),
+  );
+  if (clash) {
+    validationError("startDate", "These days already have paid leave");
+  }
+}
+
+// Leave that overlaps [from, to]: it starts on or before `to` and ends on or
+// after `from`. It includes the leave of jobs that stopped tracking vacation,
+// as the backend does; the pages leave that out themselves.
+function listLeave(query: URLSearchParams): Leave[] {
+  const { from, to, jobId } = parseLeaveQuery(query);
+  return sortedLeave().filter(
+    (entry) =>
+      (!to || entry.startDate <= to) &&
+      (!from || entry.endDate >= from) &&
+      (!jobId || entry.jobId === jobId),
+  );
+}
+
+function createLeave(body: unknown): Leave & { removedShifts?: number } {
+  const { removeOverlappingShifts, ...fields } = parseLeaveBody(body, false);
+  requireVacationJob(fields.jobId);
+  assertNoOverlap(fields.jobId, fields);
+  const stamp = now();
+  const leave: DemoLeave = {
+    id: nextDemoId("demo-leave"),
+    type: "paid_vacation",
+    ...fields,
+    notes: fields.notes ?? null,
+    createdAt: stamp,
+    updatedAt: stamp,
+  };
+  demoDb.leave.push(leave);
+  if (!removeOverlappingShifts) {
+    return toLeave(leave);
+  }
+  // The job's shifts on the counted days go in the same step.
+  const days = new Set(
+    countedDays(leave.startDate, leave.endDate, leave.weekdays),
+  );
+  const before = demoDb.shifts.length;
+  demoDb.shifts = demoDb.shifts.filter(
+    (shift) => shift.jobId !== leave.jobId || !days.has(shift.date),
+  );
+  return { ...toLeave(leave), removedShifts: before - demoDb.shifts.length };
+}
+
+// The backend's order: the body's own fields, then whether the entry exists,
+// then the merged dates, the job and the overlap.
+function updateLeave(id: string, body: unknown): Leave {
+  const current = demoDb.leave.find((entry) => entry.id === id);
+  const fields = parseLeaveBody(body, true, current);
+  if (!current) {
+    return notFound("Leave");
+  }
+  const merged = { ...current, ...fields };
+  requireVacationJob(merged.jobId);
+  assertNoOverlap(merged.jobId, merged, current.id);
+  Object.assign(current, fields, { updatedAt: now() });
+  return toLeave(current);
+}
+
+function deleteLeave(id: string): void {
+  requireLeave(id);
+  demoDb.leave = demoDb.leave.filter((entry) => entry.id !== id);
+}
+
 function getSummary(query: URLSearchParams) {
   const range = query.get("range");
   const date = query.get("date");
@@ -183,6 +304,10 @@ function getSummary(query: URLSearchParams) {
   }
   return buildDemoSummary({
     shifts: sortedShifts(),
+    // Like the backend, only the leave of jobs that track paid vacation.
+    leave: sortedLeave().filter((entry) =>
+      tracksVacation(requireJob(entry.jobId)),
+    ),
     range: range as SummaryRange,
     date,
     now: at,
@@ -207,6 +332,12 @@ function route(method: string, path: string, body: unknown): unknown {
     if (isCollection && method === "POST") return createShift(body);
     if (!isCollection && method === "PATCH") return updateShift(id, body);
     if (!isCollection && method === "DELETE") return deleteShift(id);
+  }
+  if (resource === "leave") {
+    if (isCollection && method === "GET") return listLeave(url.searchParams);
+    if (isCollection && method === "POST") return createLeave(body);
+    if (!isCollection && method === "PATCH") return updateLeave(id, body);
+    if (!isCollection && method === "DELETE") return deleteLeave(id);
   }
   if (resource === "summary" && isCollection && method === "GET") {
     return getSummary(url.searchParams);
