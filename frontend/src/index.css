@@ -3,8 +3,50 @@
 @import "./styles/tokens.css";
 
 @layer base {
+  /* The app is light only. Saying so makes the browser draw its own controls
+     (the list of a dropdown, the date and time pickers, scrollbars) in the
+     light style, instead of dark ones on a computer set to dark mode. When a
+     dark theme arrives, this becomes "light dark" with it. */
+  :root {
+    color-scheme: light;
+  }
+
   html {
     scroll-behavior: smooth;
+  }
+
+  /* The page behind an open dialog stays where it is. */
+  body:has(dialog[open]) {
+    overflow: hidden;
+  }
+
+  /* A dialog fades and scales in; on a phone it is a sheet that slides up. */
+  dialog[open] {
+    animation: dialog-in 0.18s ease-out;
+  }
+  dialog[open]::backdrop {
+    animation: dialog-fade 0.16s ease-out;
+  }
+  @media (max-width: 39.9375rem) {
+    dialog[open] {
+      animation: sheet-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+  }
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97) translateY(6px);
+    }
+  }
+  @keyframes dialog-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes sheet-in {
+    from {
+      transform: translateY(100%);
+    }
   }
 
   body {

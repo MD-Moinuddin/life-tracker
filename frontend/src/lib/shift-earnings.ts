@@ -3,9 +3,10 @@ import type { Shift } from "./shifts-api";
 
 // The same rule as the backend summary: rate x minutes / 60, rounded half up to
 // the cent. Whole cents avoid adding up floating point euros.
-export function shiftEarningsCents(
-  shift: Pick<Shift, "job" | "workedMinutes">,
-): number {
+export function shiftEarningsCents(shift: {
+  job: Pick<Shift["job"], "hourlyRate">;
+  workedMinutes: number;
+}): number {
   const rateCents = Math.round(Number(shift.job.hourlyRate) * 100);
   return Math.round((rateCents * shift.workedMinutes) / 60);
 }
