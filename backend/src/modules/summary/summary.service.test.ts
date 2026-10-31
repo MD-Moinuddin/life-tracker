@@ -1,9 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { listLeaveInRange } from "../leave/leave.service";
+import type { LeaveResponse } from "../leave/leave.service";
 import { listShiftsInRange } from "../shifts/shift.service";
 import { getSummary } from "./summary.service";
 
 vi.mock("../shifts/shift.service", () => ({
   listShiftsInRange: vi.fn(),
+}));
+
+vi.mock("../leave/leave.service", () => ({
+  listLeaveInRange: vi.fn(),
 }));
 
 type ShiftResponse = Awaited<ReturnType<typeof listShiftsInRange>>[number];
@@ -66,8 +72,40 @@ function mockShifts(shifts: ShiftResponse[]) {
   vi.mocked(listShiftsInRange).mockResolvedValue(shifts);
 }
 
+function leaveFor(
+  job: JobResponse,
+  overrides: Partial<LeaveResponse> = {},
+): LeaveResponse {
+  return {
+    id: "leave-1",
+    jobId: job.id,
+    job,
+    type: "paid_vacation",
+    startDate: "2026-10-12",
+    endDate: "2026-10-16",
+    weekdays: [1, 2, 3, 4, 5],
+    minutesPerDay: 240,
+    notes: null,
+    createdAt: new Date("2026-10-01T09:00:00Z"),
+    updatedAt: new Date("2026-10-01T09:00:00Z"),
+    ...overrides,
+  };
+}
+
+function mockLeave(leave: LeaveResponse[]) {
+  vi.mocked(listLeaveInRange).mockResolvedValue(leave);
+}
+
+const noLeave = {
+  earnedMinutes: 0,
+  plannedMinutes: 0,
+  earnedAmount: "0.00",
+  plannedAmount: "0.00",
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
+  mockLeave([]);
 });
 
 describe("period", () => {
@@ -86,6 +124,14 @@ describe("period", () => {
       to: "2026-10-31",
     });
     expect(listShiftsInRange).toHaveBeenNthCalledWith(2, "user-1", {
+      from: "2026-10-05",
+      to: "2026-10-11",
+    });
+    expect(listLeaveInRange).toHaveBeenNthCalledWith(1, "user-1", {
+      from: "2026-10-01",
+      to: "2026-10-31",
+    });
+    expect(listLeaveInRange).toHaveBeenNthCalledWith(2, "user-1", {
       from: "2026-10-05",
       to: "2026-10-11",
     });
@@ -114,6 +160,7 @@ describe("totals per job", () => {
         plannedMinutes: 120,
         earnedAmount: "20.00",
         plannedAmount: "20.00",
+        leave: noLeave,
       },
       {
         jobId: "job-w",
@@ -124,6 +171,7 @@ describe("totals per job", () => {
         plannedMinutes: 720,
         earnedAmount: "144.00",
         plannedAmount: "144.00",
+        leave: noLeave,
       },
     ]);
     expect(result.totals).toEqual({
@@ -131,6 +179,7 @@ describe("totals per job", () => {
       plannedMinutes: 840,
       earnedAmount: "164.00",
       plannedAmount: "164.00",
+      leave: noLeave,
     });
   });
 
@@ -277,11 +326,216 @@ describe("an empty period", () => {
       plannedMinutes: 0,
       earnedAmount: "0.00",
       plannedAmount: "0.00",
+      leave: noLeave,
     });
     expect(result.miniJob).toEqual({
       plannedAmount: "0.00",
       threshold: "540.00",
       warning: false,
     });
+  });
+});
+
+describe("paid leave", () => {
+  // Monday 12 to Friday 16 October 2026, 4 hours a day.
+  const midMonth = { ...month, now: "2026-10-14T12:00" };
+
+  it("counts leave days before today as earned, and today on as planned", async () => {
+    mockShifts([shiftFor(warehouse, 120)]);
+    mockLeave([leaveFor(warehouse)]);
+
+    const result = await getSummary("user-1", midMonth);
+
+    expect(result.jobs[0]).toMatchObject({
+      earnedMinutes: 120,
+      plannedMinutes: 120,
+      earnedAmount: "24.00",
+      plannedAmount: "24.00",
+      leave: {
+        earnedMinutes: 480,
+        plannedMinutes: 1200,
+        earnedAmount: "96.00",
+        plannedAmount: "240.00",
+      },
+    });
+  });
+
+  it.each([
+    ["the day before", "2026-10-11T23:59", 0],
+    ["the morning of", "2026-10-12T00:00", 0],
+    ["the evening of", "2026-10-12T23:59", 0],
+    ["the day after", "2026-10-13T00:00", 60],
+  ])(
+    "judges a single leave day by its date, %s",
+    async (_label, now, earned) => {
+      mockShifts([]);
+      mockLeave([
+        leaveFor(cafe, {
+          startDate: "2026-10-12",
+          endDate: "2026-10-12",
+          weekdays: [1],
+          minutesPerDay: 60,
+        }),
+      ]);
+
+      const result = await getSummary("user-1", { ...month, now });
+
+      expect(result.jobs[0]?.leave).toMatchObject({
+        earnedMinutes: earned,
+        plannedMinutes: 60,
+      });
+    },
+  );
+
+  it("counts only the days inside the period", async () => {
+    mockShifts([]);
+    mockLeave([
+      // Starts before the week of 5 to 11 October.
+      leaveFor(warehouse, { startDate: "2026-09-28", endDate: "2026-10-06" }),
+      // Ends after it.
+      leaveFor(cafe, {
+        id: "leave-2",
+        startDate: "2026-10-09",
+        endDate: "2026-10-20",
+      }),
+    ]);
+
+    const result = await getSummary("user-1", {
+      range: "week",
+      date: "2026-10-07",
+      now: "2026-10-01T00:00",
+    });
+
+    expect(
+      result.jobs.map((job) => [job.name, job.leave.plannedMinutes]),
+    ).toEqual([
+      ["Cafe", 240],
+      ["Warehouse", 480],
+    ]);
+  });
+
+  it("skips leave with no counted day in the period", async () => {
+    mockShifts([]);
+    // Saturday 10 October only, but the week asked for is 12 to 18 October.
+    mockLeave([
+      leaveFor(cafe, {
+        startDate: "2026-10-05",
+        endDate: "2026-10-16",
+        weekdays: [6],
+      }),
+    ]);
+
+    const result = await getSummary("user-1", {
+      range: "week",
+      date: "2026-10-14",
+      now: month.now,
+    });
+
+    expect(result.jobs).toEqual([]);
+    expect(result.totals.leave).toEqual(noLeave);
+  });
+
+  it("adds up several entries of one job before rounding", async () => {
+    const rounding: JobResponse = { ...bakery, hourlyRate: "12.34" };
+    mockShifts([]);
+    mockLeave([
+      leaveFor(rounding, {
+        startDate: "2026-10-05",
+        endDate: "2026-10-05",
+        weekdays: [1],
+        minutesPerDay: 15,
+      }),
+      leaveFor(rounding, {
+        id: "leave-2",
+        startDate: "2026-10-06",
+        endDate: "2026-10-06",
+        weekdays: [2],
+        minutesPerDay: 15,
+      }),
+    ]);
+
+    const result = await getSummary("user-1", month);
+
+    expect(result.jobs).toHaveLength(1);
+    expect(result.jobs[0]?.leave.plannedAmount).toBe("6.17");
+  });
+
+  it("makes the leave total the sum of the rounded job amounts", async () => {
+    const quarterHour = {
+      startDate: "2026-10-05",
+      endDate: "2026-10-05",
+      weekdays: [1],
+      minutesPerDay: 15,
+    };
+    mockShifts([]);
+    mockLeave([
+      leaveFor({ ...bakery, hourlyRate: "12.34" }, quarterHour),
+      leaveFor(
+        { ...cafe, hourlyRate: "12.34" },
+        { id: "leave-2", ...quarterHour },
+      ),
+    ]);
+
+    const result = await getSummary("user-1", month);
+
+    expect(result.jobs.map((job) => job.leave.plannedAmount)).toEqual([
+      "3.09",
+      "3.09",
+    ]);
+    expect(result.totals.leave).toEqual({
+      earnedMinutes: 30,
+      plannedMinutes: 30,
+      earnedAmount: "6.18",
+      plannedAmount: "6.18",
+    });
+  });
+
+  it("gives a job with only leave a row with zero worked minutes, in name order", async () => {
+    mockShifts([shiftFor(warehouse, 60)]);
+    mockLeave([leaveFor(bakery)]);
+
+    const result = await getSummary("user-1", midMonth);
+
+    expect(result.jobs.map((job) => job.name)).toEqual(["Bakery", "Warehouse"]);
+    expect(result.jobs[0]).toEqual({
+      jobId: "job-b",
+      name: "Bakery",
+      type: "part_time",
+      hourlyRate: "10.00",
+      earnedMinutes: 0,
+      plannedMinutes: 0,
+      earnedAmount: "0.00",
+      plannedAmount: "0.00",
+      leave: {
+        earnedMinutes: 480,
+        plannedMinutes: 1200,
+        earnedAmount: "80.00",
+        plannedAmount: "200.00",
+      },
+    });
+    expect(result.jobs[1]?.leave).toEqual(noLeave);
+  });
+
+  it("adds planned mini-job leave to the mini-job limit, not part-time leave", async () => {
+    mockShifts([shiftFor(cafe, 3000)]);
+    mockLeave([
+      leaveFor(warehouse, { minutesPerDay: 720 }),
+      leaveFor(cafe, {
+        id: "leave-2",
+        startDate: "2026-10-19",
+        endDate: "2026-10-19",
+        weekdays: [1],
+        minutesPerDay: 241,
+      }),
+    ]);
+
+    const result = await getSummary("user-1", month);
+
+    expect(result.miniJob).toEqual({
+      plannedAmount: "540.17",
+      threshold: "540.00",
+      warning: true,
+    });
+    expect(result.totals.plannedAmount).toBe("500.00");
   });
 });
