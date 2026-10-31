@@ -5,9 +5,12 @@ import type { ReactNode } from "react";
 // stays in view. The main action is on the right on a wide screen; on a phone
 // the buttons stack, full width, with the main action on top.
 
+// flex-auto (grow, shrink, size to content) rather than flex-1 (a basis of 0):
+// the dialog's height comes from its content, and Safari on iPhone collapses a
+// box with a basis of 0 to nothing there, leaving only the title showing.
 export function DialogBody({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-2 pb-4 max-sm:px-5">
+    <div className="min-h-0 flex-auto overflow-y-auto px-6 pt-2 pb-4 max-sm:px-5">
       {children}
     </div>
   );

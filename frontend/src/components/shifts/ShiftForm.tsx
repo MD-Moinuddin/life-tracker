@@ -200,7 +200,7 @@ export function ShiftForm({
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="flex min-h-0 flex-1 flex-col"
+      className="flex min-h-0 flex-auto flex-col"
     >
       <DialogBody>
         <div className="space-y-4">
