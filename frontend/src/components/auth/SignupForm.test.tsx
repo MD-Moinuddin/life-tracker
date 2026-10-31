@@ -12,7 +12,7 @@ function fill(label: string, value: string) {
 }
 
 function submit() {
-  fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
+  fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 }
 
 describe("SignupForm", () => {
@@ -24,7 +24,9 @@ describe("SignupForm", () => {
     expect(screen.getByLabelText("Password").getAttribute("type")).toBe(
       "password",
     );
-    expect(screen.getByRole("button", { name: "Sign up" })).toBeDefined();
+    expect(
+      screen.getByRole("button", { name: "Create account" }),
+    ).toBeDefined();
   });
 
   it("shows every error and does not submit an empty form", () => {
@@ -35,36 +37,66 @@ describe("SignupForm", () => {
     expect(screen.getByText("Name is required")).toBeDefined();
     expect(screen.getByText("Enter a valid email address")).toBeDefined();
     expect(
-      screen.getByText("Password must be at least 8 characters"),
+      screen.getByText("Choose a password that meets all the rules"),
     ).toBeDefined();
-    expect(
-      screen.getByText("Password must contain a lowercase letter"),
-    ).toBeDefined();
-    expect(
-      screen.getByText("Password must contain an uppercase letter"),
-    ).toBeDefined();
-    expect(screen.getByText("Password must contain a number")).toBeDefined();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("lists only the password rules that are broken", () => {
+  it("moves focus to the first field with an error", () => {
     renderForm();
     fill("Name", "Md");
-    fill("Email", "md@example.com");
-    fill("Password", "abcdefgh");
 
     submit();
 
+    expect(document.activeElement).toBe(screen.getByLabelText("Email"));
+  });
+
+  it("shows the password rules up front and ticks them while typing", () => {
+    renderForm();
+    const rules = screen.getByRole("list", { name: "Password rules" });
+
+    expect(rules.textContent).toContain("8 or more characters (not met yet)");
+
+    fill("Password", "Abcdefg1");
+
+    expect(rules.textContent).toContain("8 or more characters (met)");
+    expect(rules.textContent).toContain("A lowercase letter (met)");
+    expect(rules.textContent).toContain("An uppercase letter (met)");
+    expect(rules.textContent).toContain("A number (met)");
+  });
+
+  it("only draws the missing rules as a problem once the password has been tried", () => {
+    renderForm();
+    fill("Password", "abcdefgh");
+    const uppercase = () =>
+      screen.getByText(/^An uppercase letter/).closest("li");
+    expect(uppercase()?.className).not.toContain("text-danger");
+
+    submit();
+
+    expect(uppercase()?.className).toContain("text-danger");
     expect(
-      screen.getByText("Password must contain an uppercase letter"),
-    ).toBeDefined();
-    expect(screen.getByText("Password must contain a number")).toBeDefined();
-    expect(
-      screen.queryByText("Password must be at least 8 characters"),
-    ).toBeNull();
-    expect(
-      screen.queryByText("Password must contain a lowercase letter"),
-    ).toBeNull();
+      screen.getByText(/^A lowercase letter/).closest("li")?.className,
+    ).not.toContain("text-danger");
+  });
+
+  it("does not complain about an empty field that was only tabbed through", () => {
+    renderForm();
+
+    fireEvent.blur(screen.getByLabelText("Email"));
+
+    expect(screen.queryByText("Enter a valid email address")).toBeNull();
+  });
+
+  it("shows a field's error when it is left, and clears it as soon as it is fixed", () => {
+    renderForm();
+    fill("Email", "md@");
+
+    fireEvent.blur(screen.getByLabelText("Email"));
+    expect(screen.getByText("Enter a valid email address")).toBeDefined();
+
+    fill("Email", "md@example.com");
+    expect(screen.queryByText("Enter a valid email address")).toBeNull();
   });
 
   it("rejects a password longer than 72 characters", () => {
@@ -125,7 +157,9 @@ describe("SignupForm", () => {
 
     submit();
 
-    const busy = await screen.findByRole("button", { name: /Signing up/ });
+    const busy = await screen.findByRole("button", {
+      name: /Creating account/,
+    });
     expect((busy as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByLabelText("Name") as HTMLInputElement).disabled).toBe(
       true,
@@ -133,7 +167,7 @@ describe("SignupForm", () => {
 
     finish();
 
-    const ready = await screen.findByRole("button", { name: "Sign up" });
+    const ready = await screen.findByRole("button", { name: "Create account" });
     expect((ready as HTMLButtonElement).disabled).toBe(false);
   });
 
@@ -168,7 +202,7 @@ describe("SignupForm", () => {
     );
   });
 
-  it("announces all the password problems together", () => {
+  it("announces the password problem as an alert, tied to the field", () => {
     renderForm();
 
     submit();
@@ -178,6 +212,23 @@ describe("SignupForm", () => {
       password.getAttribute("aria-describedby") ?? "",
     );
     expect(errorBlock?.getAttribute("role")).toBe("alert");
-    expect(errorBlock?.querySelectorAll("p")).toHaveLength(4);
+    expect(errorBlock?.textContent).toBe(
+      "Choose a password that meets all the rules",
+    );
+  });
+
+  it("explains the name field", () => {
+    renderForm();
+
+    expect(screen.getByText("We'll use this to greet you.")).toBeDefined();
+  });
+
+  it("sets the phone keyboard hints on the email field", () => {
+    renderForm();
+
+    const email = screen.getByLabelText("Email");
+    expect(email.getAttribute("inputmode")).toBe("email");
+    expect(email.getAttribute("autocapitalize")).toBe("none");
+    expect(email.getAttribute("spellcheck")).toBe("false");
   });
 });

@@ -14,21 +14,70 @@ function renderLayout() {
 }
 
 describe("AuthLayout", () => {
-  it("shows the brand and a tagline", () => {
+  it("shows the brand, and a panel about the app, which a phone does not show", () => {
     renderLayout();
 
-    expect(screen.getByText("Life Tracker")).toBeDefined();
-    expect(
-      screen.getByText("Track work, shifts and earnings in one place"),
-    ).toBeDefined();
+    expect(screen.getAllByText("Life Tracker").length).toBeGreaterThan(0);
+    const panel = screen.getByRole("complementary", {
+      name: "About Life Tracker",
+    });
+    expect(panel.className).toContain("max-lg:hidden");
+    expect(panel.textContent).toContain(
+      "Know what you have earned, and what is still to come",
+    );
   });
 
-  it("links the brand back to the home page", () => {
+  it("links every brand mark back to the home page", () => {
+    renderLayout();
+
+    for (const link of screen.getAllByRole("link", { name: "Life Tracker" })) {
+      expect(link.getAttribute("href")).toBe("/");
+    }
+  });
+
+  it("offers a way back to the home page", () => {
     renderLayout();
 
     expect(
-      screen.getByRole("link", { name: "Life Tracker" }).getAttribute("href"),
+      screen.getByRole("link", { name: "Back to home" }).getAttribute("href"),
     ).toBe("/");
+  });
+
+  it("shows the line under the title when there is one", () => {
+    render(
+      <MemoryRouter>
+        <AuthLayout
+          title="Welcome back"
+          lead="Log in to see your week."
+          footer="x"
+        >
+          y
+        </AuthLayout>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Log in to see your week.")).toBeDefined();
+  });
+
+  it("offers the demo under the card only when asked to", () => {
+    const { unmount } = render(
+      <MemoryRouter>
+        <AuthLayout title="a" footer="b">
+          c
+        </AuthLayout>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole("button", { name: "Try the demo" })).toBeNull();
+    unmount();
+
+    render(
+      <MemoryRouter>
+        <AuthLayout title="a" footer="b" showDemo>
+          c
+        </AuthLayout>
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("button", { name: "Try the demo" })).toBeDefined();
   });
 
   it("has the title as the page heading", () => {

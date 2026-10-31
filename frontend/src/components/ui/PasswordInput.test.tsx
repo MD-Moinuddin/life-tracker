@@ -24,14 +24,19 @@ describe("PasswordInput", () => {
     );
   });
 
-  it("shows Show or Hide as the visible text", () => {
+  it("draws an eye icon with no visible text, named for what pressing it does", () => {
     render(<PasswordInput aria-label="Password" />);
 
     const toggle = screen.getByRole("button", { name: "Show password" });
-    expect(toggle.textContent).toBe("Show");
+    expect(toggle.textContent).toBe("");
+    expect(toggle.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
+      "true",
+    );
+    // The name changes with the state, so it is not also a pressed toggle.
+    expect(toggle.getAttribute("aria-pressed")).toBeNull();
 
     fireEvent.click(toggle);
-    expect(toggle.textContent).toBe("Hide");
+    expect(toggle.getAttribute("aria-label")).toBe("Hide password");
   });
 
   it("disables the toggle when the input is disabled", () => {
