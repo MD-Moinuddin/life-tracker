@@ -3,7 +3,7 @@ import { classNames } from "../../lib/class-names";
 import { Spinner } from "../Spinner";
 
 export type ButtonVariant =
-  "primary" | "secondary" | "danger" | "danger-outline";
+  "primary" | "secondary" | "ghost" | "danger" | "danger-outline";
 export type ButtonSize = "normal" | "compact";
 
 const BASE =
@@ -12,6 +12,8 @@ const BASE =
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: "bg-accent text-on-accent shadow-card hover:bg-accent-hover",
   secondary: "border border-border-strong bg-surface text-ink hover:bg-page",
+  // A quiet third choice next to a primary and a secondary button.
+  ghost: "text-accent hover:bg-accent-soft",
   danger: "bg-danger text-on-accent hover:bg-danger-hover",
   "danger-outline":
     "border border-danger-border bg-surface text-danger hover:bg-danger-soft",

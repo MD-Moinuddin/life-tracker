@@ -25,3 +25,26 @@ describe("auth store session hint", () => {
     expect(hasSessionHint()).toBe(false);
   });
 });
+
+describe("auth store demo", () => {
+  const DEMO_USER = { ...SESSION.user, isDemo: true };
+
+  it("signs a demo visitor in without leaving a session hint", () => {
+    useAuthStore.getState().startDemo(DEMO_USER);
+
+    expect(useAuthStore.getState().user).toEqual(DEMO_USER);
+    expect(useAuthStore.getState().accessToken).not.toBeNull();
+    expect(hasSessionHint()).toBe(false);
+  });
+
+  it("leaves the demo without forgetting a real visitor's hint", () => {
+    useAuthStore.getState().setAuth(SESSION);
+    useAuthStore.getState().startDemo(DEMO_USER);
+
+    useAuthStore.getState().exitDemo();
+
+    expect(useAuthStore.getState().user).toBeNull();
+    expect(useAuthStore.getState().accessToken).toBeNull();
+    expect(hasSessionHint()).toBe(true);
+  });
+});

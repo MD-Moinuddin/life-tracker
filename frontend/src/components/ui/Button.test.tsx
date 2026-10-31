@@ -41,6 +41,14 @@ describe("Button", () => {
     expect(screen.getByRole("button").className).toContain("bg-danger");
   });
 
+  it("has a ghost variant: accent text with no border, for a quiet third choice", () => {
+    render(<Button variant="ghost">Try</Button>);
+
+    const { className } = screen.getByRole("button");
+    expect(className).toContain("text-accent");
+    expect(className).not.toContain("border");
+  });
+
   it("has a smaller compact size that still reaches 44px on touch screens", () => {
     render(<Button size="compact">Edit</Button>);
 
