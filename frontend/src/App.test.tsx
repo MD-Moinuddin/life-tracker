@@ -73,7 +73,11 @@ describe("App routing for a logged-out visitor", () => {
   it("takes the logo on the login page back to the landing page", async () => {
     renderAt("/login");
 
-    fireEvent.click(await screen.findByRole("link", { name: "Life Tracker" }));
+    fireEvent.click(
+      (
+        await screen.findAllByRole("link", { name: "Life Tracker" })
+      )[0] as HTMLElement,
+    );
 
     expect(
       await screen.findByRole("heading", { level: 1, name: LANDING_HEADLINE }),
