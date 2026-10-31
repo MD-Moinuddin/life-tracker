@@ -13,8 +13,20 @@ describe("DialogBody", () => {
     const { className } = screen.getByText("Fields")
       .parentElement as HTMLElement;
     expect(className).toContain("overflow-y-auto");
-    expect(className).toContain("flex-1");
+    expect(className).toContain("flex-auto");
     expect(className).toContain("min-h-0");
+  });
+
+  it("sizes to its content, not from a basis of 0, which Safari on iPhone collapses", () => {
+    render(
+      <DialogBody>
+        <p>Fields</p>
+      </DialogBody>,
+    );
+
+    const { className } = screen.getByText("Fields")
+      .parentElement as HTMLElement;
+    expect(className.split(" ")).not.toContain("flex-1");
   });
 });
 
