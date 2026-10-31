@@ -6,6 +6,7 @@ import {
   within,
 } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { ToastProvider } from "../components/ui/ToastProvider";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../lib/api-client";
 import { listJobs } from "../lib/jobs-api";
@@ -72,9 +73,11 @@ function mockShifts(items: Shift[]) {
 
 function renderPage() {
   render(
-    <MemoryRouter>
-      <ShiftsPage />
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter>
+        <ShiftsPage />
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 
@@ -431,9 +434,12 @@ describe("ShiftsPage", () => {
     const dialog = screen.getByRole("dialog", { name: "Delete shift?" });
     expect(
       within(dialog).getByText(
-        "You are about to delete the Warehouse shift on Fri 9 Oct, 09:00 to 17:00.",
+        "This shift will be removed from your list and your totals.",
       ),
     ).toBeDefined();
+    const row = within(dialog).getByRole("listitem");
+    expect(row.textContent).toContain("Warehouse");
+    expect(row.textContent).toContain("09:00 to 17:00");
     expect(deleteShift).not.toHaveBeenCalled();
   });
 
@@ -487,5 +493,45 @@ describe("ShiftsPage", () => {
 
     expect(await within(dialog).findByText("Shift not found")).toBeDefined();
     expect(screen.getByRole("dialog", { name: "Delete shift?" })).toBeDefined();
+  });
+
+  it("confirms in a message after a shift is added, updated and deleted", async () => {
+    mockShifts([future]);
+    vi.mocked(createShift).mockResolvedValue(makeShift());
+    vi.mocked(updateShift).mockResolvedValue(makeShift());
+    vi.mocked(deleteShift).mockResolvedValue(undefined);
+    renderPage();
+    await screen.findByText("Warehouse");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add shift" }));
+    const addDialog = await screen.findByRole("dialog", {
+      name: "Add a shift",
+    });
+    fireEvent.change(await within(addDialog).findByLabelText("Job"), {
+      target: { value: "job-1" },
+    });
+    fireEvent.change(within(addDialog).getByLabelText("Start time"), {
+      target: { value: "09:00" },
+    });
+    fireEvent.change(within(addDialog).getByLabelText("End time"), {
+      target: { value: "17:00" },
+    });
+    fireEvent.click(
+      within(addDialog).getByRole("button", { name: "Add shift" }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toBe("Shift added"),
+    );
+
+    await chooseAction(futureLabel, "Delete shift…");
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "Delete shift?" })).getByRole(
+        "button",
+        { name: "Delete shift" },
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toBe("Shift deleted"),
+    );
   });
 });

@@ -1,4 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../lib/api-client";
@@ -57,10 +63,16 @@ describe("ForgotPasswordPage", () => {
     requestLinkFor("md@example.com");
 
     expect(
-      await screen.findByText(
-        "If an account exists for that email, we've sent a link. It expires in 30 minutes.",
-      ),
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Check your email",
+      }),
     ).toBeDefined();
+    const status = screen.getByRole("status");
+    expect(status.textContent).toContain("md@example.com");
+    expect(status.textContent).toContain("we've sent a link");
+    expect(status.textContent).toContain("30 minutes and only once");
+    expect(status.textContent).toContain("spam folder");
     expect(forgotPassword).toHaveBeenCalledWith("md@example.com");
     expect(screen.queryByLabelText("Email")).toBeNull();
     expect(screen.getByRole("link", { name: "Back to log in" })).toBeDefined();
@@ -89,5 +101,54 @@ describe("ForgotPasswordPage", () => {
 
     expect(await screen.findByText("Something went wrong")).toBeDefined();
     expect(screen.queryByText(/we've sent a link/)).toBeNull();
+  });
+
+  it("makes the visitor wait before asking for another link, then sends it again", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.mocked(forgotPassword).mockResolvedValue({ message: "ok" });
+    renderPage();
+    requestLinkFor("md@example.com");
+    const again = await screen.findByRole("button", {
+      name: /Send again in 60s/,
+    });
+    expect((again as HTMLButtonElement).disabled).toBe(true);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    const ready = screen.getByRole("button", { name: "Send again" });
+    expect((ready as HTMLButtonElement).disabled).toBe(false);
+
+    fireEvent.click(ready);
+    await waitFor(() => expect(forgotPassword).toHaveBeenCalledTimes(2));
+    expect(
+      await screen.findByRole("button", { name: /Send again in 60s/ }),
+    ).toBeDefined();
+    vi.useRealTimers();
+  });
+
+  it("shows the error and keeps the wait if sending again fails", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.mocked(forgotPassword).mockResolvedValueOnce({ message: "ok" });
+    renderPage();
+    requestLinkFor("md@example.com");
+    await screen.findByRole("button", { name: /Send again in/ });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    vi.mocked(forgotPassword).mockRejectedValueOnce(
+      new ApiError(429, "Too many requests, please try again later."),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Send again" }));
+
+    expect(
+      await screen.findByText("Too many requests, please try again later."),
+    ).toBeDefined();
+    expect(
+      (screen.getByRole("button", { name: "Send again" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
+    vi.useRealTimers();
   });
 });

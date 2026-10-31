@@ -35,7 +35,7 @@ function signUpWith(name: string, email: string, password: string) {
   fireEvent.change(screen.getByLabelText("Password"), {
     target: { value: password },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
+  fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 }
 
 beforeEach(() => {

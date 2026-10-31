@@ -46,18 +46,18 @@ describe("ResetPasswordPage", () => {
     expect(screen.queryByLabelText("New password")).toBeNull();
   });
 
-  it("shows every broken password rule and does not submit", () => {
+  it("shows the rules, and does not submit a password that breaks them", () => {
     renderPage();
 
     submitPassword("abc");
 
     expect(
-      screen.getByText("Password must be at least 8 characters"),
+      screen.getByText("Choose a password that meets all the rules"),
     ).toBeDefined();
-    expect(
-      screen.getByText("Password must contain an uppercase letter"),
-    ).toBeDefined();
-    expect(screen.getByText("Password must contain a number")).toBeDefined();
+    const rules = screen.getByRole("list", { name: "Password rules" });
+    expect(rules.textContent).toContain("A lowercase letter (met)");
+    expect(rules.textContent).toContain("An uppercase letter (not met yet)");
+    expect(rules.textContent).toContain("A number (not met yet)");
     expect(resetPassword).not.toHaveBeenCalled();
   });
 

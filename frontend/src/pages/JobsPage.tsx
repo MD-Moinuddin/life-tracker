@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AddButton } from "../components/AddButton";
+import { CONFIRM_DESCRIPTION_ID } from "../components/ConfirmDelete";
 import { DeleteJobConfirmation } from "../components/jobs/DeleteJobConfirmation";
 import { JobForm } from "../components/jobs/JobForm";
 import { JobList } from "../components/jobs/JobList";
@@ -8,6 +9,7 @@ import { AppShell } from "../components/layout/AppShell";
 import { LoadMessage } from "../components/LoadBoundary";
 import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/ui/PageHeader";
+import { useToast } from "../hooks/useToast";
 import { pluralize } from "../lib/plural";
 import { createJob, deleteJob, listJobs, updateJob } from "../lib/jobs-api";
 import type { JobInput, JobWithShiftCount } from "../lib/jobs-api";
@@ -15,6 +17,7 @@ import type { JobInput, JobWithShiftCount } from "../lib/jobs-api";
 type LoadStatus = "loading" | "ready" | "error";
 
 export function JobsPage() {
+  const toast = useToast();
   const [jobs, setJobs] = useState<JobWithShiftCount[]>([]);
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -48,6 +51,7 @@ export function JobsPage() {
     const created = await createJob(values);
     setJobs((current) => [...current, { ...created, shiftCount: 0 }]);
     setIsAddOpen(false);
+    toast.show("Job added");
   }
 
   async function handleUpdate(id: string, values: JobInput) {
@@ -56,12 +60,19 @@ export function JobsPage() {
       current.map((job) => (job.id === id ? { ...job, ...updated } : job)),
     );
     setEditingJob(null);
+    toast.show("Job updated");
   }
 
   async function handleDelete(id: string) {
     await deleteJob(id);
+    const deleted = jobs.find((job) => job.id === id);
     setJobs((current) => current.filter((job) => job.id !== id));
     setDeletingJob(null);
+    toast.show(
+      deleted && deleted.shiftCount > 0
+        ? `${deleted.name} and its ${pluralize(deleted.shiftCount, "shift")} deleted`
+        : "Job deleted",
+    );
   }
 
   const hasJobs = jobs.length > 0;
@@ -139,6 +150,7 @@ export function JobsPage() {
           <Modal
             open={deletingJob !== null}
             title="Delete job?"
+            describedBy={CONFIRM_DESCRIPTION_ID}
             onClose={() => setDeletingJob(null)}
           >
             {deletingJob && (

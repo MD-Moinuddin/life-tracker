@@ -20,7 +20,7 @@ function submit(label = "Add job") {
 
 function fillValid() {
   fillIn("Name", "Cafe");
-  fillIn("Hourly rate (€)", "10");
+  fillIn("Hourly rate", "10");
 }
 
 describe("JobForm", () => {
@@ -38,17 +38,73 @@ describe("JobForm", () => {
       "Warehouse",
     );
     expect(
-      (screen.getByLabelText("Hourly rate (€)") as HTMLInputElement).value,
+      (screen.getByLabelText("Hourly rate") as HTMLInputElement).value,
     ).toBe("12.00");
-    expect((screen.getByLabelText("Type") as HTMLSelectElement).value).toBe(
-      "mini_job",
-    );
+    expect(
+      (screen.getByRole("radio", { name: /Mini-job/ }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("radio", { name: /Part-time job/ }) as HTMLInputElement)
+        .checked,
+    ).toBe(false);
+  });
+
+  it("explains each job type where it is chosen", () => {
+    renderForm();
+
+    expect(screen.getByText("A regular job with its own hours.")).toBeDefined();
+    expect(
+      screen.getByText(/Counts towards the monthly earnings limit/),
+    ).toBeDefined();
+  });
+
+  it("starts as a part-time job", () => {
+    renderForm();
+
+    expect(
+      (screen.getByRole("radio", { name: /Part-time job/ }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+  });
+
+  it("shows the euro sign in front of the rate, not in the label", () => {
+    renderForm();
+
+    expect(screen.getByLabelText("Hourly rate").className).toContain("pl-7");
+    expect(screen.getByText("€").getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("moves focus to the first field with an error", () => {
+    renderForm();
+    fillIn("Name", "Cafe");
+
+    submit();
+
+    expect(document.activeElement).toBe(screen.getByLabelText("Hourly rate"));
+  });
+
+  it("shows a field's error when it is left, and clears it once fixed", () => {
+    renderForm();
+    fillIn("Hourly rate", "abc");
+
+    fireEvent.blur(screen.getByLabelText("Hourly rate"));
+    expect(
+      screen.getByText("Enter the hourly rate as an amount, for example 12.50"),
+    ).toBeDefined();
+
+    fillIn("Hourly rate", "12.5");
+    expect(
+      screen.queryByText(
+        "Enter the hourly rate as an amount, for example 12.50",
+      ),
+    ).toBeNull();
   });
 
   it("shows errors and does not submit when the name or rate is invalid", async () => {
     const { onSubmit } = renderForm();
 
-    fillIn("Hourly rate (€)", "abc");
+    fillIn("Hourly rate", "abc");
     submit();
 
     expect(await screen.findByText("Name is required")).toBeDefined();
@@ -62,8 +118,8 @@ describe("JobForm", () => {
     const { onSubmit } = renderForm();
 
     fillIn("Name", "  Cafe  ");
-    fillIn("Hourly rate (€)", "13,5");
-    fillIn("Type", "mini_job");
+    fillIn("Hourly rate", "13,5");
+    fireEvent.click(screen.getByRole("radio", { name: /Mini-job/ }));
     submit();
 
     await waitFor(() =>
@@ -84,13 +140,13 @@ describe("JobForm", () => {
     renderForm({ onSubmit });
 
     fillIn("Name", "Cafe");
-    fillIn("Hourly rate (€)", "0");
+    fillIn("Hourly rate", "0");
     submit();
 
     const message = await screen.findByText(
       "Hourly rate must be greater than 0",
     );
-    const input = screen.getByLabelText("Hourly rate (€)");
+    const input = screen.getByLabelText("Hourly rate");
     expect(input.getAttribute("aria-invalid")).toBe("true");
     expect(input.getAttribute("aria-describedby")).toBe(
       message.parentElement?.id,
@@ -158,9 +214,6 @@ describe("JobForm", () => {
     );
 
     expect(screen.getByLabelText("Name").className).toContain(
-      "rounded-control",
-    );
-    expect(screen.getByLabelText("Type").className).toContain(
       "rounded-control",
     );
     expect(container.innerHTML).not.toMatch(/slate-|indigo-|red-/);

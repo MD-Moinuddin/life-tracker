@@ -43,6 +43,8 @@ export function LoginPage() {
   return (
     <AuthLayout
       title="Welcome back"
+      lead="Log in to see your week."
+      showDemo
       footer={
         <>
           Don&apos;t have an account?{" "}

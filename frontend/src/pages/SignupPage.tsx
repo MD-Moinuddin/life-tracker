@@ -32,6 +32,8 @@ export function SignupPage() {
   return (
     <AuthLayout
       title="Create your account"
+      lead="Free to use. No card needed."
+      showDemo
       footer={
         <>
           Already have an account?{" "}

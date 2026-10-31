@@ -21,8 +21,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
+  // No session, whatever the reason (never signed in, logged out, left the
+  // demo, or reloaded the demo, which is never saved): the way in is the
+  // homepage, which has Log in, Sign up and the demo.
   if (!accessToken) {
-    return <Navigate to={ROUTES.login} replace />;
+    return <Navigate to={ROUTES.home} replace />;
   }
 
   return children;

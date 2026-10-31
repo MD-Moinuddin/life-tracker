@@ -1,90 +1,106 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { FormStatus } from "../components/auth/FormStatus";
+import { ResetLinkSent } from "../components/auth/ResetLinkSent";
 import { AuthLayout } from "../components/layout/AuthLayout";
-import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 import { Field } from "../components/ui/Field";
+import { Icon } from "../components/ui/Icon";
 import { Input } from "../components/ui/Input";
 import { LINK_CLASSES } from "../components/ui/links";
+import { useFormErrors } from "../hooks/useFormErrors";
 import { ApiError } from "../lib/api-client";
 import { forgotPassword } from "../lib/auth-api";
 import { isValidEmail } from "../lib/auth-validation";
 import { ROUTES } from "../lib/routes";
 
 const TITLE = "Reset your password";
+const SENT_TITLE = "Check your email";
 const INTRO =
   "Enter your email and we'll send you a link to choose a new password.";
-// The "30 minutes" must match PASSWORD_RESET_TTL_MS in the backend.
-const SENT_MESSAGE =
-  "If an account exists for that email, we've sent a link. It expires in 30 minutes.";
 const INVALID_EMAIL_MESSAGE = "Enter a valid email address";
 const GENERIC_ERROR = "Something went wrong";
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [emailError, setEmailError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
+  const form = useFormErrors(
+    { email: isValidEmail(email) ? [] : [INVALID_EMAIL_MESSAGE] },
+    ["email"],
+  );
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!isValidEmail(email)) {
-      setEmailError(INVALID_EMAIL_MESSAGE);
-      return;
-    }
-
-    setEmailError(null);
+  // True when the link was requested, so the sent screen can restart its wait.
+  async function requestLink(): Promise<boolean> {
     setError(null);
     setIsSubmitting(true);
     try {
       await forgotPassword(email);
-      setIsSent(true);
+      return true;
     } catch (err) {
       setError(err instanceof ApiError ? err.message : GENERIC_ERROR);
+      return false;
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!form.check(event.currentTarget)) {
+      return;
+    }
+    if (await requestLink()) {
+      setIsSent(true);
+    }
+  }
+
   return (
     <AuthLayout
-      title={TITLE}
+      title={isSent ? SENT_TITLE : TITLE}
+      lead={isSent ? undefined : INTRO}
       footer={
-        <Link to={ROUTES.login} className={LINK_CLASSES}>
+        <Link
+          to={ROUTES.login}
+          className={`${LINK_CLASSES} inline-flex min-h-11 items-center gap-1`}
+        >
+          <Icon name="chevron-left" className="h-4 w-4" />
           Back to log in
         </Link>
       }
     >
+      <FormStatus message={error} />
       {isSent ? (
-        <Alert tone="info" role="status">
-          {SENT_MESSAGE}
-        </Alert>
+        <ResetLinkSent
+          email={email}
+          isResending={isSubmitting}
+          onResend={requestLink}
+        />
       ) : (
-        <>
-          <p className="mb-4 text-sm text-ink-muted">{INTRO}</p>
-          <FormStatus message={error} />
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            <Field label="Email" errors={emailError ? [emailError] : []}>
-              {(control) => (
-                <Input
-                  {...control}
-                  type="email"
-                  autoComplete="email"
-                  required
-                  disabled={isSubmitting}
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                />
-              )}
-            </Field>
-            <Button type="submit" loading={isSubmitting} className="w-full">
-              {isSubmitting ? "Sending…" : "Send reset link"}
-            </Button>
-          </form>
-        </>
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <Field label="Email" errors={form.errorsFor("email")}>
+            {(control) => (
+              <Input
+                {...control}
+                name="email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                required
+                disabled={isSubmitting}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                onBlur={() => form.onBlur("email", email)}
+              />
+            )}
+          </Field>
+          <Button type="submit" loading={isSubmitting} className="w-full">
+            {isSubmitting ? "Sending…" : "Send reset link"}
+          </Button>
+        </form>
       )}
     </AuthLayout>
   );

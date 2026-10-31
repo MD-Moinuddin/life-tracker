@@ -10,3 +10,10 @@ export const JOB_TYPE_TONES: Record<JobType, BadgeTone> = {
   part_time: "neutral",
   mini_job: "accent",
 };
+
+// One line under each type where a visitor chooses between them.
+export const JOB_TYPE_DESCRIPTIONS: Record<JobType, string> = {
+  part_time: "A regular job with its own hours.",
+  mini_job:
+    "Counts towards the monthly earnings limit, with a warning before you pass it.",
+};
