@@ -12,6 +12,7 @@ import { shiftLengthMinutes, workedMinutes } from "../../lib/shift-time";
 import type { ShiftInput } from "../../lib/shifts-api";
 import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
+import { chipClassName } from "../ui/chip";
 import { DialogBody, DialogFooter } from "../ui/DialogParts";
 import { Field } from "../ui/Field";
 import { Input } from "../ui/Input";
@@ -296,12 +297,7 @@ export function ShiftForm({
                   type="button"
                   aria-pressed={values.breakMinutes === minutes}
                   onClick={() => setField("breakMinutes", minutes)}
-                  className={classNames(
-                    "min-h-10 rounded-full border px-3.5 text-sm font-medium transition-colors disabled:opacity-60",
-                    values.breakMinutes === minutes
-                      ? "border-accent bg-accent-soft font-semibold text-accent-ink"
-                      : "border-border-strong bg-surface text-ink hover:bg-neutral-soft",
-                  )}
+                  className={chipClassName(values.breakMinutes === minutes)}
                 >
                   {breakLabel(minutes)}
                 </button>

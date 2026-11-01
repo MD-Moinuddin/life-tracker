@@ -37,11 +37,41 @@ export function formatTileDate(date: string): { weekday: string; day: number } {
   return { weekday: weekday ?? "", day };
 }
 
+// "Tue 22 and Wed 23 Dec": days in order, each month named once after its
+// last day.
+export function formatDayList(dates: readonly string[]): string {
+  const names = dates.map((date, index) => {
+    const { weekday, day, month } = parts(date);
+    const next = dates[index + 1];
+    const monthEnds = next === undefined || parts(next).month !== month;
+    return monthEnds ? `${weekday} ${day} ${month}` : `${weekday} ${day}`;
+  });
+  const last = names.pop();
+  if (last === undefined) {
+    return "";
+  }
+  return names.length === 0 ? last : `${names.join(", ")} and ${last}`;
+}
+
 export function formatDateRange(from: string, to: string): string {
   const start = parts(from);
   const end = parts(to);
   const startYear = start.year === end.year ? "" : ` ${start.year}`;
   return `${start.day} ${start.month}${startYear} to ${end.day} ${end.month} ${end.year}`;
+}
+
+// A leave period as the list shows it: "5 Mar", "9 Mar to 13 Mar". The year
+// is named only when the period crosses one.
+export function formatLeavePeriod(from: string, to: string): string {
+  if (from === to) {
+    return `${parts(from).day} ${parts(from).month}`;
+  }
+  const start = parts(from);
+  const end = parts(to);
+  if (start.year === end.year) {
+    return `${start.day} ${start.month} to ${end.day} ${end.month}`;
+  }
+  return `${start.day} ${start.month} ${start.year} to ${end.day} ${end.month} ${end.year}`;
 }
 
 export function formatMonth(date: string): string {
@@ -84,4 +114,9 @@ const longDate = new Intl.DateTimeFormat("en-GB", {
 // "Friday 30 October".
 export function formatLongDate(date: string): string {
   return longDate.format(new Date(`${date}T00:00:00Z`)).replace(",", "");
+}
+
+// Like formatDuration, but a shortfall is written with a minus sign: "−8h".
+export function formatSignedDuration(minutes: number): string {
+  return minutes < 0 ? `−${formatDuration(-minutes)}` : formatDuration(minutes);
 }

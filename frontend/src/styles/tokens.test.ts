@@ -42,6 +42,7 @@ const TEXT_PAIRS: [string, string][] = [
   ["danger", "page"],
   ["danger", "danger-soft"],
   ["danger-ink", "danger-soft"],
+  ["leave-ink", "leave-soft"],
 ];
 
 // [UI component colour, neighbouring colour]. Boundaries and indicators of
@@ -63,6 +64,8 @@ const NON_TEXT_PAIRS: [string, string][] = [
   ["job-4", "surface"],
   ["job-5", "surface"],
   ["job-6", "surface"],
+  ["leave", "surface"],
+  ["leave-edge", "surface"],
 ];
 
 describe("design tokens", () => {

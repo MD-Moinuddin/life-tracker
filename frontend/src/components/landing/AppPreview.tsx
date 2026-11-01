@@ -1,7 +1,9 @@
 import { JOB_COLORS } from "../../lib/job-color";
 import { formatEuro } from "../../lib/money";
+import { PLANNED_STYLE } from "../leave/planned-style";
 import { Card } from "../ui/Card";
 import { EYEBROW_CLASSES } from "../ui/eyebrow";
+import { Icon } from "../ui/Icon";
 import { ProgressBar } from "../ui/ProgressBar";
 import { PREVIEW } from "./landing-content";
 
@@ -9,6 +11,9 @@ import { PREVIEW } from "./landing-content";
 const [FIRST_COLOR, SECOND_COLOR] = JOB_COLORS;
 const PREVIEW_COLORS = [FIRST_COLOR, SECOND_COLOR] as const;
 const PERCENT_DONE = 32;
+// The example vacation bar: the taken part, then the planned (hatched) part.
+const VACATION_TAKEN = 40;
+const VACATION_PLANNED = 15;
 
 // A static, made-up week, drawn like the real Dashboard. It is hidden from
 // assistive tech: the numbers are an example, not data.
@@ -63,6 +68,24 @@ export function AppPreview() {
           </li>
         ))}
       </ul>
+
+      <div className="mt-3">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-leave-ink">
+          <Icon name="sun" className="h-4 w-4 shrink-0" />
+          {`${PREVIEW.vacation.label}: ${PREVIEW.vacation.left} left of ${PREVIEW.vacation.of}`}
+        </p>
+        <div
+          data-testid="vacation-bar"
+          aria-hidden="true"
+          className="mt-1.5 flex h-2 gap-0.5 overflow-hidden rounded-full bg-leave-soft"
+        >
+          <span className="bg-leave" style={{ width: `${VACATION_TAKEN}%` }} />
+          <span
+            data-planned=""
+            style={{ ...PLANNED_STYLE, width: `${VACATION_PLANNED}%` }}
+          />
+        </div>
+      </div>
 
       <div
         className={`mt-4 flex items-center gap-3 rounded-card border-l-4 bg-accent-soft/40 py-2.5 pr-3 pl-3.5 ${FIRST_COLOR.edge}`}

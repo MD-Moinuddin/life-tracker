@@ -3,6 +3,10 @@
 export const EYEBROW_CLASSES =
   "text-xs font-bold tracking-wider text-ink-muted uppercase";
 
+// The same label in the paid-leave colour, for leave figures.
+export const EYEBROW_LEAVE_CLASSES =
+  "text-xs font-bold tracking-wider text-leave-ink uppercase";
+
 // The same label in the accent colour, for the line above a section heading on
 // the landing page.
 export const EYEBROW_ACCENT_CLASSES =

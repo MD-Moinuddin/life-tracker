@@ -23,6 +23,9 @@ const ownJob: Job = {
   name: "Warehouse",
   hourlyRate: new Prisma.Decimal("13.5"),
   type: "part_time",
+  vacationHoursPerYear: null,
+  vacationCarryOverHours: new Prisma.Decimal("0"),
+  vacationCarryOverYear: null,
   createdAt: new Date("2026-10-01T09:00:00Z"),
   updatedAt: new Date("2026-10-01T09:00:00Z"),
 };

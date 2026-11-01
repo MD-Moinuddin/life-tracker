@@ -1,5 +1,6 @@
 import { addDays, weekBounds } from "../dates";
-import type { DemoJob, DemoShift } from "./demo-db";
+import { NO_VACATION } from "./demo-db";
+import type { DemoJob, DemoLeave, DemoShift } from "./demo-db";
 
 // The ids are fixed so each demo job keeps the same colour (see jobColor), and
 // these two map to two different colours.
@@ -10,18 +11,32 @@ const JOB_IDS = {
 
 type JobKey = keyof typeof JOB_IDS;
 
-const JOBS: {
-  key: JobKey;
-  name: string;
-  hourlyRate: string;
-  type: DemoJob["type"];
-}[] = [
-  { key: "cafe", name: "Cafe", hourlyRate: "14.00", type: "part_time" },
+// The Cafe tracks 80 hours of paid vacation a year (four weeks of 20 hours),
+// the Restaurant does not track any.
+const JOBS: ({ key: JobKey } & Pick<
+  DemoJob,
+  | "name"
+  | "hourlyRate"
+  | "type"
+  | "vacationHoursPerYear"
+  | "vacationCarryOverHours"
+  | "vacationCarryOverYear"
+>)[] = [
+  {
+    key: "cafe",
+    name: "Cafe",
+    hourlyRate: "14.00",
+    type: "part_time",
+    vacationHoursPerYear: "80.00",
+    vacationCarryOverHours: "0.00",
+    vacationCarryOverYear: null,
+  },
   {
     key: "restaurant",
     name: "Restaurant",
     hourlyRate: "15.00",
     type: "mini_job",
+    ...NO_VACATION,
   },
 ];
 
@@ -68,11 +83,60 @@ const WEEK: WeeklyShift[] = [
 const WEEKS_BEFORE = 2;
 const WEEKS_AFTER = 2;
 
-// The jobs and shifts of the demo, repeating the working week around `today`
-// (YYYY-MM-DD): finished shifts behind it, upcoming ones ahead.
+interface SeededLeave {
+  job: JobKey;
+  // The first day: the Monday this many weeks from the current week's Monday.
+  weeksFromThisWeek: number;
+  // How many calendar days the entry spans, its first day included.
+  spanDays: number;
+}
+
+// The Cafe's paid leave, Monday to Friday at 4 hours a day: two weeks and one
+// week already taken, and two days still to come. All of it lies outside the
+// weeks that have shifts, so no leave falls on a shift.
+const LEAVE_WEEKDAYS = [1, 2, 3, 4, 5];
+const LEAVE_MINUTES_PER_DAY = 240;
+const LEAVE: SeededLeave[] = [
+  // Two weeks, Monday to the Friday of the second week.
+  { job: "cafe", weeksFromThisWeek: -12, spanDays: 12 },
+  { job: "cafe", weeksFromThisWeek: -6, spanDays: 5 },
+  // Monday and Tuesday.
+  { job: "cafe", weeksFromThisWeek: 6, spanDays: 2 },
+];
+
+// The seeded leave around `today`. An entry that would not lie wholly inside
+// today's calendar year is left out (a booking cannot span two years, and
+// early in the year the balance simply starts full).
+function buildLeave(today: string, stamp: string): DemoLeave[] {
+  const monday = weekBounds(today).from;
+  const year = today.slice(0, 4);
+  return LEAVE.map((entry, index) => {
+    const startDate = addDays(monday, entry.weeksFromThisWeek * 7);
+    return {
+      id: `demo-leave-seed-${index + 1}`,
+      jobId: JOB_IDS[entry.job],
+      type: "paid_vacation" as const,
+      startDate,
+      endDate: addDays(startDate, entry.spanDays - 1),
+      weekdays: [...LEAVE_WEEKDAYS],
+      minutesPerDay: LEAVE_MINUTES_PER_DAY,
+      notes: null,
+      createdAt: stamp,
+      updatedAt: stamp,
+    };
+  }).filter(
+    (entry) =>
+      entry.startDate.slice(0, 4) === year &&
+      entry.endDate.slice(0, 4) === year,
+  );
+}
+
+// The jobs, shifts and paid leave of the demo, repeating the working week
+// around `today` (YYYY-MM-DD): finished shifts behind it, upcoming ones ahead.
 export function buildDemoData(today: string): {
   jobs: DemoJob[];
   shifts: DemoShift[];
+  leave: DemoLeave[];
 } {
   const stamp = `${today}T00:00:00.000Z`;
   const jobs = JOBS.map(({ key, ...job }) => ({
@@ -99,5 +163,5 @@ export function buildDemoData(today: string): {
       });
     }
   }
-  return { jobs, shifts };
+  return { jobs, shifts, leave: buildLeave(today, stamp) };
 }

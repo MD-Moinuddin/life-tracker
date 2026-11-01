@@ -202,3 +202,43 @@ describe("update and delete", () => {
     expect(second.status).toBe(404);
   });
 });
+
+describe("vacation settings", () => {
+  it("saves, returns and clears the vacation settings", async () => {
+    const created = await request(app)
+      .post("/api/jobs")
+      .set(bearer(alice.token))
+      .send({
+        name: "Cafe",
+        hourlyRate: "14",
+        type: "part_time",
+        vacationHoursPerYear: "80",
+        vacationCarryOverHours: "8",
+        vacationCarryOverYear: 2026,
+      });
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({
+      vacationHoursPerYear: "80.00",
+      vacationCarryOverHours: "8.00",
+      vacationCarryOverYear: 2026,
+    });
+
+    const off = await request(app)
+      .patch(`/api/jobs/${created.body.id}`)
+      .set(bearer(alice.token))
+      .send({ vacationHoursPerYear: null });
+    expect(off.body.vacationHoursPerYear).toBeNull();
+  });
+
+  it("returns null and 0 for a job that does not track vacation", async () => {
+    const job = await createJob(alice.token, "Plain");
+    const list = await request(app).get("/api/jobs").set(bearer(alice.token));
+    expect(
+      list.body.find((j: { id: string }) => j.id === job.id),
+    ).toMatchObject({
+      vacationHoursPerYear: null,
+      vacationCarryOverHours: "0.00",
+      vacationCarryOverYear: null,
+    });
+  });
+});

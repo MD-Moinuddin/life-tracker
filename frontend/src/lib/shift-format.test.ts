@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   formatDay,
+  formatDayList,
   formatDuration,
+  formatLeavePeriod,
+  formatSignedDuration,
   formatMonth,
   formatTimeRange,
   formatTimeSpan,
@@ -101,5 +104,53 @@ describe("formatTimeSpan", () => {
         endDate: "2026-10-04",
       }),
     ).toBe("22:00–02:00 +1");
+  });
+});
+
+describe("formatDayList", () => {
+  it("names one day with its month", () => {
+    expect(formatDayList(["2026-12-22"])).toBe("Tue 22 Dec");
+  });
+
+  it("joins the days of one month and names the month once", () => {
+    expect(formatDayList(["2026-12-22", "2026-12-23"])).toBe(
+      "Tue 22 and Wed 23 Dec",
+    );
+    expect(formatDayList(["2026-12-21", "2026-12-22", "2026-12-23"])).toBe(
+      "Mon 21, Tue 22 and Wed 23 Dec",
+    );
+  });
+
+  it("names each month when the days span two", () => {
+    expect(formatDayList(["2026-11-30", "2026-12-01", "2026-12-02"])).toBe(
+      "Mon 30 Nov, Tue 1 and Wed 2 Dec",
+    );
+  });
+
+  it("is empty for no days", () => {
+    expect(formatDayList([])).toBe("");
+  });
+});
+
+describe("formatLeavePeriod", () => {
+  it("names one day, or the two ends of a period", () => {
+    expect(formatLeavePeriod("2026-03-05", "2026-03-05")).toBe("5 Mar");
+    expect(formatLeavePeriod("2026-03-09", "2026-03-13")).toBe(
+      "9 Mar to 13 Mar",
+    );
+  });
+
+  it("adds the years when the period crosses a year", () => {
+    expect(formatLeavePeriod("2026-12-28", "2027-01-02")).toBe(
+      "28 Dec 2026 to 2 Jan 2027",
+    );
+  });
+});
+
+describe("formatSignedDuration", () => {
+  it("writes a shortfall with a minus sign", () => {
+    expect(formatSignedDuration(720)).toBe("12h");
+    expect(formatSignedDuration(-480)).toBe("−8h");
+    expect(formatSignedDuration(-450)).toBe("−7h 30m");
   });
 });

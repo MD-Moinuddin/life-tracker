@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import contentSource from "./landing-content.ts?raw";
 import { JOB_COLORS } from "../../lib/job-color";
 import {
   FEATURES,
@@ -8,6 +9,7 @@ import {
   LANDING_SECTION_LINKS,
   MINI_JOB_SPOTLIGHT,
   PHONE_SHOWCASE,
+  PREVIEW,
   miniJobMessage,
 } from "./landing-content";
 
@@ -32,6 +34,48 @@ describe("LANDING_FEATURES", () => {
   it("points every feature at a colour that exists", () => {
     for (const feature of LANDING_FEATURES) {
       expect(JOB_COLORS[feature.colorIndex]).toBeDefined();
+    }
+  });
+});
+
+describe("paid vacation copy", () => {
+  it("replaces the list or week view feature with the vacation balance", () => {
+    const titles = LANDING_FEATURES.map((f) => f.title);
+    const vacation = LANDING_FEATURES.find(
+      (f) => f.title === "Paid vacation balance",
+    );
+
+    expect(titles).not.toContain("List or week view");
+    expect(vacation?.description).toBe(
+      "Track your paid leave, see the hours you have left, and book a week or two with the pay shown.",
+    );
+    expect(vacation?.icon).toBe("sun");
+    expect(vacation?.colorIndex).toBe(2);
+  });
+
+  it("keeps the list and the week view in the phone feature", () => {
+    const phone = LANDING_FEATURES.find(
+      (f) => f.title === "Made for your phone",
+    );
+
+    expect(phone?.description).toBe(
+      "A list or a week view, a bottom tab bar and a floating button, so you can log a shift in seconds.",
+    );
+  });
+
+  it("has an example vacation balance in the preview", () => {
+    expect(PREVIEW.vacation).toEqual({
+      label: "Paid vacation",
+      left: "12h",
+      of: "80h",
+    });
+  });
+
+  it("claims no legal entitlement", () => {
+    const source = contentSource.toLowerCase();
+
+    for (const word of ["entitled by law", "legal", "guarantee"]) {
+      expect(source).not.toContain(word);
     }
   });
 });

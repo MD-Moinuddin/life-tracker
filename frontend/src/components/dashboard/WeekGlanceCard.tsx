@@ -5,6 +5,12 @@ import { progressPercent } from "../../lib/progress";
 import { ROUTES } from "../../lib/routes";
 import { formatDateRange, formatDuration } from "../../lib/shift-format";
 import type { Summary } from "../../lib/summary-api";
+import {
+  earnedWithLeave,
+  hasLeave,
+  plannedWithLeave,
+  rowHasLeave,
+} from "../../lib/summary-totals";
 import { LoadBoundary } from "../LoadBoundary";
 import { buttonClassName } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -32,8 +38,10 @@ function WeekSkeleton() {
 function WeekContent({ summary }: { summary: Summary }) {
   const { totals } = summary;
   const percent = progressPercent(totals.earnedMinutes, totals.plannedMinutes);
+  const withLeave = rowHasLeave(totals);
 
-  if (summary.jobs.length === 0) {
+  // A week with only paid leave has content too.
+  if (summary.jobs.length === 0 && !hasLeave(summary)) {
     return (
       <p className="mt-3 text-sm text-ink-muted">
         No shifts this week yet.{" "}
@@ -47,10 +55,12 @@ function WeekContent({ summary }: { summary: Summary }) {
   return (
     <>
       <p className="mt-2 text-4xl font-bold tracking-tight text-accent tabular-nums">
-        {formatEuro(totals.earnedAmount)}
+        {formatEuro(earnedWithLeave(totals))}
       </p>
       <p className="text-sm text-ink-muted tabular-nums">
-        {`earned · ${formatDuration(totals.earnedMinutes)} finished`}
+        {withLeave
+          ? `earned · worked ${formatEuro(totals.earnedAmount)} + paid leave ${formatEuro(totals.leave.earnedAmount)}`
+          : `earned · ${formatDuration(totals.earnedMinutes)} finished`}
       </p>
       <ProgressBar
         value={totals.earnedMinutes}
@@ -65,7 +75,7 @@ function WeekContent({ summary }: { summary: Summary }) {
           {" of planned hours done"}
         </span>
         <span>
-          {`${formatEuro(totals.plannedAmount)} · ${formatDuration(totals.plannedMinutes)}`}
+          {`${formatEuro(plannedWithLeave(totals))} · ${formatDuration(totals.plannedMinutes + totals.leave.plannedMinutes)}`}
         </span>
       </p>
       <Link
@@ -79,7 +89,8 @@ function WeekContent({ summary }: { summary: Summary }) {
 }
 
 // This week's earnings first, then how far along the plan is. It matches the
-// headline figures of the Summary page.
+// headline figures of the Summary page: earned and planned include paid leave,
+// the progress counts worked hours only.
 export function WeekGlanceCard({ state }: WeekGlanceCardProps) {
   return (
     <Card padded className="px-6">

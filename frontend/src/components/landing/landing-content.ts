@@ -58,6 +58,7 @@ export const PREVIEW = {
     time: "10:45–16:00 · 5h 15m",
     earnings: "73.50",
   },
+  vacation: { label: "Paid vacation", left: "12h", of: "80h" },
 } as const;
 
 export const HOW_IT_WORKS = {
@@ -125,16 +126,16 @@ export const LANDING_FEATURES: readonly LandingFeature[] = [
     colorIndex: 2,
   },
   {
-    title: "List or week view",
+    title: "Paid vacation balance",
     description:
-      "Read your shifts as a list with weekly totals, or as a week at a glance.",
-    icon: "calendar",
-    colorIndex: 3,
+      "Track your paid leave, see the hours you have left, and book a week or two with the pay shown.",
+    icon: "sun",
+    colorIndex: 2,
   },
   {
     title: "Made for your phone",
     description:
-      "A bottom tab bar and a floating button, so you can log a shift in seconds.",
+      "A list or a week view, a bottom tab bar and a floating button, so you can log a shift in seconds.",
     icon: "smartphone",
     colorIndex: 0,
   },
