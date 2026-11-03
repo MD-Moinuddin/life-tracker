@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { ApiError } from "./lib/api-client";
@@ -65,6 +66,7 @@ function App() {
         </Route>
         <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
       </Routes>
+      <Analytics />
     </ToastProvider>
   );
 }
