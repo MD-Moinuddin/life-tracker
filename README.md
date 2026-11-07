@@ -1,8 +1,8 @@
 # Life Tracker
 
-Life Tracker is a personal app for tracking daily life. Version 1 covers user authentication and a dashboard. Version 1.1 adds work and shift scheduling with a weekly and monthly earnings summary. Later versions will add fitness tracking, nutrition tracking, and personal finance tracking.
+Life Tracker is a personal app for tracking daily life. Version 1 covers user authentication and a dashboard. Version 1.1 adds work and shift scheduling with a weekly and monthly earnings summary. Version 1.2 adds password reset, paid vacation, and a no-signup demo. Later versions will add fitness tracking, nutrition tracking, and personal finance tracking.
 
-**Live demo:** [lifetracker-md.vercel.app](https://lifetracker-md.vercel.app)
+**Live demo:** [lifetracker-md.vercel.app](https://lifetracker-md.vercel.app). Use the **Try the demo** button to explore the app without creating an account.
 
 ## Why this project exists
 
@@ -28,9 +28,23 @@ Version 1.1 is the first real tracking module. It lets me track hours and earnin
 - A weekly and monthly summary that shows what I have earned so far next to what I have planned
 - A mini-job warning that shows when my planned mini-job earnings for a month go over 540 euros. It never blocks me from adding more shifts
 
+## Version 1.2: Paid vacation, password reset, and demo
+
+Version 1.2 rounds out the work module and makes the app easier to try and to use:
+
+- **Paid vacation.** Each job can have a yearly vacation entitlement and carry-over hours from last year. I can add paid leave over a date range, counted only on the weekdays I choose and at a set number of minutes per day. A balance card and a year strip show how much vacation is left, and paid leave counts toward the weekly and monthly summary
+- **Password reset.** Forgot-password and reset-password pages send a single-use, expiring reset link by email (Brevo). Only a hash of the token is stored, and changing a password signs out older sessions
+- **Try the demo.** A button on the landing page opens the full app with sample data and no signup. The demo runs on an in-memory API in the browser that mirrors the real API's paths, response shapes, validation, and errors, so the pages cannot tell the difference
+- **Landing page.** A public home page with a hero, how it works, a feature grid, a mini-job spotlight, and a phone showcase
+- **Redesigned dashboard.** A next-up shift card, a week-at-a-glance card, a vacation card, and set-up steps for new users
+- **Mobile-first interface.** A bottom tab bar and bottom-sheet dialogs on phones, a compact week agenda for shifts, and a card or table summary depending on screen size
+- **Smoother shift entry.** The shift dialog shows a live summary of hours and earnings and remembers the last job used. Overnight shifts are supported
+- **Job colours.** Each job gets its own colour and monogram, so it is easy to tell jobs apart in lists and in the earnings share bar
+- **Better loading states.** Skeleton loaders, toast messages, and a notice that explains the wait when the free-tier server is waking up
+
 ## What comes next
 
-After version 1.1, future versions will add:
+After version 1.2, future versions will add:
 
 - Fitness and workout tracking
 - Nutrition and protein tracking
@@ -52,9 +66,12 @@ _Screenshots coming soon._
 | Backend      | Node.js, Express, TypeScript                                                     |
 | Database     | PostgreSQL, Prisma                                                               |
 | Auth         | JWT (short-lived access token in memory, httpOnly refresh cookie), bcrypt        |
+| Validation   | Zod (every API request body and query)                                           |
+| Email        | Brevo (password reset emails)                                                    |
+| Security     | Helmet, CORS allowlist, rate limiting on auth routes                             |
 | Containers   | Docker, Docker Compose                                                           |
 | CI           | GitHub Actions (lint, typecheck, test, build on every PR; required before merge) |
-| Testing      | Vitest, Testing Library, jest-axe (accessibility)                                |
+| Testing      | Vitest, Testing Library, Supertest, jest-axe (accessibility)                     |
 | Code quality | ESLint, Prettier, Husky                                                          |
 | Hosting      | Vercel (frontend), Render (backend), Neon (database)                             |
 
