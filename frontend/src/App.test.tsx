@@ -5,6 +5,7 @@ import App from "./App";
 import { LANDING_HEADLINE } from "./components/landing/landing-content";
 import { ApiError } from "./lib/api-client";
 import { refresh } from "./lib/auth-api";
+import { startDemoSession } from "./lib/demo/demo-session";
 import { hasSessionHint, saveSessionHint } from "./lib/session-hint";
 import { useAuthStore } from "./store/auth-store";
 
@@ -158,5 +159,34 @@ describe("App session restore", () => {
 
     await screen.findByRole("heading", { level: 1, name: LANDING_HEADLINE });
     expect(hasSessionHint()).toBe(true);
+  });
+});
+
+describe("leaving the demo from the banner", () => {
+  async function startInDemo() {
+    startDemoSession("2026-11-17");
+    useAuthStore.setState({ isInitialized: true });
+    renderAt("/dashboard");
+    await screen.findByRole("region", { name: "Demo mode" });
+  }
+
+  it("Sign up goes to the signup page, not the homepage", async () => {
+    await startInDemo();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Create your account" }),
+    ).toBeDefined();
+  });
+
+  it("Exit demo goes to the homepage", async () => {
+    await startInDemo();
+
+    fireEvent.click(screen.getByRole("button", { name: "Exit demo" }));
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: LANDING_HEADLINE }),
+    ).toBeDefined();
   });
 });

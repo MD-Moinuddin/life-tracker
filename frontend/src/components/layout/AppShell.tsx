@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { classNames } from "../../lib/class-names";
@@ -50,8 +51,21 @@ export function AppShell({ children }: AppShellProps) {
     }
   }
 
+  // The demo ends only once this page has been left. Ending it first would
+  // sign the visitor out while a protected page is still showing, and that
+  // page's guard would send them to the homepage instead of where they chose.
+  const leavingDemo = useRef(false);
+  useEffect(
+    () => () => {
+      if (leavingDemo.current) {
+        endDemoSession();
+      }
+    },
+    [],
+  );
+
   function handleExitDemo(to: string) {
-    endDemoSession();
+    leavingDemo.current = true;
     navigate(to);
   }
 
